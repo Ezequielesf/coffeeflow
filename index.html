@@ -36,7 +36,7 @@
 
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Serviço Supabase para persistência e consulta protegida
+    // Serviço Supabase
     const supabaseService = {
       buscarCafeteriaPorEmail: async (email) => {
         try {
@@ -59,7 +59,6 @@
           const data = await res.json();
           return (Array.isArray(data) && data.length > 0) ? data[0] : null;
         } catch (err) {
-          console.error("Erro ao buscar cafeteria por email:", err);
           return null;
         }
       },
@@ -75,7 +74,6 @@
           const data = await res.json();
           return (Array.isArray(data) && data.length > 0) ? data[0] : null;
         } catch (err) {
-          console.error("Erro ao buscar cafeteria por PIN:", err);
           return null;
         }
       },
@@ -104,7 +102,6 @@
           });
 
           if (!res.ok) {
-            // Fallback caso colunas de email no BD tenham alguma restricao de schema
             const resFallback = await fetch(`${API_URL}/rest/v1/cafeterias`, {
               method: 'POST',
               headers: {
@@ -126,7 +123,6 @@
           const data = await res.json();
           return data?.[0] || { id: `local_${Date.now()}`, nome: nome, pin_equipe: pin, email: email };
         } catch (err) {
-          console.error("Erro ao criar cafeteria no banco:", err);
           return { id: `local_${Date.now()}`, nome: nome, pin_equipe: pin, email: email };
         }
       },
@@ -249,6 +245,7 @@
       const [notificacao, setNotificacao] = useState('');
       const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
       const [termoPesquisa, setTermoPesquisa] = useState('');
+      
       const [modalProduto, setModalProduto] = useState({ open: false, data: null });
 
       useEffect(() => {
@@ -277,7 +274,6 @@
               throw new Error('Preencha o nome da cafeteria, o e-mail e a senha.');
             }
             
-            // Autenticação no Supabase
             const authData = await authService.login(adminEmailInput, adminPasswordInput);
             let dadosCafeteria = await supabaseService.buscarCafeteriaPorEmail(adminEmailInput);
             
@@ -331,6 +327,7 @@
         setAdminPasswordInput('');
         setNomeCafeteriaInput('');
         setCafeteria({ id: null, nome: '', pinEquipe: '', planoAtivo: true, donoEmail: '' });
+        // Ao sair da conta, redireciona para o Início
         setActiveView('landing');
       };
 
@@ -391,6 +388,12 @@
         setProdutos(produtos.map(p => p.id === id ? { ...p, disponivel: !p.disponivel } : p));
       };
 
+      const handleRemoverProduto = (id) => {
+        if (confirm('Tem certeza de que deseja remover este produto do cardápio?')) {
+          setProdutos(produtos.filter(p => p.id !== id));
+        }
+      };
+
       const handleSalvarProduto = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -411,6 +414,16 @@
         }
 
         setModalProduto({ open: false, data: null });
+      };
+
+      const atualizarStatusPedido = (id, statusAtual) => {
+        if (statusAtual === 'pendente') {
+          setPedidos(pedidos.map(p => p.id === id ? { ...p, status: 'em_preparo' } : p));
+        } else {
+          setPedidos(pedidos.filter(p => p.id !== id));
+          setNotificacao(`Pedido ${id} entregue com sucesso!`);
+          setTimeout(() => setNotificacao(''), 4000);
+        }
       };
 
       const adicionarAoCarrinho = (produto) => {
@@ -441,10 +454,6 @@
         setTimeout(() => setNotificacao(''), 5000);
       };
 
-      const atualizarStatusPedido = (id, novoStatus) => {
-        setPedidos(pedidos.map(p => p.id === id ? { ...p, status: novoStatus } : p));
-      };
-
       const produtosFiltrados = produtos.filter(p => {
         const bateCategoria = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
         const batePesquisa = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase()) || p.descricao.toLowerCase().includes(termoPesquisa.toLowerCase());
@@ -469,15 +478,42 @@
             )}
 
             <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-800">
-              <button onClick={() => setActiveView('landing')} className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'landing' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}>Início</button>
-              <button onClick={() => setActiveView(isLoggedInAdmin ? 'admin' : 'admin_login')} className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'admin' || activeView === 'admin_login' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}>{isLoggedInAdmin ? 'Painel Proprietário' : 'Login Proprietário'}</button>
-              <button onClick={() => setActiveView('staff_login')} className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}>Acesso Equipe (PIN)</button>
-              <button onClick={() => { setActiveView('customer'); setPedidoEnviado(false); }} className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'customer' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}>Ver Cardápio (Mesa)</button>
+              
+              {/* O Botão "Início" SÓ APARECE QUANDO NÃO ESTIVER LOGADO */}
+              {!isLoggedInAdmin && (
+                <button 
+                  onClick={() => setActiveView('landing')} 
+                  className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'landing' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Início
+                </button>
+              )}
+
+              <button 
+                onClick={() => setActiveView(isLoggedInAdmin ? 'admin' : 'admin_login')} 
+                className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'admin' || activeView === 'admin_login' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}
+              >
+                {isLoggedInAdmin ? 'Painel Proprietário' : 'Login Proprietário'}
+              </button>
+
+              <button 
+                onClick={() => setActiveView('staff_login')} 
+                className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}
+              >
+                Acesso Equipe (PIN)
+              </button>
+
+              <button 
+                onClick={() => { setActiveView('customer'); setPedidoEnviado(false); }} 
+                className={`px-2.5 py-1 rounded text-xs transition-all ${activeView === 'customer' ? 'bg-amber-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}
+              >
+                Ver Cardápio (Mesa)
+              </button>
             </div>
           </header>
 
-          {/* LANDING PAGE */}
-          {activeView === 'landing' && (
+          {/* LANDING PAGE (SÓ VISÍVEL SEM LOGIN) */}
+          {activeView === 'landing' && !isLoggedInAdmin && (
             <div className="max-w-6xl mx-auto px-4 py-12">
               <div className="text-center max-w-3xl mx-auto space-y-6">
                 <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-tight">
@@ -495,7 +531,7 @@
           )}
 
           {/* LOGIN / CADASTRO */}
-          {activeView === 'admin_login' && (
+          {activeView === 'admin_login' && !isLoggedInAdmin && (
             <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
               <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl space-y-6">
                 <h2 className="text-2xl font-black text-white text-center">
@@ -549,7 +585,7 @@
                   <h2 className="text-2xl font-extrabold text-white">{cafeteria.nome || 'Minha Cafeteria'}</h2>
                   <p className="text-xs text-slate-400 mt-0.5">Proprietário: <strong className="text-amber-400">{cafeteria.donoEmail}</strong></p>
                 </div>
-                <button onClick={handleAdminLogout} className="p-2 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold">Sair</button>
+                <button onClick={handleAdminLogout} className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-all">Sair da Conta</button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -586,44 +622,89 @@
             </div>
           )}
 
-          {/* PAINEL OPERACIONAL */}
+          {/* PAINEL OPERACIONAL DA EQUIPE */}
           {activeView === 'staff_panel' && (
             <div className="max-w-6xl mx-auto px-4 py-8">
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
-                <h2 className="text-xl font-bold text-white">Painel Operacional da Cozinha & Balcão ({cafeteria.nome})</h2>
-                <button onClick={() => setModalProduto({ open: true, data: null })} className="px-3 py-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl">+ Item</button>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Painel Operacional ({cafeteria.nome || 'Minha Cafeteria'})</h2>
+                  <p className="text-xs text-slate-400">Gerencie o cardápio e os pedidos da cozinha em tempo real</p>
+                </div>
+                <button onClick={() => setModalProduto({ open: true, data: null })} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg">+ Novo Item</button>
               </div>
 
               <div className="grid lg:grid-cols-2 gap-6">
+                
+                {/* SEÇÃO CARDÁPIO */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-amber-400 text-sm">Cardápio</h3>
+                  <h3 className="font-bold text-amber-400 text-sm">Cardápio do Estabelecimento ({produtos.length} itens)</h3>
                   {produtosFiltrados.map(prod => (
-                    <div key={prod.id} className="bg-slate-800 p-3 rounded-xl flex items-center justify-between border border-slate-700">
-                      <div>
-                        <h4 className="font-bold text-white text-sm">{prod.nome}</h4>
-                        <span className="text-xs font-mono text-amber-400">R$ {prod.preco.toFixed(2)}</span>
+                    <div key={prod.id} className="bg-slate-800 p-3.5 rounded-2xl flex items-center justify-between border border-slate-700 gap-3">
+                      <img src={prod.imagem} alt={prod.nome} className="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-900" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-white text-sm truncate">{prod.nome}</h4>
+                        <span className="text-xs font-mono text-amber-400 font-semibold">R$ {prod.preco.toFixed(2)}</span>
                       </div>
-                      <button onClick={() => toggleDisponibilidadeProduto(prod.id)} className={`px-3 py-1 rounded text-xs font-bold ${prod.disponivel ? 'bg-slate-700 text-slate-300' : 'bg-rose-500/20 text-rose-400'}`}>
-                        {prod.disponivel ? 'Pausar' : 'Ativar'}
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button 
+                          onClick={() => toggleDisponibilidadeProduto(prod.id)} 
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${prod.disponivel ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}
+                        >
+                          {prod.disponivel ? 'Pausar' : 'Ativar'}
+                        </button>
+                        <button 
+                          onClick={() => setModalProduto({ open: true, data: prod })}
+                          className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-[11px] font-bold"
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          onClick={() => handleRemoverProduto(prod.id)}
+                          className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-lg text-[11px] font-bold"
+                        >
+                          Excluir
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
 
+                {/* SEÇÃO PEDIDOS */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-amber-400 text-sm">Pedidos Ativos</h3>
-                  {pedidos.map(p => (
-                    <div key={p.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
-                      <div className="flex justify-between text-xs text-white font-bold">
-                        <span>Mesa {p.mesa} ({p.id})</span>
-                        <span className="text-amber-400">R$ {p.total.toFixed(2)}</span>
-                      </div>
-                      <button onClick={() => atualizarStatusPedido(p.id, p.status === 'pendente' ? 'em_preparo' : 'concluido')} className="w-full py-1.5 bg-amber-500 text-slate-950 font-bold rounded text-xs">
-                        {p.status === 'pendente' ? 'Iniciar Preparo' : 'Marcar Entregue'}
-                      </button>
+                  <h3 className="font-bold text-amber-400 text-sm">Pedidos em Aberto ({pedidos.length})</h3>
+                  {pedidos.length === 0 ? (
+                    <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 text-center text-xs text-slate-400">
+                      Nenhum pedido pendente no momento.
                     </div>
-                  ))}
+                  ) : (
+                    pedidos.map(p => (
+                      <div key={p.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3 shadow-md">
+                        <div className="flex justify-between items-center text-xs text-white font-bold border-b border-slate-700/80 pb-2">
+                          <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-[11px]">Mesa {p.mesa}</span>
+                          <span className="font-mono text-slate-400">{p.hora}</span>
+                          <span className="text-amber-400 font-mono text-sm">R$ {p.total.toFixed(2)}</span>
+                        </div>
+
+                        <div className="space-y-1 py-1">
+                          {p.itens.map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-300">
+                              <span>{item.qtd}x {item.nome}</span>
+                              <span className="font-mono text-slate-400">R$ {(item.preco * item.qtd).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <button 
+                          onClick={() => atualizarStatusPedido(p.id, p.status)} 
+                          className={`w-full py-2 font-extrabold rounded-xl text-xs transition-all ${p.status === 'pendente' ? 'bg-amber-500 hover:bg-amber-400 text-slate-950' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'}`}
+                        >
+                          {p.status === 'pendente' ? 'Iniciar Preparo' : '✓ Marcar como Entregue (Remover do Painel)'}
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
+
               </div>
             </div>
           )}
@@ -632,7 +713,7 @@
           {activeView === 'customer' && (
             <div className="max-w-md mx-auto min-h-screen bg-slate-950 pb-28 border-x border-slate-800 p-4 space-y-4">
               <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                <span className="text-slate-400">Mesa:</span>
+                <span className="text-slate-400">Simular Mesa:</span>
                 <select value={selectedMesaCliente} onChange={(e) => setSelectedMesaCliente(parseInt(e.target.value))} className="bg-slate-800 text-amber-400 font-bold rounded px-2 py-1">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n}>Mesa {n}</option>)}
                 </select>
@@ -667,20 +748,44 @@
             </div>
           )}
 
-          {/* MODAL ADICIONAR PRODUTO */}
+          {/* MODAL ADICIONAR / EDITAR PRODUTO */}
           {modalProduto.open && (
             <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4">
-                <h3 className="text-lg font-bold text-white">Novo Item no Cardápio</h3>
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+                <h3 className="text-lg font-bold text-white">
+                  {modalProduto.data ? 'Editar Item do Cardápio' : 'Novo Item no Cardápio'}
+                </h3>
                 <form onSubmit={handleSalvarProduto} className="space-y-3">
-                  <input type="text" name="nome" placeholder="Nome do Item" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white" />
-                  <input type="number" step="0.50" name="preco" placeholder="Preço (ex: 12.00)" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white" />
-                  <select name="categoria" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
-                    {INITIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg">Cancelar</button>
-                    <button type="submit" className="px-4 py-1.5 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg">Salvar</button>
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome do Produto</label>
+                    <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Ex: Espresso Duplo" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold block mb-1">Preço (R$)</label>
+                    <input type="number" step="0.50" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="12.00" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
+                    <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                      {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold block mb-1">Descrição</label>
+                    <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado com notas de chocolate" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold block mb-1">URL da Imagem</label>
+                    <input type="url" name="imagem" defaultValue={modalProduto.data?.imagem || ''} placeholder="https://..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/80">
+                    <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
+                    <button type="submit" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg">Salvar Produto</button>
                   </div>
                 </form>
               </div>
@@ -695,4 +800,5 @@
   </script>
 </body>
 </html>
+
 
