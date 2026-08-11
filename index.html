@@ -1,112 +1,472 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CoffeeFlow - Cardápio Digital & Gestão</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- React & ReactDOM CDN -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  
-  <!-- Compilador Babel para JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+const { useState, useEffect, useMemo, useRef } = React;
 
-  <style>
-    .scrollbar-none::-webkit-scrollbar { display: none; }
-    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+// --- ESTADO INICIAL SE NÃO HOUVER NADA NO LOCALSTORAGE ---
+const DEFAULT_DATABASE = {
+  users: [
+    {
+      id: "usr_101",
+      name: "Carlos Eduardo",
+      email: "carlos@cafecentral.com.br",
+      password: "123", // Em produção real, senhas nunca ficam em texto puro
+      businessName: "Café Central & Bistrô",
+      businessType: "Cafeteria",
+      plan: "PRO UNLIMITED",
+      planPrice: 79.90
+    }
+  ],
+  menu: {
+    id: "menu_01",
+    name: "Cardápio Principal",
+    slug: "cafe-central",
+    description: "Cafés especiais, salgados artesanais e sobremesas deliciosas.",
+    currency: "BRL",
+    active: true,
+    logoUrl: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=200&auto=format&fit=crop&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1000&auto=format&fit=crop&q=80",
+    theme: {
+      primaryColor: "#16a34a",
+      backgroundColor: "#fafafa",
+      textColor: "#0f172a",
+      cardStyle: "rounded-2xl shadow-sm border border-slate-100",
+      fontFamily: "sans-serif",
+      darkMode: false,
+      showImages: true,
+      showPrices: true,
+      showFeaturedBadges: true
+    }
+  },
+  categories: [
+    { id: "cat_1", name: "Cafés Especiais", description: "Grãos selecionados 100% Arábica", active: true, sortOrder: 1 },
+    { id: "cat_2", name: "Salgados & Lanches", description: "Feitos na hora com ingredientes frescos", active: true, sortOrder: 2 },
+    { id: "cat_3", name: "Sobremesas", description: "Doces artesanais de fabricação própria", active: true, sortOrder: 3 },
+    { id: "cat_4", name: "Bebidas Geladas", description: "Sucos naturais e frappés", active: true, sortOrder: 4 }
+  ],
+  products: [
+    { id: "prod_1", categoryId: "cat_1", name: "Cappuccino Italiano", description: "Espresso cremoso, leite vaporizado, cacau 70% e canela em pó.", price: 14.90, active: true, featured: true, imageUrl: "https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&auto=format&fit=crop&q=80", createdAt: "2026-08-01T10:00:00Z" },
+    { id: "prod_2", categoryId: "cat_1", name: "Café Latte Silvestre", description: "Dose dupla de espresso com leite aveludado e xarope de baunilha.", price: 12.50, active: true, featured: false, imageUrl: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?w=400&auto=format&fit=crop&q=80", createdAt: "2026-08-02T11:30:00Z" },
+    { id: "prod_3", categoryId: "cat_2", name: "Croissant de Presunto e Queijo", description: "Massa folhada amanteigada recheada com presunto de parma e queijo gruyère.", price: 18.90, active: true, featured: true, imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&auto=format&fit=crop&q=80", createdAt: "2026-08-03T09:15:00Z" },
+    { id: "prod_4", categoryId: "cat_2", name: "Pão de Queijo Canastra", description: "Porção com 6 unidades quentinhas feitas com legítimo queijo da Canastra.", price: 11.00, active: true, featured: false, imageUrl: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&auto=format&fit=crop&q=80", createdAt: "2026-08-04T08:00:00Z" },
+    { id: "prod_5", categoryId: "cat_3", name: "Brownie de Chocolate Belga", description: "Acompanha uma bola de sorvete de baunilha e calda quente de chocolate.", price: 21.90, active: true, featured: true, imageUrl: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&auto=format&fit=crop&q=80", createdAt: "2026-08-05T14:20:00Z" },
+    { id: "prod_6", categoryId: "cat_4", name: "Iced Caramel Macchiato", description: "Café gelado expresso com leite, gelo e calda de caramelo salgado.", price: 16.50, active: true, featured: false, imageUrl: "", createdAt: "2026-08-06T16:45:00Z" }
+  ],
+  billing: {
+    subscriptionId: "sub_1N8x2yE2eZvKYlo23",
+    status: "active",
+    currentPeriodEnd: "2026-09-10T23:59:59Z",
+    cardLast4: "4242",
+    cardBrand: "visa",
+    invoices: [
+      { id: "inv_104", date: "2026-08-10", amount: 79.90, status: "paga" },
+      { id: "inv_103", date: "2026-07-10", amount: 79.90, status: "paga" },
+      { id: "inv_102", date: "2026-06-10", amount: 79.90, status: "paga" }
+    ]
+  }
+};
 
-    @media print {
-      body * {
-        visibility: hidden;
+const ANALYTICS_DB_PER_PERIOD = {
+  today: {
+    periodLabel: "hoje",
+    views: 142,
+    viewsChange: 14.2,
+    uniqueVisitors: 108,
+    visitorsChange: 9.8,
+    productViews: 326,
+    prodViewsChange: 21.4,
+    qrScans: 129,
+    qrScansChange: 17.3,
+    engagementRate: 76.4,
+    engagementChange: 4.1,
+    peakHour: "12:00 — 13:00",
+    peakHourViews: 34,
+    chartLabels: ["08h", "10h", "12h", "14h", "16h", "18h", "20h"],
+    chartData: [12, 28, 54, 22, 11, 9, 6],
+    chartDataPrevious: [10, 22, 45, 19, 10, 8, 5],
+    topProducts: [
+      { id: "prod_1", name: "Cappuccino Italiano", category: "Cafés Especiais", views: 48, change: 18.0, imageUrl: "https://images.unsplash.com/photo-1534778101976-62847782c213?w=200&auto=format&fit=crop&q=80", price: 14.90 },
+      { id: "prod_3", name: "Croissant de Presunto e Queijo", category: "Salgados & Lanches", views: 36, change: 12.5, imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=200&auto=format&fit=crop&q=80", price: 18.90 }
+    ]
+  }
+};
+
+const formatCurrency = (amount) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount || 0);
+
+function PeriodSelector({ period, setPeriod }) {
+  return (
+    <div className="inline-flex rounded-xl bg-slate-900 p-1 border border-slate-800">
+      {[{ id: "today", label: "Hoje" }, { id: "yesterday", label: "Ontem" }, { id: "week", label: "7 dias" }, { id: "month", label: "30 dias" }].map((item) => (
+        <button key={item.id} onClick={() => setPeriod(item.id)} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${period === item.id ? "bg-emerald-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"}`}>
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MetricCard({ title, value, changeText, isPositive, icon, subtitle }) {
+  return (
+    <div className="group relative bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 transition-all shadow-sm">
+      <div className="flex items-center justify-between text-slate-400 mb-2">
+        <span className="text-xs font-bold uppercase tracking-wider">{title}</span>
+        <div className="rounded-xl bg-slate-950 p-2 text-emerald-400 border border-slate-800">
+          <i data-lucide={icon} className="w-4 h-4"></i>
+        </div>
+      </div>
+      <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">{value}</div>
+      <div className="mt-2 flex items-center justify-between text-xs">
+        {changeText && (
+          <span className={`inline-flex items-center gap-1 font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <i data-lucide={isPositive ? "trending-up" : "trending-down"} className="w-3.5 h-3.5"></i>
+            {changeText}
+          </span>
+        )}
+        {subtitle && <span className="text-[11px] text-slate-500">{subtitle}</span>}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsChart({ labels, data, dataPrevious, periodLabel }) {
+  const maxValue = Math.max(...data, ...dataPrevious, 10);
+  const points = data.map((val, idx) => {
+    const x = (idx / (data.length - 1)) * 100;
+    const y = 100 - (val / maxValue) * 80;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div>
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="line-chart" className="w-4 h-4 text-emerald-400"></i> Desempenho do Cardápio
+          </h2>
+          <p className="text-xs text-slate-400">Visualizações vs. período anterior ({periodLabel})</p>
+        </div>
+      </div>
+      <div className="relative h-52 w-full pt-4">
+        <svg className="h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#10b981" strokeWidth="2.5" points={points} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function OverviewTab({ currentUser, db, currentPeriodData, analyticsPeriod, setAnalyticsPeriod, setDashboardTab, setCurrentView }) {
+  return (
+    <div className="space-y-8 max-w-6xl mx-auto">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div className="flex items-center gap-2 text-xs text-emerald-400 font-bold mb-1">
+            <i data-lucide="store" className="w-3.5 h-3.5"></i> {currentUser?.businessName || db.menu.name}
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Olá, {currentUser?.name || "Usuário"} 👋
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">Veja como seu cardápio está performando.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <PeriodSelector period={analyticsPeriod} setPeriod={setAnalyticsPeriod} />
+          <button onClick={() => setCurrentView("public_menu")} className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-xs font-bold text-slate-300">
+            <i data-lucide="eye" className="w-4 h-4 text-emerald-400"></i> Ver Cardápio
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <MetricCard title="Visualizações" value={currentPeriodData.views} changeText="+14.2%" isPositive={true} icon="eye" subtitle="vs. período anterior" />
+        <MetricCard title="Visitantes Únicos" value={currentPeriodData.uniqueVisitors} changeText="+9.8%" isPositive={true} icon="users" subtitle="Sessões distintas" />
+        <MetricCard title="Plano Ativo" value={currentUser?.plan || "PRO"} isPositive={true} icon="shield-check" subtitle={`R$ ${currentUser?.planPrice || 79.90}/mês`} />
+      </div>
+
+      <AnalyticsChart labels={currentPeriodData.chartLabels} data={currentPeriodData.chartData} dataPrevious={currentPeriodData.chartDataPrevious} periodLabel={currentPeriodData.periodLabel} />
+    </div>
+  );
+}
+
+function ProductsPage({ db }) {
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-black text-white">Produtos Cadastrados</h1>
+      <div className="grid sm:grid-cols-2 gap-4">
+        {db.products.map((prod) => (
+          <div key={prod.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-white text-sm">{prod.name}</h3>
+              <p className="text-xs text-slate-400">{prod.description}</p>
+              <span className="text-sm font-black text-emerald-400 mt-2 block">{formatCurrency(prod.price)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QrCodeStudio({ currentUser, db }) {
+  const publicUrl = `https://menuqrpro.com/menu/${db.menu.slug}`;
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-5">
+        <h1 className="text-2xl font-black text-white">QR Code & Display Studio</h1>
+        <button onClick={() => window.print()} className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-slate-950">Imprimir</button>
+      </div>
+      <div id="printable-qr-area" className="bg-white text-slate-900 rounded-3xl p-8 text-center max-w-md mx-auto space-y-6">
+        <h2 className="text-2xl font-black">{currentUser?.businessName || db.menu.name}</h2>
+        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`} className="w-48 h-48 mx-auto" />
+        <p className="text-xs font-mono text-slate-500">{publicUrl}</p>
+      </div>
+    </div>
+  );
+}
+
+// --- APLICAÇÃO PRINCIPAL COM PERSISTÊNCIA REAL ---
+function App() {
+  // 1. Carrega o Banco de Dados do localStorage (ou usa o DEFAULT_DATABASE)
+  const [db, setDb] = useState(() => {
+    const saved = localStorage.getItem("menuqr_db");
+    return saved ? JSON.parse(saved) : DEFAULT_DATABASE;
+  });
+
+  // 2. Carrega a Sessão do Usuário Logado do localStorage
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem("menuqr_session");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  // Se já houver usuário logado no carregamento, entra direto na dashboard
+  const [currentView, setCurrentView] = useState(() => currentUser ? "dashboard" : "landing");
+  const [dashboardTab, setDashboardTab] = useState("overview");
+  const [analyticsPeriod, setAnalyticsPeriod] = useState("today");
+  const [toast, setToast] = useState(null);
+
+  // Form State para Login / Cadastro
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [emailInput, setEmailInput] = useState("carlos@cafecentral.com.br");
+  const [passwordInput, setPasswordInput] = useState("123");
+  const [nameInput, setNameInput] = useState("");
+  const [businessInput, setBusinessInput] = useState("");
+
+  // Salva no localStorage sempre que a base de dados mudar
+  useEffect(() => {
+    localStorage.setItem("menuqr_db", JSON.stringify(db));
+  }, [db]);
+
+  // Salva ou remove a sessão no localStorage
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem("menuqr_session", JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem("menuqr_session");
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (window.lucide) window.lucide.createIcons();
+  });
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setCurrentView("landing");
+    showToast("Sessão encerrada com sucesso!");
+  };
+
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+
+    if (isRegisterMode) {
+      // CADASTRO DE NOVO USUÁRIO
+      const existingUser = db.users.find(u => u.email.toLowerCase() === emailInput.toLowerCase());
+      if (existingUser) {
+        showToast("Este e-mail já está cadastrado. Faça login!", "error");
+        setIsRegisterMode(false);
+        return;
       }
-      #print-qr-section, #print-qr-section * {
-        visibility: visible;
-      }
-      #print-qr-section {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 40px 20px;
+
+      const newUser = {
+        id: `usr_${Date.now()}`,
+        name: nameInput || "Novo Cliente",
+        email: emailInput,
+        password: passwordInput,
+        businessName: businessInput || "Meu Estabelecimento",
+        businessType: "Restaurante",
+        plan: "PRO UNLIMITED",
+        planPrice: 79.90
+      };
+
+      // Atualiza lista de usuários no banco de dados persistente
+      setDb(prev => ({
+        ...prev,
+        users: [...prev.users, newUser]
+      }));
+
+      setCurrentUser(newUser);
+      showToast("Conta criada e plano ativado!");
+      setCurrentView("dashboard");
+    } else {
+      // LOGIN DE USUÁRIO EXISTENTE
+      const userFound = db.users.find(
+        u => u.email.toLowerCase() === emailInput.toLowerCase() && u.password === passwordInput
+      );
+
+      if (userFound) {
+        setCurrentUser(userFound);
+        showToast(`Bem-vindo de volta, ${userFound.name}!`);
+        setCurrentView("dashboard");
+      } else {
+        showToast("E-mail ou senha inválidos!", "error");
       }
     }
-  </style>
-</head>
-<body class="bg-slate-900 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-white">
+  };
 
-  <div id="root"></div>
+  const Toast = () => toast ? (
+    <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-bold text-white shadow-2xl ${toast.type === "error" ? "bg-rose-600" : "bg-emerald-600"}`}>
+      <i data-lucide={toast.type === "error" ? "alert-circle" : "check-circle-2"} className="w-4 h-4"></i>
+      <span>{toast.message}</span>
+    </div>
+  ) : null;
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+  if (currentView === "landing") {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
+        <Toast />
+        <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md fixed top-0 w-full z-40">
+          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-2 font-black text-xl">
+              <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-950">
+                <i data-lucide="qr-code" className="w-5 h-5"></i>
+              </div>
+              <span>MenuQR<span className="text-emerald-500">Pro</span></span>
+            </div>
+            <div className="flex items-center gap-4">
+              <button onClick={() => { setIsRegisterMode(false); setCurrentView("auth"); }} className="text-xs font-bold text-slate-300">Entrar</button>
+              <button onClick={() => { setIsRegisterMode(true); setCurrentView("auth"); }} className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-slate-950">Criar Conta</button>
+            </div>
+          </div>
+        </header>
 
-    const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
-    const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
-    const DEFAULT_PAYMENT_LINK = 'https://buy.stripe.com/6oU14n1J24no0Lc5Fe3AY00';
+        <main className="pt-36 pb-20 px-6 max-w-5xl mx-auto text-center space-y-6">
+          <h1 className="text-4xl sm:text-6xl font-black text-white">
+            Seu cardápio digital por <br /><span className="text-emerald-400">R$ 79,90/mês.</span>
+          </h1>
+          <button onClick={() => { setIsRegisterMode(true); setCurrentView("auth"); }} className="rounded-xl bg-emerald-500 px-8 py-3.5 text-sm font-extrabold text-slate-950">
+            Começar Agora
+          </button>
+        </main>
+      </div>
+    );
+  }
 
-    const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
+  if (currentView === "auth") {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <Toast />
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-black text-white">{isRegisterMode ? "Criar Conta Pro" : "Acessar o Painel"}</h2>
+            <p className="text-xs text-slate-400">{isRegisterMode ? "Cadastre seu estabelecimento por R$ 79,90/mês" : "Digite seus dados de acesso"}</p>
+          </div>
 
-    // Helper para extrair parâmetros de URL de forma segura
-    const getUrlParams = () => {
-      const search = window.location.search;
-      const params = new URLSearchParams(search);
-      return {
-        cafeteriaId: params.get('cafeteria'),
-        mesaNum: params.get('mesa') || '1'
-      };
-    };
+          <form onSubmit={handleAuthSubmit} className="space-y-4">
+            {isRegisterMode && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Seu Nome</label>
+                  <input type="text" required value={nameInput} onChange={(e) => setNameInput(e.target.value)} className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Nome do Estabelecimento</label>
+                  <input type="text" required value={businessInput} onChange={(e) => setBusinessInput(e.target.value)} className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white" />
+                </div>
+              </>
+            )}
 
-    // Gerador dinâmico de QR Code de alta legibilidade
-    const getQrCodeUrl = (text, size = 280) => {
-      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
-    };
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">E-mail Corporativo</label>
+              <input type="email" required value={emailInput} onChange={(e) => setEmailInput(e.target.value)} className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white" />
+            </div>
 
-    // Serviço Supabase resiliente contra erros
-    const supabaseService = {
-      buscarCafeteriaPorId: async (id) => {
-        try {
-          if (!id) return null;
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(id)}`, {
-            method: 'GET',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return (Array.isArray(data) && data.length > 0) ? data[0] : null;
-        } catch (err) {
-          console.error("Erro ao consultar cafeteria por ID:", err);
-          return null;
-        }
-      },
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Senha</label>
+              <input type="password" required value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white" />
+            </div>
 
-      buscarCafeteriaPorEmail: async (email) => {
-        try {
-          if (!email) return null;
-          const cleanEmail = email.trim().toLowerCase();
-          let res = await fetch(`${API_URL}/rest/v1/cafeterias?email=eq.${encodeURIComponent(cleanEmail)}`, {
-            method: 'GET',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }
-          });
+            <button type="submit" className="w-full rounded-xl bg-emerald-500 py-3 text-xs font-extrabold text-slate-950">
+              {isRegisterMode ? "Finalizar Cadastro (R$ 79,90/mês)" : "Entrar no Painel"}
+            </button>
+          </form>
 
-          if (!res.ok) {
-            res = await fetch(`${API_URL}/rest/v1/cafeterias?select=*`, {
-              method: 'GET',
-              headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }
-            });
-            if (!res.ok) return null;
-            const todas = await res.json();
-            return (Array.isArray(todas) && todas.find(c => (c?.email || c?.dono_email || '').toLowerCase() === cleanEmail)) || null;
-          }
+          <div className="text-center pt-2">
+            <button onClick={() => setIsRegisterMode(!isRegisterMode)} className="text-xs text-emerald-400 font-bold underline">
+              {isRegisterMode ? "Já possui conta? Faça Login" : "Não tem conta? Cadastre-se"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-          const data = await res.json();
-          return (Array.isArray(data) && data.length > 0) ? data[0] : null;
-        } catch (err) {
+  if (currentView === "dashboard") {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row text-slate-100">
+        <Toast />
+        <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 p-5 flex flex-col justify-between shrink-0">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-lg">MenuQR<span className="text-emerald-500">Pro</span></span>
+              <span className="text-[10px] font-extrabold bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded">R$ 79,90/mês</span>
+            </div>
+
+            <nav className="space-y-1">
+              {[{ id: "overview", label: "Visão Geral", icon: "layout-dashboard" }, { id: "products", label: "Produtos", icon: "shopping-bag" }, { id: "qrcode", label: "QR Code & Print", icon: "qr-code" }].map((item) => (
+                <button key={item.id} onClick={() => setDashboardTab(item.id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold ${dashboardTab === item.id ? "bg-emerald-500 text-slate-950" : "text-slate-400"}`}>
+                  <i data-lucide={item.icon} className="w-4 h-4"></i>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="border-t border-slate-800 pt-4 space-y-2">
+            <div className="text-xs text-slate-400 px-1 truncate">
+              Logado como: <strong className="text-white block truncate">{currentUser?.email}</strong>
+            </div>
+            <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 rounded-xl bg-rose-950 text-rose-400 border border-rose-800/50 py-2 text-xs font-bold hover:bg-rose-900">
+              <i data-lucide="log-out" className="w-3.5 h-3.5"></i> Sair do Painel
+            </button>
+          </div>
+        </aside>
+
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+          {dashboardTab === "overview" && <OverviewTab currentUser={currentUser} db={db} currentPeriodData={ANALYTICS_DB_PER_PERIOD.today} analyticsPeriod={analyticsPeriod} setAnalyticsPeriod={setAnalyticsPeriod} setDashboardTab={setDashboardTab} setCurrentView={setCurrentView} />}
+          {dashboardTab === "products" && <ProductsPage db={db} />}
+          {dashboardTab === "qrcode" && <QrCodeStudio currentUser={currentUser} db={db} />}
+        </main>
+      </div>
+    );
+  }
+
+  if (currentView === "public_menu") {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 p-6 flex items-center justify-center">
+        <button onClick={() => setCurrentView("dashboard")} className="fixed top-4 left-4 bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold">← Voltar ao Dashboard</button>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-bold">{currentUser?.businessName || db.menu.name}</h2>
+          <p className="text-xs text-slate-400">Visão do cliente final do cardápio digital.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
           console.error("Erro ao consultar e-mail:", err);
           return null;
         }
