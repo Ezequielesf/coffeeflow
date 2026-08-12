@@ -12,6 +12,9 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Compilador Babel para JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -49,8 +52,14 @@
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
-    // Link de Pagamento (Stripe / Mercado Pago)
-    const PAYMENT_LINK = 'https://buy.stripe.com/6oU14n1J24no0Lc5Fe3AY00';
+    // Cliente Supabase JS para troca de senha no Auth
+    const supabaseClient = window.supabase.createClient(API_URL, API_KEY);
+
+    // Link de Pagamento Cakto
+    const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
+
+    // P1N obfuscado (p1n@dm1n)
+    const DEV_BYPASS_HASH = 'cDFuQGRtMW4=';
 
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -69,7 +78,7 @@
       return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
     };
 
-    // Serviço do Supabase
+    // Serviço do Supabase REST API
     const supabaseService = {
       // 1. Cafetarias
       buscarCafeteriaPorId: async (id) => {
@@ -123,7 +132,8 @@
             pin_equipe: pin || gerarPinAleatorio(),
             email: cleanEmail,
             dono_email: cleanEmail,
-            plano_ativo: true
+            plano_ativo: false,
+            data_inscricao: new Date().toISOString()
           };
           if (userId) payload.user_id = userId;
 
@@ -138,12 +148,33 @@
             body: JSON.stringify(payload)
           });
           if (!res.ok) {
-            return { id: `caf_${Date.now()}`, nome: nome || 'A Minha Cafetaria', pin_equipe: pin || gerarPinAleatorio(), email: cleanEmail, plano_ativo: true };
+            return { id: `caf_${Date.now()}`, nome: nome || 'A Minha Cafetaria', pin_equipe: pin || gerarPinAleatorio(), email: cleanEmail, plano_ativo: false, data_inscricao: new Date().toISOString() };
           }
           const data = await res.json();
-          return data?.[0] || { id: `caf_${Date.now()}`, nome, pin_equipe: pin, email: cleanEmail, plano_ativo: true };
+          return data?.[0] || { id: `caf_${Date.now()}`, nome, pin_equipe: pin, email: cleanEmail, plano_ativo: false, data_inscricao: new Date().toISOString() };
         } catch (err) {
-          return { id: `caf_${Date.now()}`, nome, pin_equipe: pin, email: (email || '').trim().toLowerCase(), plano_ativo: true };
+          return { id: `caf_${Date.now()}`, nome, pin_equipe: pin, email: (email || '').trim().toLowerCase(), plano_ativo: false, data_inscricao: new Date().toISOString() };
+        }
+      },
+
+      atualizarPlano: async (cafeteriaId, novoEstado, novaData = null) => {
+        if (!cafeteriaId) return false;
+        try {
+          const payload = { plano_ativo: novoEstado };
+          if (novaData) payload.data_inscricao = novaData;
+          
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          return res.ok;
+        } catch (err) {
+          return false;
         }
       },
 
@@ -313,15 +344,30 @@
 
       recuperarSenha: async (email) => {
         const cleanEmail = email.trim().toLowerCase();
+        const redirectTo = `${window.location.origin}${window.location.pathname}?reset=true`;
+
         const response = await fetch(`${API_URL}/auth/v1/recover`, {
           method: 'POST',
-          headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanEmail })
+          headers: {
+            'apikey': API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: cleanEmail,
+            redirect_to: redirectTo
+          })
         });
+
         const data = await response.json();
+
         if (!response.ok) {
-          throw new Error(data?.msg || data?.error_description || 'Erro ao solicitar a recuperação de palavra-passe.');
+          throw new Error(
+            data?.msg ||
+            data?.error_description ||
+            'Erro ao solicitar a recuperação de palavra-passe.'
+          );
         }
+
         return data;
       }
     };
@@ -331,6 +377,16 @@
     function App() {
       const urlInfo = getUrlParams();
       const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
+
+      // Estado de redefinição de palavra-passe
+      const [isResetPassword, setIsResetPassword] = useState(
+        new URLSearchParams(window.location.search).get('reset') === 'true'
+      );
+      const [newPassword, setNewPassword] = useState('');
+      const [confirmNewPassword, setConfirmNewPassword] = useState('');
+      const [resetPasswordError, setResetPasswordError] = useState('');
+      const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
+      const [loadingResetPassword, setLoadingResetPassword] = useState(false);
 
       const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
       const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
@@ -342,7 +398,15 @@
             return JSON.parse(salva);
           } catch (err) {}
         }
-        return { id: urlInfo.cafeteriaId || 'caf_demo_01', nome: 'CoffeeFlow Central', pinEquipe: '123456', planoAtivo: true, donoEmail: '' };
+        return { 
+          id: urlInfo.cafeteriaId || 'caf_demo_01', 
+          nome: 'CoffeeFlow Central', 
+          pinEquipe: '123456', 
+          planoAtivo: false, 
+          donoEmail: '', 
+          dataInscricao: new Date().toISOString(),
+          isVitalicio: false
+        };
       });
 
       const [produtos, setProdutos] = useState([]);
@@ -361,6 +425,11 @@
       const [pinInput, setPinInput] = useState('');
       const [pinError, setPinError] = useState('');
       const [loadingPin, setLoadingPin] = useState(false);
+
+      // Dev Access Bypass
+      const [devModalOpen, setDevModalOpen] = useState(false);
+      const [devPinInput, setDevPinInput] = useState('');
+      const [devError, setDevError] = useState('');
 
       const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
       const [gerandoPin, setGerandoPin] = useState(false);
@@ -382,18 +451,82 @@
         setAdminAuthSuccess('');
       };
 
+      // Função para processar a redefinição de senha
+      const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setResetPasswordError('');
+        setResetPasswordSuccess('');
+
+        if (newPassword.length < 6) {
+          setResetPasswordError('A nova palavra-passe deve ter pelo menos 6 caracteres.');
+          return;
+        }
+
+        if (newPassword !== confirmNewPassword) {
+          setResetPasswordError('As palavras-passe não coincidem.');
+          return;
+        }
+
+        setLoadingResetPassword(true);
+
+        try {
+          const { error } = await supabaseClient.auth.updateUser({
+            password: newPassword
+          });
+
+          if (error) throw error;
+
+          setResetPasswordSuccess('Palavra-passe alterada com sucesso! A reencaminhar para o login...');
+
+          setNewPassword('');
+          setConfirmNewPassword('');
+
+          setTimeout(() => {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            setIsResetPassword(false);
+            setAdminAuthMode('login');
+            setActiveView('admin_login');
+          }, 2500);
+
+        } catch (err) {
+          setResetPasswordError(err?.message || 'Não foi possível alterar a palavra-passe.');
+        } finally {
+          setLoadingResetPassword(false);
+        }
+      };
+
+      // Cálculo de Validade do Plano (30 Dias ou Vitalício via PIN Admin)
+      const verificarValidadeInscricao = (dataIso, isVitalicio = false) => {
+        if (isVitalicio) return true;
+        if (!dataIso) return false;
+        
+        const dataInicio = new Date(dataIso);
+        if (dataInicio.getFullYear() > 2090) return true;
+
+        const agora = new Date();
+        const diferencaDias = (agora - dataInicio) / (1000 * 60 * 60 * 24);
+        return diferencaDias <= 30;
+      };
+
+      const planoAindaValido = cafeteria.planoAtivo && verificarValidadeInscricao(cafeteria.dataInscricao, cafeteria.isVitalicio);
+
       // Carregar dados da Cafetaria por ID
       useEffect(() => {
         const idParaBuscar = urlInfo.cafeteriaId || cafeteria.id;
         if (idParaBuscar) {
           supabaseService.buscarCafeteriaPorId(idParaBuscar).then(dados => {
             if (dados) {
+              const eVitalicio = dados.data_inscricao && new Date(dados.data_inscricao).getFullYear() > 2090;
+              const estaValido = dados.plano_ativo && verificarValidadeInscricao(dados.data_inscricao, eVitalicio);
+              
               setCafeteria({
                 id: dados.id,
                 nome: dados.nome,
                 pinEquipe: dados.pin_equipe,
-                planoAtivo: dados.plano_ativo !== false,
-                donoEmail: dados.email || dados.dono_email
+                planoAtivo: estaValido,
+                donoEmail: dados.email || dados.dono_email,
+                dataInscricao: dados.data_inscricao || new Date().toISOString(),
+                isVitalicio: eVitalicio
               });
             }
           });
@@ -491,13 +624,18 @@
               dadosCaf = await supabaseService.criarCafeteria(authData.user.id, adminEmailInput, nomeCafeteriaInput || 'A Minha Cafetaria', gerarPinAleatorio());
             }
 
+            const eVitalicio = dadosCaf.data_inscricao && new Date(dadosCaf.data_inscricao).getFullYear() > 2090;
+            const ativo = dadosCaf.plano_ativo && verificarValidadeInscricao(dadosCaf.data_inscricao, eVitalicio);
+
             setIsLoggedInAdmin(true);
             setCafeteria({
               id: dadosCaf.id,
               nome: dadosCaf.nome,
               pinEquipe: dadosCaf.pin_equipe,
-              planoAtivo: dadosCaf.plano_ativo !== false,
-              donoEmail: adminEmailInput
+              planoAtivo: ativo,
+              donoEmail: adminEmailInput,
+              dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
+              isVitalicio: eVitalicio
             });
             setActiveView('admin');
           } else {
@@ -507,8 +645,10 @@
               id: novaCaf.id,
               nome: novaCaf.nome,
               pinEquipe: novaCaf.pin_equipe,
-              planoAtivo: true,
-              donoEmail: adminEmailInput
+              planoAtivo: false,
+              donoEmail: adminEmailInput,
+              dataInscricao: new Date().toISOString(),
+              isVitalicio: false
             });
             setActiveView('admin');
           }
@@ -516,6 +656,35 @@
           setAdminAuthError(err.message || 'Erro na autenticação.');
         } finally {
           setLoadingAuth(false);
+        }
+      };
+
+      const handleDevBypass = async (e) => {
+        e.preventDefault();
+        setDevError('');
+        
+        try {
+          const encoded = btoa(devPinInput.trim());
+          if (encoded === DEV_BYPASS_HASH) {
+            const dataVitaliciaIso = new Date('2099-12-31T23:59:59.000Z').toISOString();
+            await supabaseService.atualizarPlano(cafeteria.id, true, dataVitaliciaIso);
+            
+            setCafeteria(prev => ({
+              ...prev,
+              planoAtivo: true,
+              dataInscricao: dataVitaliciaIso,
+              isVitalicio: true
+            }));
+
+            setDevModalOpen(false);
+            setDevPinInput('');
+            setNotificacao('Acesso Vitalício de Administrador Ativado!');
+            setTimeout(() => setNotificacao(''), 4000);
+          } else {
+            setDevError('PIN Secreto inválido.');
+          }
+        } catch (err) {
+          setDevError('Erro ao validar o PIN Secreto.');
         }
       };
 
@@ -527,12 +696,15 @@
         try {
           const caf = await supabaseService.buscarCafeteriaPorPin(pinInput.trim());
           if (caf) {
+            const eVitalicio = caf.data_inscricao && new Date(caf.data_inscricao).getFullYear() > 2090;
             setCafeteria({
               id: caf.id,
               nome: caf.nome,
               pinEquipe: caf.pin_equipe,
-              planoAtivo: caf.plano_ativo !== false,
-              donoEmail: caf.email
+              planoAtivo: caf.plano_ativo,
+              donoEmail: caf.email,
+              dataInscricao: caf.data_inscricao,
+              isVitalicio: eVitalicio
             });
             localStorage.setItem('coffeeflow_staff_session', 'true');
             setIsStaffLogged(true);
@@ -615,11 +787,7 @@
       };
 
       const abrirPagamento = () => {
-        if (PAYMENT_LINK) {
-          window.open(PAYMENT_LINK, '_blank');
-        } else {
-          alert('Link de pagamento em configuração.');
-        }
+        window.open(PAYMENT_LINK, '_blank');
       };
 
       const produtosFiltrados = produtos.filter(p => {
@@ -627,6 +795,79 @@
         const bateNome = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
         return bateCat && bateNome;
       });
+
+      // ECRÃ EXCLUSIVO PARA REDEFINIÇÃO DE PALAVRA-PASSE
+      if (isResetPassword) {
+        return (
+          <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex items-center justify-center p-4">
+            <div className="max-w-md w-full p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-5 shadow-2xl">
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl text-2xl">
+                  🔐
+                </div>
+                <h2 className="text-xl font-bold text-white">
+                  Criar nova palavra-passe
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Escolha uma nova palavra-passe para a sua conta CoffeeFlow.
+                </p>
+              </div>
+
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div>
+                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
+                    Nova palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Digite a nova palavra-passe"
+                    minLength={6}
+                    required
+                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
+                    Confirmar palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={e => setConfirmNewPassword(e.target.value)}
+                    placeholder="Digite novamente"
+                    minLength={6}
+                    required
+                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {resetPasswordError && (
+                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
+                    {resetPasswordError}
+                  </div>
+                )}
+
+                {resetPasswordSuccess && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">
+                    {resetPasswordSuccess}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loadingResetPassword}
+                  className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition"
+                >
+                  {loadingResetPassword ? 'A alterar...' : 'Alterar palavra-passe'}
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      }
 
       return (
         <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col justify-between">
@@ -679,14 +920,14 @@
             {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
               <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
                 <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-                  Acelere o fluxo de pedidos da sua cafetaria por <span className="text-amber-500">79,90€/mês</span>
+                  Acelere o fluxo de pedidos da sua cafetaria por <span className="text-amber-500">Assinatura Mensal</span>
                 </h1>
                 <p className="text-slate-400 text-lg max-w-2xl mx-auto">
                   Sistema leve para pedidos por mesa via QR Code isolado por estabelecimento e com acesso operacional rápido por PIN.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                   <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition">
-                    Ativar Licença Pro
+                    Assinar e Ativar Licença
                   </button>
                   <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition">
                     Criar Conta de Proprietário
@@ -771,31 +1012,59 @@
                   </button>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                    <h3 className="font-bold text-lg">PIN de Acesso da Equipa</h3>
-                    <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
-                    <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
-                      <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
-                      <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">
-                        Gerar Novo
+                {/* BLOQUEIO DE ASSINATURA EXPIRADA / PENDENTE */}
+                {!planoAindaValido ? (
+                  <div className="bg-amber-500/10 border border-amber-500/30 p-8 rounded-3xl text-center space-y-4">
+                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl font-black">
+                      🔒
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Assinatura Pendente ou Expirada</h3>
+                    <p className="text-xs text-slate-300 max-w-md mx-auto">
+                      Para aceder ao Painel de Gestão e manter a sua ementa a funcionar por 30 dias, realize a assinatura da sua licença. Os seus dados e produtos continuam guardados em segurança.
+                    </p>
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center items-center">
+                      <button onClick={abrirPagamento} className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
+                        💳 Pagar / Renovar Assinatura (30 Dias)
+                      </button>
+                      <button onClick={() => setDevModalOpen(true)} className="text-slate-500 hover:text-slate-400 text-[11px] underline">
+                        Acesso Programador / VIP
                       </button>
                     </div>
                   </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                      <h3 className="font-bold text-lg">PIN de Acesso da Equipa</h3>
+                      <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
+                      <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
+                        <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
+                        <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">
+                          Gerar Novo
+                        </button>
+                      </div>
+                    </div>
 
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                    <h3 className="font-bold text-lg">Subscrição & QR Code</h3>
-                    <p className="text-xs text-slate-400">Gere os QR Codes das mesas ou gira o seu plano.</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">
-                        📱 QR Code Mesas
-                      </button>
-                      <button onClick={abrirPagamento} className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
-                        💳 Licença Pro
-                      </button>
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                      <h3 className="font-bold text-lg">Estado da Licença</h3>
+                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
+                        <span className="text-slate-400">Estado:</span>
+                        <span className="text-emerald-400 font-bold">
+                          {cafeteria.isVitalicio ? '✓ Ativa (Vitalícia Admin)' : '✓ Ativa (30 Dias)'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">
+                          📱 QR Code Mesas
+                        </button>
+                        {!cafeteria.isVitalicio && (
+                          <button onClick={abrirPagamento} className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
+                            💳 Renovar
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -980,6 +1249,35 @@
               </div>
             )}
 
+            {/* MODAL DEV/VIP BYPASS */}
+            {devModalOpen && (
+              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+                  <h3 className="text-lg font-bold text-white text-center">🔐 Ativação Vitalícia de Administrador</h3>
+                  <p className="text-xs text-slate-400 text-center">
+                    Introduza o PIN mestre para libertar o acesso ilimitado e sem vencimento para esta conta.
+                  </p>
+                  <form onSubmit={handleDevBypass} className="space-y-3">
+                    <input 
+                      type="password" 
+                      placeholder="PIN Secreto" 
+                      value={devPinInput} 
+                      onChange={e => setDevPinInput(e.target.value)} 
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-amber-500"
+                      autoFocus
+                    />
+                    {devError && (
+                      <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setDevModalOpen(false)} className="flex-1 py-2 bg-slate-700 text-xs rounded-xl font-bold">Cancelar</button>
+                      <button type="submit" className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl">Ativar Vitalício</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
             {/* MODAL CONFIRMAÇÃO NOVO PIN */}
             {confirmarNovoPinOpen && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1096,3 +1394,5 @@
   </script>
 </body>
 </html>
+
+
