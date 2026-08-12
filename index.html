@@ -52,7 +52,7 @@
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
-    // Cliente Supabase JS para troca de senha no Auth
+    // Cliente Supabase JS para Auth e Sessões
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY);
 
     // Link de Pagamento Cakto
@@ -63,13 +63,20 @@
 
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Extração de parâmetros de URL
+    // Extração de parâmetros de URL (incluindo parâmetros de query '?' e hash '#')
     const getUrlParams = () => {
-      const search = window.location.search;
-      const params = new URLSearchParams(search);
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashString = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
+      const hashParams = new URLSearchParams(hashString);
+
       return {
-        cafeteriaId: params.get('cafeteria'),
-        mesaNum: params.get('mesa') || '1'
+        cafeteriaId: searchParams.get('cafeteria'),
+        mesaNum: searchParams.get('mesa') || '1',
+        resetQuery: searchParams.get('reset') === 'true',
+        accessToken: hashParams.get('access_token') || searchParams.get('access_token'),
+        refreshToken: hashParams.get('refresh_token') || searchParams.get('refresh_token'),
+        type: hashParams.get('type') || searchParams.get('type'),
+        isResetRoute: window.location.pathname.includes('reset-password')
       };
     };
 
@@ -344,7 +351,8 @@
 
       recuperarSenha: async (email) => {
         const cleanEmail = email.trim().toLowerCase();
-        const redirectTo = `${window.location.origin}${window.location.pathname}?reset=true`;
+        // URL configurado para apontar para /reset-password
+        const redirectTo = 'https://coffeeflow.com.br/reset-password';
 
         const response = await fetch(`${API_URL}/auth/v1/recover`, {
           method: 'POST',
@@ -378,15 +386,30 @@
       const urlInfo = getUrlParams();
       const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
 
-      // Estado de redefinição de palavra-passe
-      const [isResetPassword, setIsResetPassword] = useState(
-        new URLSearchParams(window.location.search).get('reset') === 'true'
-      );
+      // Detetar se a navegação atual é um pedido de redefinição de palavra-passe
+      const [isResetPassword, setIsResetPassword] = useState(() => {
+        return urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery' || Boolean(urlInfo.accessToken);
+      });
+
       const [newPassword, setNewPassword] = useState('');
       const [confirmNewPassword, setConfirmNewPassword] = useState('');
       const [resetPasswordError, setResetPasswordError] = useState('');
       const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
       const [loadingResetPassword, setLoadingResetPassword] = useState(false);
+
+      // Autenticar no SDK do Supabase caso os tokens venham no URL
+      useEffect(() => {
+        if (urlInfo.accessToken && urlInfo.refreshToken) {
+          supabaseClient.auth.setSession({
+            access_token: urlInfo.accessToken,
+            refresh_token: urlInfo.refreshToken
+          }).then(({ error }) => {
+            if (error) {
+              setResetPasswordError('A ligação de recuperação expirou ou é inválida. Solicite uma nova.');
+            }
+          });
+        }
+      }, []);
 
       const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
       const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
@@ -451,7 +474,7 @@
         setAdminAuthSuccess('');
       };
 
-      // Função para processar a redefinição de senha
+      // Função para guardar a nova palavra-passe
       const handleResetPassword = async (e) => {
         e.preventDefault();
         setResetPasswordError('');
@@ -482,7 +505,8 @@
           setConfirmNewPassword('');
 
           setTimeout(() => {
-            window.history.replaceState({}, document.title, window.location.pathname);
+            // Limpa o hash e a rota da URL e regressa ao ecrã inicial
+            window.history.replaceState({}, document.title, '/');
             setIsResetPassword(false);
             setAdminAuthMode('login');
             setActiveView('admin_login');
@@ -615,7 +639,7 @@
           if (adminAuthMode === 'forgot') {
             if (!adminEmailInput) throw new Error('Por favor, introduza o e-mail associado à sua conta.');
             await authService.recuperarSenha(adminEmailInput);
-            setAdminAuthSuccess('E-mail de redefinição enviado com sucesso!');
+            setAdminAuthSuccess('E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada.');
           } else if (adminAuthMode === 'login') {
             const authData = await authService.login(adminEmailInput, adminPasswordInput);
             let dadosCaf = await supabaseService.buscarCafeteriaPorEmail(adminEmailInput);
@@ -1394,5 +1418,4 @@
   </script>
 </body>
 </html>
-
 
