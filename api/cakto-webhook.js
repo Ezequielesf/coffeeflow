@@ -15,6 +15,7 @@ module.exports = async (req, res) => {
   try {
     const body = req.body;
 console.log('PAYLOAD CAKTO:', JSON.stringify(body));
+    
     // 1) Confirma que a chamada realmente veio da Cakto (evita que qualquer pessoa
     //    chame esse endpoint e ative uma conta de graça).
     if (!body || body.secret !== CAKTO_WEBHOOK_SECRET) {
