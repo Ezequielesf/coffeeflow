@@ -52,7 +52,6 @@
     });
 
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
-    const DEV_BYPASS_HASH = 'cDFuQGRtMW4=';
 
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -688,28 +687,55 @@
       const handleDevBypass = async (e) => {
         e.preventDefault();
         setDevError('');
-        try {
-          const encoded = btoa(devPinInput.trim());
-          if (encoded === DEV_BYPASS_HASH) {
-            const dataVitaliciaIso = new Date('2099-12-31T23:59:59.000Z').toISOString();
-            await supabaseService.atualizarPlano(cafeteria.id, true, dataVitaliciaIso);
-                
-            setCafeteria(prev => ({
-              ...prev,
-              planoAtivo: true,
-              dataExpiracao: dataVitaliciaIso,
-              isVitalicio: true
-            }));
 
-            setDevModalOpen(false);
-            setDevPinInput('');
-            setNotificacao('Acesso Vitalício de Administrador Ativado!');
-            setTimeout(() => setNotificacao(''), 4000);
-          } else {
-            setDevError('PIN Secreto inválido.');
+        try {
+          const { data: sessionData } = await supabaseClient.auth.getSession();
+          const session = sessionData?.session;
+
+          if (!session?.access_token) {
+            setDevError('Faça login antes de utilizar o acesso administrativo.');
+            return;
           }
+
+          const resposta = await fetch('/api/admin-vitalicio', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+              pin: devPinInput.trim()
+            })
+          });
+
+          const resultado = await resposta.json();
+
+          if (!resposta.ok) {
+            setDevError(resultado.error || 'PIN Secreto inválido.');
+            return;
+          }
+
+          const dataVitaliciaIso = resultado.dataExpiracao;
+
+          setCafeteria(prev => ({
+            ...prev,
+            planoAtivo: true,
+            dataExpiracao: dataVitaliciaIso,
+            isVitalicio: true
+          }));
+
+          setDevModalOpen(false);
+          setDevPinInput('');
+
+          setNotificacao('Acesso Vitalício de Administrador Ativado!');
+
+          setTimeout(() => {
+            setNotificacao('');
+          }, 4000);
+
         } catch (err) {
-          setDevError('Erro ao validar o PIN Secreto.');
+          console.error('Erro ao ativar acesso vitalício:', err);
+          setDevError('Não foi possível validar o PIN.');
         }
       };
 
