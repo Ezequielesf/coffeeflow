@@ -43,7 +43,6 @@
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
-    // Cliente Supabase JS para gerir Autenticação e Sessões com persistência automática
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY, {
       auth: {
         persistSession: true,
@@ -52,15 +51,10 @@
       }
     });
 
-    // Link de Pagamento Cakto
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
-
-    // P1N obfuscado (p1n@dm1n)
     const DEV_BYPASS_HASH = 'cDFuQGRtMW4=';
-
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Extração flexível de parâmetros da URL (trata ?, # e caminhos)
     const getUrlParams = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const hashString = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
@@ -78,12 +72,10 @@
       };
     };
 
-    // Gerador de imagem QR Code
     const getQrCodeUrl = (text, size = 280) => {
       return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
     };
 
-    // Serviço do Supabase REST API
     const supabaseService = {
       buscarCafeteriaPorId: async (id) => {
         try {
@@ -107,6 +99,550 @@
             headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
           });
           if (!res.ok) return null;
+          const data = await res.json();
+          return data?.[0] || null;
+        } catch (err) {
+          return null;
+        }
+      },
+
+      buscarCafeteriaPorPin: async (pin) => {
+        try {
+          if (!pin) return null;
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?pin_equipe=eq.${encodeURIComponent(pin.trim())}`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          return data?.[0] || null;
+        } catch (err) {
+          return null;
+        }
+      },
+
+      criarCafeteria: async (userId, email, nome, pin) => {
+        try {
+          const cleanEmail = (email || '').trim().toLowerCase();
+          if (!cleanEmail) throw new Error('E-mail obrigatório.');
+
+          const agora = new Date();
+          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
+
+          const payload = {
+            nome: nome || 'A Minha Cafetaria',
+            pin_equipe: pin || gerarPinAleatorio(),
+            email: cleanEmail,
+            dono_email: cleanEmail,
+            plano_ativo: true,
+            data_inscricao: agora.toISOString(),
+            data_expiracao: dataExpiracao.toISOString()
+          };
+
+          if (userId) payload.user_id = userId;
+
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
+            method: 'POST',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const responseText = await res.text();
+          if (!res.ok) throw new Error(`Erro ao criar cafeteria: ${responseText}`);
+
+          const data = JSON.parse(responseText);
+          if (!Array.isArray(data) || !data[0]) throw new Error('Supabase não retornou dados.');
+          return data[0];
+        } catch (err) {
+          throw err;
+        }
+      },
+
+      atualizarPlano: async (cafeteriaId, novoEstado, novaDataExpiracao = null) => {
+        if (!cafeteriaId) return false;
+        try {
+          const payload = { plano_ativo: novoEstado };
+          if (novaDataExpiracao) payload.data_expiracao = novaDataExpiracao;
+              
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          return res.ok;
+        } catch (err) {
+          return false;
+        }
+      },
+
+      atualizarPin: async (cafeteriaId, novoPin) => {
+        if (!cafeteriaId) return false;
+        try {
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ pin_equipe: novoPin })
+          });
+          return res.ok;
+        } catch (err) {
+          return false;
+        }
+      },
+
+      buscarProdutos: async (cafeteriaId) => {
+        try {
+          if (!cafeteriaId) return [];
+          const res = await fetch(`${API_URL}/rest/v1/produtos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&order=created_at.desc`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+          if (!res.ok) return [];
+          return await res.json();
+        } catch (err) {
+          return [];
+        }
+      },
+
+      salvarProduto: async (produto) => {
+        try {
+          const isEdit = Boolean(produto.id && !produto.id.startsWith('p_'));
+          const url = isEdit ? `${API_URL}/rest/v1/produtos?id=eq.${produto.id}` : `${API_URL}/rest/v1/produtos`;
+          const method = isEdit ? 'PATCH' : 'POST';
+
+          const body = { ...produto };
+          if (!isEdit) delete body.id;
+
+          const res = await fetch(url, {
+            method: method,
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(body)
+          });
+          return res.ok;
+        } catch (err) {
+          return false;
+        }
+      },
+
+      deletarProduto: async (id) => {
+        try {
+          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+          return res.ok;
+        } catch (err) {
+          return false;
+        }
+      },
+
+      buscarPedidos: async (cafeteriaId) => {
+        try {
+          if (!cafeteriaId) return [];
+          const res = await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&status=neq.entregue&order=created_at.desc`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+          if (!res.ok) return [];
+          return await res.json();
+        } catch (err) {
+          return [];
+        }
+      },
+
+      criarPedido: async (pedido) => {
+        try {
+          const res = await fetch(`${API_URL}/rest/v1/pedidos`, {
+            method: 'POST',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(pedido)
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          return data?.[0] || null;
+        } catch (err) {
+          return null;
+        }
+      },
+
+      atualizarStatusPedido: async (id, status) => {
+        try {
+          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status })
+          });
+          return res.ok;
+        } catch (err) {
+          return false;
+        }
+      }
+    };
+
+    const authService = {
+      login: async (email, password) => {
+        const cleanEmail = email.trim().toLowerCase();
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
+        if (error) throw new Error(error.message || 'E-mail ou palavra-passe incorretos.');
+        return { user: data.user, session: data.session };
+      },
+
+      signUp: async (email, password, nomeCafeteria) => {
+        const cleanEmail = email.trim().toLowerCase();
+        const jaExisteCafetaria = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
+        if (jaExisteCafetaria) throw new Error('Este e-mail já está registado.');
+
+        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
+        if (error) throw new Error(error.message || 'Erro ao criar conta.');
+
+        const pinUnico = gerarPinAleatorio();
+        const userId = data?.user?.id || null;
+        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
+
+        return { authData: data, cafeteria: cafeteriaSalva };
+      },
+
+      recuperarSenha: async (email) => {
+        const cleanEmail = email.trim().toLowerCase();
+        const redirectTo = window.location.origin + window.location.pathname + '?reset=true';
+        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
+        if (error) throw new Error(error.message || 'Erro ao recuperar palavra-passe.');
+        return data;
+      }
+    };
+
+    const INITIAL_CATEGORIES = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
+
+    function App() {
+      const urlInfo = getUrlParams();
+      const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
+
+      const [isResetPassword, setIsResetPassword] = useState(() => {
+        return urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery'
+          || Boolean(urlInfo.accessToken) || Boolean(urlInfo.code);
+      });
+
+      const [newPassword, setNewPassword] = useState('');
+      const [confirmNewPassword, setConfirmNewPassword] = useState('');
+      const [resetPasswordError, setResetPasswordError] = useState('');
+      const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
+      const [loadingResetPassword, setLoadingResetPassword] = useState(false);
+
+      const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
+      const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
+
+      const [cafeteria, setCafeteria] = useState(() => {
+        const salva = localStorage.getItem('coffeeflow_cafeteria');
+        if (salva) {
+          try { return JSON.parse(salva); } catch (err) {}
+        }
+        return { 
+          id: urlInfo.cafeteriaId || 'caf_demo_01', 
+          nome: 'CoffeeFlow Central', 
+          pinEquipe: '123456', 
+          planoAtivo: true, 
+          donoEmail: '', 
+          dataInscricao: new Date().toISOString(),
+          dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+          isVitalicio: false 
+        };
+      });
+
+      const [produtos, setProdutos] = useState([]);
+      const [pedidos, setPedidos] = useState([]);
+      const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
+      const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
+      const [adminEmailInput, setAdminEmailInput] = useState('');
+      const [adminPasswordInput, setAdminPasswordInput] = useState('');
+      const [nomeCafeteriaInput, setNomeCafeteriaInput] = useState('');
+      const [adminAuthMode, setAdminAuthMode] = useState('login');
+      const [adminAuthError, setAdminAuthError] = useState('');
+      const [adminAuthSuccess, setAdminAuthSuccess] = useState('');
+      const [loadingAuth, setLoadingAuth] = useState(false);
+      const [pinInput, setPinInput] = useState('');
+      const [pinError, setPinError] = useState('');
+      const [loadingPin, setLoadingPin] = useState(false);
+      const [devModalOpen, setDevModalOpen] = useState(false);
+      const [devPinInput, setDevPinInput] = useState('');
+      const [devError, setDevError] = useState('');
+      const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
+      const [gerandoPin, setGerandoPin] = useState(false);
+      const [carrinho, setCarrinho] = useState([]);
+      const [pedidoEnviado, setPedidoEnviado] = useState(false);
+      const [notificacao, setNotificacao] = useState('');
+      const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
+      const [termoPesquisa, setTermoPesquisa] = useState('');
+      const [modalProduto, setModalProduto] = useState({ open: false, data: null });
+      const [mesaQr, setMesaQr] = useState(urlInfo.mesaNum || '01');
+      const [linkCopiado, setLinkCopiado] = useState(false);
+      const [modalQrOpen, setModalQrOpen] = useState(false);
+
+      const mudarModoAuth = (modo) => {
+        setAdminAuthMode(modo);
+        setAdminAuthError('');
+        setAdminAuthSuccess('');
+      };
+
+      const planoEstaValido = (caf) => {
+        if (!caf) return false;
+        if (caf.isVitalicio) return true;
+        if (!caf.planoAtivo) return false;
+        if (!caf.dataExpiracao) return false;
+        return new Date(caf.dataExpiracao) > new Date();
+      };
+
+      const calcularDiasRestantes = (dataExpiracao, isVitalicio = false) => {
+        if (isVitalicio) return 9999;
+        if (!dataExpiracao) return 0;
+        const diferenca = new Date(dataExpiracao).getTime() - Date.now();
+        if (diferenca <= 0) return 0;
+        return Math.ceil(diferenca / (1000 * 60 * 60 * 24));
+      };
+
+      const planoAindaValido = planoEstaValido(cafeteria);
+
+      useEffect(() => {
+        const idParaBuscar = urlInfo.cafeteriaId || cafeteria.id;
+        if (idParaBuscar && isClientAccessFromQr) {
+          supabaseService.buscarCafeteriaPorId(idParaBuscar).then(dados => {
+            if (dados) {
+              const eVitalicio = dados.data_expiracao && new Date(dados.data_expiracao).getFullYear() > 2090;
+              setCafeteria({
+                id: dados.id,
+                nome: dados.nome,
+                pinEquipe: dados.pin_equipe,
+                planoAtivo: dados.plano_ativo === true,
+                donoEmail: dados.email || dados.dono_email,
+                dataInscricao: dados.data_inscricao || new Date().toISOString(),
+                dataExpiracao: dados.data_expiracao || null,
+                isVitalicio: eVitalicio
+              });
+            }
+          });
+        }
+      }, [urlInfo.cafeteriaId]);
+
+      const carregarDadosDoBanco = async () => {
+        if (cafeteria.id) {
+          const prods = await supabaseService.buscarProdutos(cafeteria.id);
+          if (prods) setProdutos(prods);
+          const peds = await supabaseService.buscarPedidos(cafeteria.id);
+          if (peds) setPedidos(peds);
+        }
+      };
+
+      useEffect(() => { carregarDadosDoBanco(); }, [cafeteria.id]);
+
+      const getUrlCardapioMesa = (numMesa) => {
+        const baseUrl = window.location.origin + window.location.pathname;
+        return `${baseUrl}?cafeteria=${encodeURIComponent(cafeteria.id)}&mesa=${encodeURIComponent(numMesa)}`;
+      };
+
+      const linkAtualCardapio = getUrlCardapioMesa(mesaQr);
+
+      const copiarLinkCardapio = () => {
+        navigator.clipboard.writeText(linkAtualCardapio);
+        setLinkCopiado(true);
+        setTimeout(() => setLinkCopiado(false), 3000);
+      };
+
+      const handleAdminAuth = async (e) => {
+        e.preventDefault();
+        setAdminAuthError('');
+        setAdminAuthSuccess('');
+        setLoadingAuth(true);
+
+        try {
+          if (adminAuthMode === 'login') {
+            await authService.login(adminEmailInput, adminPasswordInput);
+            let dadosCaf = await supabaseService.buscarCafeteriaPorEmail(adminEmailInput);
+            if (!dadosCaf) {
+              const { data: { user } } = await supabaseClient.auth.getUser();
+              dadosCaf = await supabaseService.criarCafeteria(user?.id, adminEmailInput, nomeCafeteriaInput || 'A Minha Cafetaria', gerarPinAleatorio());
+            }
+            const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
+            setIsLoggedInAdmin(true);
+            setCafeteria({
+              id: dadosCaf.id,
+              nome: dadosCaf.nome,
+              pinEquipe: dadosCaf.pin_equipe,
+              planoAtivo: dadosCaf.plano_ativo === true,
+              donoEmail: adminEmailInput,
+              dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
+              dataExpiracao: dadosCaf.data_expiracao || null,
+              isVitalicio: eVitalicio
+            });
+            setActiveView('admin');
+          } else {
+            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput);
+            setIsLoggedInAdmin(true);
+            setCafeteria({
+              id: novaCaf.id,
+              nome: novaCaf.nome,
+              pinEquipe: novaCaf.pin_equipe,
+              planoAtivo: true,
+              donoEmail: adminEmailInput,
+              dataInscricao: novaCaf.data_inscricao || new Date().toISOString(),
+              dataExpiracao: novaCaf.data_expiracao || null,
+              isVitalicio: false
+            });
+            setActiveView('admin');
+          }
+        } catch (err) {
+          setAdminAuthError(err.message || 'Erro na autenticação.');
+        } finally {
+          setLoadingAuth(false);
+        }
+      };
+
+      const handleLoginStaff = async (e) => {
+        e.preventDefault();
+        setPinError('');
+        setLoadingPin(true);
+        try {
+          const caf = await supabaseService.buscarCafeteriaPorPin(pinInput.trim());
+          if (caf) {
+            const eVitalicio = caf.data_expiracao && new Date(caf.data_expiracao).getFullYear() > 2090;
+            setCafeteria({
+              id: caf.id,
+              nome: caf.nome,
+              pinEquipe: caf.pin_equipe,
+              planoAtivo: caf.plano_ativo === true,
+              donoEmail: caf.email || caf.dono_email,
+              dataInscricao: caf.data_inscricao || new Date().toISOString(),
+              dataExpiracao: caf.data_expiracao || null,
+              isVitalicio: eVitalicio
+            });
+            localStorage.setItem('coffeeflow_staff_session', 'true');
+            setIsStaffLogged(true);
+            setPinInput('');
+            setActiveView('staff_panel');
+          } else {
+            setPinError('PIN incorreto.');
+          }
+        } catch (err) {
+          setPinError('Erro ao validar PIN.');
+        } finally {
+          setLoadingPin(false);
+        }
+      };
+
+      const produtosFiltrados = produtos.filter(p => {
+        const bateCat = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
+        const bateNome = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
+        return bateCat && bateNome;
+      });
+
+      return (
+        <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col justify-between">
+          <div>
+            <header className="bg-slate-950 border-b border-slate-800 px-4 py-2.5 text-xs flex justify-between items-center sticky top-0 z-50">
+              <div className="flex items-center gap-2">
+                <div className="p-1 bg-amber-500 text-slate-950 rounded-lg font-black">☕</div>
+                <span className="font-extrabold text-white text-sm">{cafeteria.nome}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {!isLoggedInAdmin && !isClientAccessFromQr && (
+                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold">
+                    Login Proprietário
+                  </button>
+                )}
+                {!isClientAccessFromQr && (
+                  <button onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} className="px-3 py-1 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-bold">
+                    Acesso Equipa
+                  </button>
+                )}
+              </div>
+            </header>
+
+            {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
+              <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
+                <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
+                  Acelere o fluxo de pedidos da sua cafetaria
+                </h1>
+                <div className="flex justify-center gap-4 pt-4">
+                  <button onClick={() => window.open(PAYMENT_LINK, '_blank')} className="px-8 py-4 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-lg">
+                    Assinar Licença
+                  </button>
+                  <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-800 text-white font-semibold rounded-xl border border-slate-700">
+                    Criar Conta
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeView === 'admin_login' && !isLoggedInAdmin && (
+              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-4 shadow-2xl">
+                <h2 className="text-xl font-bold text-center">
+                  {adminAuthMode === 'login' ? 'Entrar no CoffeeFlow' : 'Registar Cafetaria'}
+                </h2>
+                <form onSubmit={handleAdminAuth} className="space-y-3">
+                  {adminAuthMode === 'register' && (
+                    <div>
+                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
+                      <input type="text" placeholder="Central Coffee" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold block mb-1">E-mail</label>
+                    <input type="email" placeholder="email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold block mb-1">Palavra-passe</label>
+                    <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" />
+                  </div>
+                  {adminAuthError && <div className="text-rose-400 text-xs font-semibold">{adminAuthError}</div>}
+                  <button type="submit" disabled={loadingAuth} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm">
+                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : 'Criar Conta')}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {activeView === 'staff_login' && !isStaffLogged && (
+              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-3xl text-center space-y-6 shadow-2xl">
+                <h3 className="text-xl font-bold text-white">Acesso por PIN</h3>
+                <form onSubmit={handleLoginStaff} className="space-y-4">
+                  <input type="password" maxLength={6} placeholder="••••••" value={pinInput} onChange={e => setPinInput(e.target.value)} className="w-full text-center text-3xl font-mono py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400" autoFocus />
+                  {pinError && <div className="text-rose-400 text-xs font-semibold">{pinError}</div>}
+                  <button type="submit" disabled={loadingPin} className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm">
+                    {loadingPin ? 'A validar...' : 'Entrar no Balcão'}
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
           const data = await res.json();
           return data?.[0] || null;
         } catch (err) {
