@@ -855,7 +855,11 @@
 
       const atualizarStatusPedido = async (id, statusAtual) => {
         const novoStatus = statusAtual === 'pendente' ? 'em_preparo' : 'entregue';
-        await supabaseService.atualizarStatusPedido(id, novoStatus, cafeteria.id);
+        await supabaseService.atualizarStatusPedido(
+          id,
+          novoStatus,
+          cafeteria.id
+        );
         carregarDadosDoBanco();
       };
 
