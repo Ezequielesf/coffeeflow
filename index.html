@@ -745,28 +745,45 @@
         setLoadingPin(true);
 
         try {
-          const caf = await supabaseService.buscarCafeteriaPorPin(pinInput.trim());
-          if (caf) {
-            const eVitalicio = caf.data_expiracao && new Date(caf.data_expiracao).getFullYear() > 2090;
-            setCafeteria({
-              id: caf.id,
-              nome: caf.nome,
-              pinEquipe: caf.pin_equipe,
-              planoAtivo: caf.plano_ativo === true,
-              donoEmail: caf.email || caf.dono_email,
-              dataInscricao: caf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: caf.data_expiracao || null,
-              isVitalicio: eVitalicio
-            });
-            localStorage.setItem('coffeeflow_staff_session', 'true');
-            setIsStaffLogged(true);
-            setPinInput('');
-            setActiveView('staff_panel');
-          } else {
-            setPinError('PIN de acesso incorreto.');
+          const resposta = await fetch('/api/staff-login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              pin: pinInput.trim()
+            })
+          });
+
+          const resultado = await resposta.json();
+
+          if (!resposta.ok) {
+            setPinError(resultado.error || 'PIN de acesso incorreto.');
+            return;
           }
+
+          const caf = resultado.cafeteria;
+
+          setCafeteria({
+            id: caf.id,
+            nome: caf.nome,
+            pinEquipe: caf.pinEquipe,
+            planoAtivo: caf.planoAtivo,
+            donoEmail: caf.donoEmail,
+            dataInscricao: caf.dataInscricao || new Date().toISOString(),
+            dataExpiracao: caf.dataExpiracao || null,
+            isVitalicio: caf.isVitalicio
+          });
+
+          localStorage.setItem('coffeeflow_staff_session', 'true');
+
+          setIsStaffLogged(true);
+          setPinInput('');
+          setActiveView('staff_panel');
+
         } catch (err) {
-          setPinError('Erro ao validar o PIN.');
+          console.error('Erro no login do funcionário:', err);
+          setPinError('Não foi possível validar o PIN.');
         } finally {
           setLoadingPin(false);
         }
@@ -1301,3 +1318,4 @@
   </script>
 </body>
 </html>
+
