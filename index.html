@@ -1,4 +1,3 @@
-</script>
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
@@ -44,7 +43,6 @@
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
-    // Cliente Supabase JS para gerir Autenticação e Sessões com persistência automática
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY, {
       auth: {
         persistSession: true,
@@ -53,15 +51,11 @@
       }
     });
 
-    // Link de Pagamento Cakto
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
-
-    // P1N obfuscado (p1n@dm1n)
     const DEV_BYPASS_HASH = 'cDFuQGRtMW4=';
 
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Extração flexível de parâmetros da URL (trata ?, # e caminhos)
     const getUrlParams = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const hashString = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
@@ -79,12 +73,10 @@
       };
     };
 
-    // Gerador de imagem QR Code
     const getQrCodeUrl = (text, size = 280) => {
       return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
     };
 
-    // Serviço do Supabase REST API
     const supabaseService = {
       buscarCafeteriaPorId: async (id) => {
         try {
@@ -132,15 +124,10 @@
       criarCafeteria: async (userId, email, nome, pin) => {
         try {
           const cleanEmail = (email || '').trim().toLowerCase();
-
-          if (!cleanEmail) {
-            throw new Error('E-mail obrigatório para criar a cafeteria.');
-          }
+          if (!cleanEmail) throw new Error('E-mail obrigatório para criar a cafeteria.');
 
           const agora = new Date();
-          const dataExpiracao = new Date(
-            agora.getTime() + 15 * 24 * 60 * 60 * 1000
-          );
+          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
 
           const payload = {
             nome: nome || 'A Minha Cafetaria',
@@ -152,9 +139,7 @@
             data_expiracao: dataExpiracao.toISOString()
           };
 
-          if (userId) {
-            payload.user_id = userId;
-          }
+          if (userId) payload.user_id = userId;
 
           const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
             method: 'POST',
@@ -168,24 +153,12 @@
           });
 
           const responseText = await res.text();
-
-          if (!res.ok) {
-            console.error('Erro ao criar cafeteria:', responseText);
-            throw new Error(
-              `Não foi possível criar a cafeteria. ${responseText}`
-            );
-          }
+          if (!res.ok) throw new Error(`Não foi possível criar a cafeteria. ${responseText}`);
 
           const data = JSON.parse(responseText);
-
-          if (!Array.isArray(data) || !data[0]) {
-            throw new Error('O Supabase não retornou a cafeteria criada.');
-          }
-
+          if (!Array.isArray(data) || !data[0]) throw new Error('O Supabase não retornou a cafeteria criada.');
           return data[0];
-
         } catch (err) {
-          console.error('Erro em criarCafeteria:', err);
           throw err;
         }
       },
@@ -346,9 +319,7 @@
         }
 
         const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) {
-          throw new Error(error.message || 'Erro ao criar conta.');
-        }
+        if (error) throw new Error(error.message || 'Erro ao criar conta.');
 
         if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
           throw new Error('Este e-mail já possui uma conta ativa. Escolha a opção Login.');
@@ -364,15 +335,8 @@
       recuperarSenha: async (email) => {
         const cleanEmail = email.trim().toLowerCase();
         const redirectTo = window.location.origin + window.location.pathname + '?reset=true';
-
-        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: redirectTo
-        });
-
-        if (error) {
-          throw new Error(error.message || 'Erro ao solicitar a recuperação de palavra-passe.');
-        }
-
+        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
+        if (error) throw new Error(error.message || 'Erro ao solicitar a recuperação de palavra-passe.');
         return data;
       }
     };
@@ -417,1298 +381,6 @@
           trocarSessao();
         }
       }, []);
-
-      const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
-      const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
-
-      const [cafeteria, setCafeteria] = useState(() => {
-        const salva = localStorage.getItem('coffeeflow_cafeteria');
-        if (salva) {
-          try {
-            return JSON.parse(salva);
-          } catch (err) {}
-        }
-        return { 
-          id: urlInfo.cafeteriaId || 'caf_demo_01', 
-          nome: 'CoffeeFlow Central', 
-          pinEquipe: '123456', 
-          planoAtivo: true, 
-          donoEmail: '', 
-          dataInscricao: new Date().toISOString(),
-          dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          isVitalicio: false 
-        };
-      });
-
-      const [produtos, setProdutos] = useState([]);
-      const [pedidos, setPedidos] = useState([]);
-      const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
-
-      const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
-      const [adminEmailInput, setAdminEmailInput] = useState('');
-      const [adminPasswordInput, setAdminPasswordInput] = useState('');
-      const [nomeCafeteriaInput, setNomeCafeteriaInput] = useState('');
-      const [adminAuthMode, setAdminAuthMode] = useState('login');
-      const [adminAuthError, setAdminAuthError] = useState('');
-      const [adminAuthSuccess, setAdminAuthSuccess] = useState('');
-      const [loadingAuth, setLoadingAuth] = useState(false);
-
-      const [pinInput, setPinInput] = useState('');
-      const [pinError, setPinError] = useState('');
-      const [loadingPin, setLoadingPin] = useState(false);
-
-      const [devModalOpen, setDevModalOpen] = useState(false);
-      const [devPinInput, setDevPinInput] = useState('');
-      const [devError, setDevError] = useState('');
-
-      const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
-      const [gerandoPin, setGerandoPin] = useState(false);
-
-      const [carrinho, setCarrinho] = useState([]);
-      const [pedidoEnviado, setPedidoEnviado] = useState(false);
-      const [notificacao, setNotificacao] = useState('');
-      const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-      const [termoPesquisa, setTermoPesquisa] = useState('');
-      const [modalProduto, setModalProduto] = useState({ open: false, data: null });
-
-      const [mesaQr, setMesaQr] = useState(urlInfo.mesaNum || '01');
-      const [linkCopiado, setLinkCopiado] = useState(false);
-      const [modalQrOpen, setModalQrOpen] = useState(false);
-
-      const mudarModoAuth = (modo) => {
-        setAdminAuthMode(modo);
-        setAdminAuthError('');
-        setAdminAuthSuccess('');
-      };
-
-      const handleResetPassword = async (e) => {
-        e.preventDefault();
-        setResetPasswordError('');
-        setResetPasswordSuccess('');
-
-        if (newPassword.length < 6) {
-          setResetPasswordError('A nova palavra-passe deve ter pelo menos 6 caracteres.');
-          return;
-        }
-
-        if (newPassword !== confirmNewPassword) {
-          setResetPasswordError('As palavras-passe não coincidem.');
-          return;
-        }
-
-        setLoadingResetPassword(true);
-
-        try {
-          const { data: sessionData } = await supabaseClient.auth.getSession();
-          if (!sessionData?.session) {
-            throw new Error('Sessão de recuperação não encontrada. Solicite um novo link de redefinição.');
-          }
-
-          const { error } = await supabaseClient.auth.updateUser({
-            password: newPassword
-          });
-
-          if (error) throw error;
-
-          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Redirecionando...');
-          setNewPassword('');
-          setConfirmNewPassword('');
-
-          setTimeout(() => {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            setIsResetPassword(false);
-            setAdminAuthMode('login');
-            setActiveView('admin_login');
-          }, 2000);
-
-        } catch (err) {
-          setResetPasswordError(err?.message || 'Não foi possível alterar a palavra-passe.');
-        } finally {
-          setLoadingResetPassword(false);
-        }
-      };
-
-      const planoEstaValido = (caf) => {
-        if (!caf) return false;
-        if (caf.isVitalicio) return true;
-        if (!caf.planoAtivo) return false;
-        if (!caf.dataExpiracao) return false;
-        return new Date(caf.dataExpiracao) > new Date();
-      };
-
-      const calcularDiasRestantes = (dataExpiracao, isVitalicio = false) => {
-        if (isVitalicio) return 9999;
-        if (!dataExpiracao) return 0;
-        const diferenca = new Date(dataExpiracao).getTime() - Date.now();
-        if (diferenca <= 0) return 0;
-        return Math.ceil(diferenca / (1000 * 60 * 60 * 24));
-      };
-
-      const planoAindaValido = planoEstaValido(cafeteria);
-
-      useEffect(() => {
-        const idParaBuscar = urlInfo.cafeteriaId || cafeteria.id;
-        if (idParaBuscar && isClientAccessFromQr) {
-          supabaseService.buscarCafeteriaPorId(idParaBuscar).then(dados => {
-            if (dados) {
-              const eVitalicio = dados.data_expiracao && new Date(dados.data_expiracao).getFullYear() > 2090;
-              setCafeteria({
-                id: dados.id,
-                nome: dados.nome,
-                pinEquipe: dados.pin_equipe,
-                planoAtivo: dados.plano_ativo === true,
-                donoEmail: dados.email || dados.dono_email,
-                dataInscricao: dados.data_inscricao || new Date().toISOString(),
-                dataExpiracao: dados.data_expiracao || null,
-                isVitalicio: eVitalicio
-              });
-            }
-          });
-        }
-      }, [urlInfo.cafeteriaId]);
-
-      useEffect(() => {
-        if (cafeteria && cafeteria.id) {
-          localStorage.setItem('coffeeflow_cafeteria', JSON.stringify(cafeteria));
-        }
-      }, [cafeteria]);
-
-      useEffect(() => {
-        if (isClientAccessFromQr || isResetPassword) return;
-
-        const processarSessaoAtiva = async (session) => {
-          if (session?.user?.email) {
-            const dadosCaf = await supabaseService.buscarCafeteriaPorEmail(session.user.email);
-            if (dadosCaf) {
-              const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-              setCafeteria({
-                id: dadosCaf.id,
-                nome: dadosCaf.nome,
-                pinEquipe: dadosCaf.pin_equipe,
-                planoAtivo: dadosCaf.plano_ativo === true,
-                donoEmail: dadosCaf.email || dadosCaf.dono_email,
-                dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
-                dataExpiracao: dadosCaf.data_expiracao || null,
-                isVitalicio: eVitalicio
-              });
-              setIsLoggedInAdmin(true);
-              setActiveView(prev => prev === 'landing' || prev === 'admin_login' ? 'admin' : prev);
-            }
-          }
-        };
-
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            processarSessaoAtiva(session);
-          }
-        });
-
-        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
-          if (session) {
-            processarSessaoAtiva(session);
-          } else if (event === 'SIGNED_OUT') {
-            setIsLoggedInAdmin(false);
-          }
-        });
-
-        return () => {
-          subscription?.unsubscribe();
-        };
-      }, []);
-
-      const carregarDadosDoBanco = async () => {
-        if (cafeteria.id) {
-          const prods = await supabaseService.buscarProdutos(cafeteria.id);
-          if (prods) setProdutos(prods);
-
-          const peds = await supabaseService.buscarPedidos(cafeteria.id);
-          if (peds) setPedidos(peds);
-        }
-      };
-
-      useEffect(() => {
-        carregarDadosDoBanco();
-      }, [cafeteria.id]);
-
-      useEffect(() => {
-        let interval;
-        if (isStaffLogged && cafeteria.id) {
-          interval = setInterval(() => {
-            supabaseService.buscarPedidos(cafeteria.id).then(peds => {
-              if (peds) setPedidos(peds);
-            });
-          }, 4000);
-        }
-        return () => clearInterval(interval);
-      }, [isStaffLogged, cafeteria.id]);
-
-      const getUrlCardapioMesa = (numMesa) => {
-        const baseUrl = window.location.origin + window.location.pathname;
-        return `${baseUrl}?cafeteria=${encodeURIComponent(cafeteria.id)}&mesa=${encodeURIComponent(numMesa)}`;
-      };
-
-      const linkAtualCardapio = getUrlCardapioMesa(mesaQr);
-
-      const copiarLinkCardapio = () => {
-        navigator.clipboard.writeText(linkAtualCardapio);
-        setLinkCopiado(true);
-        setTimeout(() => setLinkCopiado(false), 3000);
-      };
-
-      const solicitarNovoPin = () => {
-        setConfirmarNovoPinOpen(true);
-      };
-
-      const confirmarGerarNovoPin = async () => {
-        setGerandoPin(true);
-        const novoPin = gerarPinAleatorio();
-        const ok = await supabaseService.atualizarPin(cafeteria.id, novoPin);
-        if (ok) {
-          setCafeteria(prev => ({ ...prev, pinEquipe: novoPin }));
-          setNotificacao(`Novo PIN gerado com sucesso: ${novoPin}`);
-          setTimeout(() => setNotificacao(''), 4000);
-        } else {
-          setNotificacao('Não foi possível atualizar o PIN.');
-          setTimeout(() => setNotificacao(''), 4000);
-        }
-        setGerandoPin(false);
-        setConfirmarNovoPinOpen(false);
-      };
-
-      const cancelarNovoPin = () => {
-        setConfirmarNovoPinOpen(false);
-      };
-
-      const handleAdminAuth = async (e) => {
-        e.preventDefault();
-        setAdminAuthError('');
-        setAdminAuthSuccess('');
-        setLoadingAuth(true);
-
-        try {
-          if (adminAuthMode === 'forgot') {
-            if (!adminEmailInput) throw new Error('Por favor, introduza o e-mail associado à sua conta.');
-            await authService.recuperarSenha(adminEmailInput);
-            setAdminAuthSuccess('E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada.');
-          } else if (adminAuthMode === 'login') {
-            await authService.login(adminEmailInput, adminPasswordInput);
-            let dadosCaf = await supabaseService.buscarCafeteriaPorEmail(adminEmailInput);
-                
-            if (!dadosCaf) {
-              const { data: { user } } = await supabaseClient.auth.getUser();
-              dadosCaf = await supabaseService.criarCafeteria(user?.id, adminEmailInput, nomeCafeteriaInput || 'A Minha Cafetaria', gerarPinAleatorio());
-            }
-
-            const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: dadosCaf.id,
-              nome: dadosCaf.nome,
-              pinEquipe: dadosCaf.pin_equipe,
-              planoAtivo: dadosCaf.plano_ativo === true,
-              donoEmail: adminEmailInput,
-              dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: dadosCaf.data_expiracao || null,
-              isVitalicio: eVitalicio
-            });
-            setActiveView('admin');
-          } else {
-            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput);
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: novaCaf.id,
-              nome: novaCaf.nome,
-              pinEquipe: novaCaf.pin_equipe,
-              planoAtivo: true,
-              donoEmail: adminEmailInput,
-              dataInscricao: novaCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: novaCaf.data_expiracao || null,
-              isVitalicio: false
-            });
-            setActiveView('admin');
-          }
-        } catch (err) {
-          setAdminAuthError(err.message || 'Erro na autenticação.');
-        } finally {
-          setLoadingAuth(false);
-        }
-      };
-
-      const handleDevBypass = async (e) => {
-        e.preventDefault();
-        setDevError('');
-            
-        try {
-          const encoded = btoa(devPinInput.trim());
-          if (encoded === DEV_BYPASS_HASH) {
-            const dataVitaliciaIso = new Date('2099-12-31T23:59:59.000Z').toISOString();
-            await supabaseService.atualizarPlano(cafeteria.id, true, dataVitaliciaIso);
-                
-            setCafeteria(prev => ({
-              ...prev,
-              planoAtivo: true,
-              dataExpiracao: dataVitaliciaIso,
-              isVitalicio: true
-            }));
-
-            setDevModalOpen(false);
-            setDevPinInput('');
-            setNotificacao('Acesso Vitalício de Administrador Ativado!');
-            setTimeout(() => setNotificacao(''), 4000);
-          } else {
-            setDevError('PIN Secreto inválido.');
-          }
-        } catch (err) {
-          setDevError('Erro ao validar o PIN Secreto.');
-        }
-      };
-
-      const handleLoginStaff = async (e) => {
-        e.preventDefault();
-        setPinError('');
-        setLoadingPin(true);
-
-        try {
-          const caf = await supabaseService.buscarCafeteriaPorPin(pinInput.trim());
-          if (caf) {
-            const eVitalicio = caf.data_expiracao && new Date(caf.data_expiracao).getFullYear() > 2090;
-            setCafeteria({
-              id: caf.id,
-              nome: caf.nome,
-              pinEquipe: caf.pin_equipe,
-              planoAtivo: caf.plano_ativo === true,
-              donoEmail: caf.email || caf.dono_email,
-              dataInscricao: caf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: caf.data_expiracao || null,
-              isVitalicio: eVitalicio
-            });
-            localStorage.setItem('coffeeflow_staff_session', 'true');
-            setIsStaffLogged(true);
-            setPinInput('');
-            setActiveView('staff_panel');
-          } else {
-            setPinError('PIN de acesso incorreto.');
-          }
-        } catch (err) {
-          setPinError('Erro ao validar o PIN.');
-        } finally {
-          setLoadingPin(false);
-        }
-      };
-
-      const toggleDisponibilidadeProduto = async (id, dispAtual) => {
-        const item = produtos.find(p => p.id === id);
-        if (item) {
-          await supabaseService.salvarProduto({ ...item, disponivel: !dispAtual });
-          carregarDadosDoBanco();
-        }
-      };
-
-      const handleRemoverProduto = async (id) => {
-        if (confirm('Deseja eliminar este item da ementa?')) {
-          await supabaseService.deletarProduto(id);
-          carregarDadosDoBanco();
-        }
-      };
-
-      const handleSalvarProduto = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const prodData = {
-          id: modalProduto.data?.id,
-          cafeteria_id: cafeteria.id,
-          nome: formData.get('nome'),
-          preco: parseFloat(formData.get('preco')),
-          categoria: formData.get('categoria'),
-          descricao: formData.get('descricao') || '',
-          imagem: formData.get('imagem') || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60',
-          disponivel: modalProduto.data ? modalProduto.data.disponivel : true
-        };
-
-        await supabaseService.salvarProduto(prodData);
-        setModalProduto({ open: false, data: null });
-        carregarDadosDoBanco();
-      };
-
-      const enviarPedidoCliente = async () => {
-        if (carrinho.length === 0) return;
-        const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-            
-        const pedidoData = {
-          cafeteria_id: cafeteria.id,
-          codigo_pedido: `CF-${Math.floor(100 + Math.random() * 900)}`,
-          mesa: selectedMesaCliente,
-          itens: carrinho.map(c => ({ nome: c.nome, qtd: c.qtd, preco: c.preco })),
-          total: total,
-          status: 'pendente',
-          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-
-        const criado = await supabaseService.criarPedido(pedidoData);
-        if (criado) {
-          setCarrinho([]);
-          setPedidoEnviado(true);
-          setNotificacao(`Pedido enviado com sucesso!`);
-          setTimeout(() => setNotificacao(''), 5000);
-        } else {
-          setNotificacao('Erro ao enviar pedido.');
-          setTimeout(() => setNotificacao(''), 5000);
-        }
-      };
-
-      const atualizarStatusPedido = async (id, statusAtual) => {
-        const novoStatus = statusAtual === 'pendente' ? 'em_preparo' : 'entregue';
-        await supabaseService.atualizarStatusPedido(id, novoStatus);
-        carregarDadosDoBanco();
-      };
-
-      const abrirPagamento = () => {
-        window.open(PAYMENT_LINK, '_blank');
-      };
-
-      const produtosFiltrados = produtos.filter(p => {
-        const bateCat = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
-        const bateNome = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
-        return bateCat && bateNome;
-      });
-
-      if (isResetPassword) {
-        return (
-          <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex items-center justify-center p-4">
-            <div className="max-w-md w-full p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-5 shadow-2xl">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl text-2xl">
-                  🔐
-                </div>
-                <h2 className="text-xl font-bold text-white">
-                  Criar nova palavra-passe
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Escolha uma nova palavra-passe para a sua conta CoffeeFlow.
-                </p>
-              </div>
-
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
-                    Nova palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Digite a nova palavra-passe"
-                    minLength={6}
-                    required
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
-                    Confirmar palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={e => setConfirmNewPassword(e.target.value)}
-                    placeholder="Digite novamente"
-                    minLength={6}
-                    required
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                {resetPasswordError && (
-                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                    {resetPasswordError}
-                  </div>
-                )}
-
-                {resetPasswordSuccess && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">
-                    {resetPasswordSuccess}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loadingResetPassword}
-                  className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition"
-                >
-                  {loadingResetPassword ? 'A alterar...' : 'Alterar palavra-passe'}
-                </button>
-              </form>
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col justify-between">
-          <div>
-            <header className="bg-slate-950 border-b border-slate-800 px-4 py-2.5 text-xs flex justify-between items-center sticky top-0 z-50">
-              <div className="flex items-center gap-2">
-                <div className="p-1 bg-amber-500 text-slate-950 rounded-lg font-black">☕</div>
-                <span className="font-extrabold text-white text-sm">{cafeteria.nome}</span>
-              </div>
-
-              {notificacao && (
-                <div className="bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded-full text-xs animate-bounce shadow-lg shadow-amber-500/20">
-                  {notificacao}
-                </div>
-              )}
-
-              {!isClientAccessFromQr && (
-                <div className="flex items-center gap-2">
-                  {!isLoggedInAdmin && (
-                    <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
-                      Login Proprietário
-                    </button>
-                  )}
-                  {isLoggedInAdmin && (
-                    <button onClick={() => setActiveView('admin')} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
-                      Painel Gestão
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => {
-                      if (isStaffLogged) {
-                        setActiveView('staff_panel');
-                      } else {
-                        setActiveView('staff_login');
-                      }
-                    }} 
-                    className={`px-3 py-1 border border-slate-700 rounded-lg font-bold transition ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
-                  >
-                    Acesso Equipa (PIN)
-                  </button>
-                  <button onClick={() => setActiveView('customer')} className="px-3 py-1 bg-slate-800 text-slate-200 border border-slate-700 rounded-lg font-bold hover:bg-slate-700 transition">
-                    Ver Ementa
-                  </button>
-                </div>
-              )}
-            </header>
-
-            {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
-              <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
-                <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-                  Acelere o fluxo de pedidos da sua cafetaria por <span className="text-amber-500">Assinatura Mensal</span>
-                </h1>
-                <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                  Sistema leve para pedidos por mesa via QR Code isolado por estabelecimento e com acesso operacional rápido por PIN.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                  <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition">
-                    Assinar e Ativar Licença
-                  </button>
-                  <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition">
-                    Criar Conta de Proprietário
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'admin_login' && !isLoggedInAdmin && (
-              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-4 shadow-2xl">
-                <h2 className="text-xl font-bold text-center">
-                  {adminAuthMode === 'login' && 'Entrar no CoffeeFlow'}
-                  {adminAuthMode === 'register' && 'Registar Cafetaria'}
-                  {adminAuthMode === 'forgot' && 'Recuperar Palavra-passe'}
-                </h2>
-                    
-                <div className="flex bg-slate-900 p-1 rounded-xl text-xs font-bold gap-1">
-                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Login
-                  </button>
-                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Registar
-                  </button>
-                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Recuperar
-                  </button>
-                </div>
-
-                <form onSubmit={handleAdminAuth} className="space-y-3">
-                  {adminAuthMode === 'register' && (
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
-                      <input type="text" placeholder="Ex: Central Coffee" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="text-[11px] text-slate-400 font-bold block mb-1">E-mail</label>
-                    <input type="email" placeholder="seu-email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                  </div>
-
-                  {adminAuthMode !== 'forgot' && (
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Palavra-passe</label>
-                      <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                  )}
-
-                  {adminAuthError && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                      {adminAuthError}
-                    </div>
-                  )}
-
-                  {adminAuthSuccess && (
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">
-                      {adminAuthSuccess}
-                    </div>
-                  )}
-
-                  <button type="submit" disabled={loadingAuth} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
-                    {loadingAuth ? 'A processar...' : (
-                      adminAuthMode === 'login' ? 'Entrar' : (adminAuthMode === 'register' ? 'Criar Conta' : 'Enviar Link de Recuperação')
-                    )}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {activeView === 'admin' && isLoggedInAdmin && (
-              <div className="max-w-4xl mx-auto p-6 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold">{cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">ID da Cafetaria: <span className="font-mono text-amber-400">{cafeteria.id}</span></p>
-                  </div>
-                  <button onClick={async () => { await supabaseClient.auth.signOut(); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300">
-                    Sair da Conta
-                  </button>
-                </div>
-
-                {!planoAindaValido ? (
-                  <div className="bg-amber-500/10 border border-amber-500/30 p-8 rounded-3xl text-center space-y-4">
-                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl font-black">
-                      🔒
-                    </div>
-                    <h3 className="text-xl font-bold text-white">Assinatura Pendente ou Expirada</h3>
-                    <p className="text-xs text-slate-300 max-w-md mx-auto">
-                      Para aceder ao Painel de Gestão e manter a sua ementa a funcionar, realize a assinatura da sua licença. Os seus dados e produtos continuam guardados em segurança.
-                    </p>
-                    <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                      <button onClick={abrirPagamento} className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
-                        💳 Pagar / Renovar Assinatura (30 Dias)
-                      </button>
-                      <button onClick={() => setDevModalOpen(true)} className="text-slate-500 hover:text-slate-400 text-[11px] underline">
-                        Acesso Programador / VIP
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {!cafeteria.isVitalicio && (
-                      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-bold">
-                          Período de Teste / Assinatura
-                        </span>
-                        <span className="text-amber-400 font-bold">
-                          {calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">PIN de Acesso da Equipa</h3>
-                        <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
-                        <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
-                          <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
-                          <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">
-                            Gerar Novo
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">Estado da Licença</h3>
-                        <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
-                          <span className="text-slate-400">Estado:</span>
-                          <span className="text-emerald-400 font-bold">
-                            {cafeteria.isVitalicio ? '✓ Ativa (Vitalícia Admin)' : `✓ Ativa (${calcularDiasRestantes(cafeteria.dataExpiracao)} dias restantes)`}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">
-                            📱 QR Code Mesas
-                          </button>
-                          {!cafeteria.isVitalicio && (
-                            <button onClick={abrirPagamento} className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
-                              💳 Renovar
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {(activeView === 'staff_panel' || (activeView === 'staff_login' && isStaffLogged)) && isStaffLogged && (
-              <div className="max-w-6xl mx-auto p-4 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4 flex-wrap gap-2">
-                  <div>
-                    <h2 className="text-xl font-bold">Balcão & Cozinha - {cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">Modo operacional ativo</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">
-                      📱 QR Code Mesas
-                    </button>
-                    <button onClick={() => setModalProduto({ open: true, data: null })} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg">
-                      + Adicionar Item
-                    </button>
-                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">
-                      Sair do Balcão
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Pedidos Pendentes ({pedidos.length})</h3>
-                    {pedidos.length === 0 ? (
-                      <div className="bg-slate-800/60 p-6 rounded-xl text-center text-xs text-slate-400 border border-slate-700/60">
-                        Sem pedidos pendentes de momento.
-                      </div>
-                    ) : (
-                      pedidos.map(p => (
-                        <div key={p.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 shadow-md">
-                          <div className="flex justify-between font-bold text-xs border-b border-slate-700 pb-2">
-                            <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Mesa {p.mesa}</span>
-                            <span className="text-slate-400 font-mono">{p.hora}</span>
-                            <span className="text-amber-400 font-mono text-sm">{parseFloat(p.total).toFixed(2)}€</span>
-                          </div>
-                          <div className="text-xs text-slate-300 space-y-1">
-                            {p.itens.map((it, idx) => (
-                              <div key={idx} className="flex justify-between">
-                                <span>{it.qtd}x {it.nome}</span>
-                                <span className="text-slate-400">{(it.preco * it.qtd).toFixed(2)}€</span>
-                              </div>
-                            ))}
-                          </div>
-                          <button onClick={() => atualizarStatusPedido(p.id, p.status)} className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">
-                            {p.status === 'pendente' ? 'Iniciar Preparação' : '✓ Concluir / Marcar Entregue'}
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Ementa Ativa ({produtos.length} itens)</h3>
-                    {produtos.map(p => (
-                      <div key={p.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
-                        <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-900 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white truncate">{p.nome}</p>
-                          <p className="text-amber-400 font-bold font-mono">{parseFloat(p.preco).toFixed(2)}€</p>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <button onClick={() => toggleDisponibilidadeProduto(p.id, p.disponivel)} className={`px-2 py-1 rounded text-[10px] font-bold ${p.disponivel ? 'bg-slate-700 text-slate-300' : 'bg-amber-500/20 text-amber-400'}`}>
-                            {p.disponivel ? 'Pausar' : 'Ativar'}
-                          </button>
-                          <button onClick={() => handleRemoverProduto(p.id)} className="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold">
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'staff_login' && !isStaffLogged && (
-              <div className="max-w-md mx-auto my-12 p-6 sm:p-8 bg-slate-800 border border-slate-700 rounded-3xl text-center space-y-6 shadow-2xl">
-                <div className="inline-flex items-center justify-center p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl mb-1">
-                  <span className="text-2xl">🔑</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Acesso Operacional por PIN</h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.
-                  </p>
-                </div>
-
-                <form onSubmit={handleLoginStaff} className="space-y-4">
-                  <div>
-                    <input 
-                      type="password" 
-                      maxLength={6} 
-                      placeholder="••••••" 
-                      value={pinInput} 
-                      onChange={e => setPinInput(e.target.value)} 
-                      className="w-full text-center text-3xl font-mono tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400 focus:outline-none focus:border-amber-500 shadow-inner" 
-                      autoFocus
-                    />
-                    <p className="text-[11px] text-slate-500 mt-2">O PIN é gerado pelo proprietário no Painel de Gestão.</p>
-                  </div>
-
-                  {pinError && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                      {pinError}
-                    </div>
-                  )}
-
-                  <button 
-                    type="submit" 
-                    disabled={loadingPin} 
-                    className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/10"
-                  >
-                    {loadingPin ? 'A validar PIN...' : 'Entrar no Balcão & Cozinha'}
-                  </button>
-                </form>
-
-                <div className="pt-2 border-t border-slate-700/60 flex justify-between items-center text-xs">
-                  <button onClick={() => setActiveView('landing')} className="text-slate-400 hover:text-white transition">
-                    ← Voltar
-                  </button>
-                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="text-amber-400 hover:underline font-semibold">
-                    É o proprietário? Faça login
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'customer' && (
-              <div className="max-w-md mx-auto p-4 space-y-4 pb-28">
-                <div className="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 text-xs flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-white text-sm">{cafeteria.nome}</h3>
-                    <p className="text-amber-400 font-bold mt-0.5">Mesa / Posição: {selectedMesaCliente}</p>
-                  </div>
-                  {!isClientAccessFromQr && (
-                    <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-slate-800 text-amber-400 font-bold rounded-lg px-2 py-1 text-xs border border-slate-700">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
-                    </select>
-                  )}
-                </div>
-
-                {pedidoEnviado && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl text-center">
-                    <p className="font-bold text-sm">Pedido enviado para a cozinha!</p>
-                    <p className="text-xs text-emerald-300/80 mt-1">Aguarde na Mesa {selectedMesaCliente}.</p>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {produtosFiltrados.filter(p => p.disponivel).map(prod => (
-                    <div key={prod.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-3">
-                      <img src={prod.imagem} alt={prod.nome} className="w-16 h-16 rounded-lg object-cover bg-slate-800 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-white truncate">{prod.nome}</h4>
-                        <p className="text-xs text-slate-400 line-clamp-1">{prod.descricao}</p>
-                        <p className="text-xs font-bold text-amber-400 mt-1 font-mono">{parseFloat(prod.preco).toFixed(2)}€</p>
-                      </div>
-                      <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">+ Pedir</button>
-                    </div>
-                  ))}
-                </div>
-
-                {carrinho.length > 0 && (
-                  <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-slate-900/95 border-t border-slate-800 flex justify-between items-center z-40">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Total</p>
-                      <p className="text-amber-400 font-bold font-mono text-base">{carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0).toFixed(2)}€</p>
-                    </div>
-                    <button onClick={enviarPedidoCliente} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs transition">
-                      Enviar Pedido (Mesa {selectedMesaCliente})
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {devModalOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white text-center">🔐 Ativação Vitalícia de Administrador</h3>
-                  <p className="text-xs text-slate-400 text-center">
-                    Introduza o PIN mestre para libertar o acesso ilimitado e sem vencimento para esta conta.
-                  </p>
-                  <form onSubmit={handleDevBypass} className="space-y-3">
-                    <input 
-                      type="password" 
-                      placeholder="PIN Secreto" 
-                      value={devPinInput} 
-                      onChange={e => setDevPinInput(e.target.value)} 
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-amber-500" 
-                      autoFocus
-                    />
-                    {devError && (
-                      <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>
-                    )}
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setDevModalOpen(false)} className="flex-1 py-2 bg-slate-700 text-xs rounded-xl font-bold">Cancelar</button>
-                      <button type="submit" className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl">Ativar Vitalício</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {confirmarNovoPinOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
-                  <h3 className="text-lg font-bold text-white">Gerar novo PIN?</h3>
-                  <p className="text-xs text-slate-400">
-                    O PIN atual (<span className="font-mono text-amber-400">{cafeteria.pinEquipe}</span>) será substituído por um novo código de 6 dígitos.
-                    Toda a equipa terá de usar o novo PIN para aceder ao balcão.
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={cancelarNovoPin} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
-                      Não mudar
-                    </button>
-                    <button onClick={confirmarGerarNovoPin} disabled={gerandoPin} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs hover:bg-amber-400 transition">
-                      {gerandoPin ? 'A gerar...' : 'Mudar PIN'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {modalQrOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">📱 QR Code da Mesa</h3>
-                    <button onClick={() => setModalQrOpen(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-bold text-slate-300 block mb-1">Mesa ou Posição:</label>
-                      <input 
-                        type="text" 
-                        value={mesaQr} 
-                        onChange={(e) => setMesaQr(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-
-                    <div id="print-qr-section" className="flex justify-center py-2">
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center text-slate-900 space-y-2 max-w-xs w-full">
-                        <div className="text-lg font-black">{cafeteria.nome}</div>
-                        <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR Code" className="w-44 h-44 rounded-lg mx-auto" />
-                        <p className="text-xs font-bold text-amber-600">MESA {mesaQr}</p>
-                        <p className="text-[10px] text-slate-500">Aponte a câmara do telemóvel para fazer o pedido.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button onClick={copiarLinkCardapio} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs">
-                        {linkCopiado ? '✓ Link Copiado' : 'Copiar Link'}
-                      </button>
-                      <button onClick={() => window.print()} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs">
-                        🖨️ Imprimir Placa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {modalProduto.open && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white">
-                    {modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}
-                  </h3>
-                  <form onSubmit={handleSalvarProduto} className="space-y-3">
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome do Produto</label>
-                      <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Ex: Espresso Duplo" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Preço (€)</label>
-                      <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
-                      <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
-                        {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Descrição</label>
-                      <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado 100% Arábica" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">URL da Imagem</label>
-                      <input type="url" name="imagem" defaultValue={modalProduto.data?.imagem || ''} placeholder="https://..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-700">
-                      <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
-                      <button type="submit" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg">Guardar</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</body>
-</html>
-          if (!pin) return null;
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?pin_equipe=eq.${encodeURIComponent(pin.trim())}`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      criarCafeteria: async (userId, email, nome, pin) => {
-        try {
-          const cleanEmail = (email || '').trim().toLowerCase();
-          if (!cleanEmail) throw new Error('E-mail obrigatório.');
-
-          const agora = new Date();
-          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
-
-          const payload = {
-            nome: nome || 'A Minha Cafetaria',
-            pin_equipe: pin || gerarPinAleatorio(),
-            email: cleanEmail,
-            dono_email: cleanEmail,
-            plano_ativo: true,
-            data_inscricao: agora.toISOString(),
-            data_expiracao: dataExpiracao.toISOString()
-          };
-
-          if (userId) payload.user_id = userId;
-
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
-            method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const responseText = await res.text();
-          if (!res.ok) throw new Error(`Erro ao criar cafeteria: ${responseText}`);
-
-          const data = JSON.parse(responseText);
-          if (!Array.isArray(data) || !data[0]) throw new Error('Supabase não retornou dados.');
-          return data[0];
-        } catch (err) {
-          throw err;
-        }
-      },
-
-      atualizarPlano: async (cafeteriaId, novoEstado, novaDataExpiracao = null) => {
-        if (!cafeteriaId) return false;
-        try {
-          const payload = { plano_ativo: novoEstado };
-          if (novaDataExpiracao) payload.data_expiracao = novaDataExpiracao;
-              
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      atualizarPin: async (cafeteriaId, novoPin) => {
-        if (!cafeteriaId) return false;
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ pin_equipe: novoPin })
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      buscarProdutos: async (cafeteriaId) => {
-        try {
-          if (!cafeteriaId) return [];
-          const res = await fetch(`${API_URL}/rest/v1/produtos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&order=created_at.desc`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return [];
-          return await res.json();
-        } catch (err) {
-          return [];
-        }
-      },
-
-      salvarProduto: async (produto) => {
-        try {
-          const isEdit = Boolean(produto.id && !produto.id.startsWith('p_'));
-          const url = isEdit ? `${API_URL}/rest/v1/produtos?id=eq.${produto.id}` : `${API_URL}/rest/v1/produtos`;
-          const method = isEdit ? 'PATCH' : 'POST';
-
-          const body = { ...produto };
-          if (!isEdit) delete body.id;
-
-          const res = await fetch(url, {
-            method: method,
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(body)
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      deletarProduto: async (id) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${id}`, {
-            method: 'DELETE',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      buscarPedidos: async (cafeteriaId) => {
-        try {
-          if (!cafeteriaId) return [];
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&status=neq.entregue&order=created_at.desc`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return [];
-          return await res.json();
-        } catch (err) {
-          return [];
-        }
-      },
-
-      criarPedido: async (pedido) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos`, {
-            method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(pedido)
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      atualizarStatusPedido: async (id, status) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status })
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      }
-    };
-
-    const authService = {
-      login: async (email, password) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) throw new Error(error.message || 'E-mail ou palavra-passe incorretos.');
-        return { user: data.user, session: data.session };
-      },
-
-      signUp: async (email, password, nomeCafeteria) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const jaExisteCafetaria = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
-        if (jaExisteCafetaria) throw new Error('Este e-mail já está registado.');
-
-        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) throw new Error(error.message || 'Erro ao criar conta.');
-
-        const pinUnico = gerarPinAleatorio();
-        const userId = data?.user?.id || null;
-        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
-
-        return { authData: data, cafeteria: cafeteriaSalva };
-      },
-
-      recuperarSenha: async (email) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const redirectTo = window.location.origin + window.location.pathname + '?reset=true';
-        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
-        if (error) throw new Error(error.message || 'Erro ao recuperar palavra-passe.');
-        return data;
-      }
-    };
-
-    const INITIAL_CATEGORIES = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
-
-    function App() {
-      const urlInfo = getUrlParams();
-      const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
-
-      const [isResetPassword, setIsResetPassword] = useState(() => {
-        return urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery'
-          || Boolean(urlInfo.accessToken) || Boolean(urlInfo.code);
-      });
-
-      const [newPassword, setNewPassword] = useState('');
-      const [confirmNewPassword, setConfirmNewPassword] = useState('');
-      const [resetPasswordError, setResetPasswordError] = useState('');
-      const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
-      const [loadingResetPassword, setLoadingResetPassword] = useState(false);
 
       const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
       const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
@@ -1733,610 +405,6 @@
       const [produtos, setProdutos] = useState([]);
       const [pedidos, setPedidos] = useState([]);
       const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
-      const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
-      const [adminEmailInput, setAdminEmailInput] = useState('');
-      const [adminPasswordInput, setAdminPasswordInput] = useState('');
-      const [nomeCafeteriaInput, setNomeCafeteriaInput] = useState('');
-      const [adminAuthMode, setAdminAuthMode] = useState('login');
-      const [adminAuthError, setAdminAuthError] = useState('');
-      const [adminAuthSuccess, setAdminAuthSuccess] = useState('');
-      const [loadingAuth, setLoadingAuth] = useState(false);
-      const [pinInput, setPinInput] = useState('');
-      const [pinError, setPinError] = useState('');
-      const [loadingPin, setLoadingPin] = useState(false);
-      const [devModalOpen, setDevModalOpen] = useState(false);
-      const [devPinInput, setDevPinInput] = useState('');
-      const [devError, setDevError] = useState('');
-      const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
-      const [gerandoPin, setGerandoPin] = useState(false);
-      const [carrinho, setCarrinho] = useState([]);
-      const [pedidoEnviado, setPedidoEnviado] = useState(false);
-      const [notificacao, setNotificacao] = useState('');
-      const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-      const [termoPesquisa, setTermoPesquisa] = useState('');
-      const [modalProduto, setModalProduto] = useState({ open: false, data: null });
-      const [mesaQr, setMesaQr] = useState(urlInfo.mesaNum || '01');
-      const [linkCopiado, setLinkCopiado] = useState(false);
-      const [modalQrOpen, setModalQrOpen] = useState(false);
-
-      const mudarModoAuth = (modo) => {
-        setAdminAuthMode(modo);
-        setAdminAuthError('');
-        setAdminAuthSuccess('');
-      };
-
-      const planoEstaValido = (caf) => {
-        if (!caf) return false;
-        if (caf.isVitalicio) return true;
-        if (!caf.planoAtivo) return false;
-        if (!caf.dataExpiracao) return false;
-        return new Date(caf.dataExpiracao) > new Date();
-      };
-
-      const calcularDiasRestantes = (dataExpiracao, isVitalicio = false) => {
-        if (isVitalicio) return 9999;
-        if (!dataExpiracao) return 0;
-        const diferenca = new Date(dataExpiracao).getTime() - Date.now();
-        if (diferenca <= 0) return 0;
-        return Math.ceil(diferenca / (1000 * 60 * 60 * 24));
-      };
-
-      const planoAindaValido = planoEstaValido(cafeteria);
-
-      useEffect(() => {
-        const idParaBuscar = urlInfo.cafeteriaId || cafeteria.id;
-        if (idParaBuscar && isClientAccessFromQr) {
-          supabaseService.buscarCafeteriaPorId(idParaBuscar).then(dados => {
-            if (dados) {
-              const eVitalicio = dados.data_expiracao && new Date(dados.data_expiracao).getFullYear() > 2090;
-              setCafeteria({
-                id: dados.id,
-                nome: dados.nome,
-                pinEquipe: dados.pin_equipe,
-                planoAtivo: dados.plano_ativo === true,
-                donoEmail: dados.email || dados.dono_email,
-                dataInscricao: dados.data_inscricao || new Date().toISOString(),
-                dataExpiracao: dados.data_expiracao || null,
-                isVitalicio: eVitalicio
-              });
-            }
-          });
-        }
-      }, [urlInfo.cafeteriaId]);
-
-      const carregarDadosDoBanco = async () => {
-        if (cafeteria.id) {
-          const prods = await supabaseService.buscarProdutos(cafeteria.id);
-          if (prods) setProdutos(prods);
-          const peds = await supabaseService.buscarPedidos(cafeteria.id);
-          if (peds) setPedidos(peds);
-        }
-      };
-
-      useEffect(() => { carregarDadosDoBanco(); }, [cafeteria.id]);
-
-      const getUrlCardapioMesa = (numMesa) => {
-        const baseUrl = window.location.origin + window.location.pathname;
-        return `${baseUrl}?cafeteria=${encodeURIComponent(cafeteria.id)}&mesa=${encodeURIComponent(numMesa)}`;
-      };
-
-      const linkAtualCardapio = getUrlCardapioMesa(mesaQr);
-
-      const copiarLinkCardapio = () => {
-        navigator.clipboard.writeText(linkAtualCardapio);
-        setLinkCopiado(true);
-        setTimeout(() => setLinkCopiado(false), 3000);
-      };
-
-      const handleAdminAuth = async (e) => {
-        e.preventDefault();
-        setAdminAuthError('');
-        setAdminAuthSuccess('');
-        setLoadingAuth(true);
-
-        try {
-          if (adminAuthMode === 'login') {
-            await authService.login(adminEmailInput, adminPasswordInput);
-            let dadosCaf = await supabaseService.buscarCafeteriaPorEmail(adminEmailInput);
-            if (!dadosCaf) {
-              const { data: { user } } = await supabaseClient.auth.getUser();
-              dadosCaf = await supabaseService.criarCafeteria(user?.id, adminEmailInput, nomeCafeteriaInput || 'A Minha Cafetaria', gerarPinAleatorio());
-            }
-            const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: dadosCaf.id,
-              nome: dadosCaf.nome,
-              pinEquipe: dadosCaf.pin_equipe,
-              planoAtivo: dadosCaf.plano_ativo === true,
-              donoEmail: adminEmailInput,
-              dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: dadosCaf.data_expiracao || null,
-              isVitalicio: eVitalicio
-            });
-            setActiveView('admin');
-          } else {
-            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput);
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: novaCaf.id,
-              nome: novaCaf.nome,
-              pinEquipe: novaCaf.pin_equipe,
-              planoAtivo: true,
-              donoEmail: adminEmailInput,
-              dataInscricao: novaCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: novaCaf.data_expiracao || null,
-              isVitalicio: false
-            });
-            setActiveView('admin');
-          }
-        } catch (err) {
-          setAdminAuthError(err.message || 'Erro na autenticação.');
-        } finally {
-          setLoadingAuth(false);
-        }
-      };
-
-      const handleLoginStaff = async (e) => {
-        e.preventDefault();
-        setPinError('');
-        setLoadingPin(true);
-        try {
-          const caf = await supabaseService.buscarCafeteriaPorPin(pinInput.trim());
-          if (caf) {
-            const eVitalicio = caf.data_expiracao && new Date(caf.data_expiracao).getFullYear() > 2090;
-            setCafeteria({
-              id: caf.id,
-              nome: caf.nome,
-              pinEquipe: caf.pin_equipe,
-              planoAtivo: caf.plano_ativo === true,
-              donoEmail: caf.email || caf.dono_email,
-              dataInscricao: caf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: caf.data_expiracao || null,
-              isVitalicio: eVitalicio
-            });
-            localStorage.setItem('coffeeflow_staff_session', 'true');
-            setIsStaffLogged(true);
-            setPinInput('');
-            setActiveView('staff_panel');
-          } else {
-            setPinError('PIN incorreto.');
-          }
-        } catch (err) {
-          setPinError('Erro ao validar PIN.');
-        } finally {
-          setLoadingPin(false);
-        }
-      };
-
-      const produtosFiltrados = produtos.filter(p => {
-        const bateCat = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
-        const bateNome = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
-        return bateCat && bateNome;
-      });
-
-      return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col justify-between">
-          <div>
-            <header className="bg-slate-950 border-b border-slate-800 px-4 py-2.5 text-xs flex justify-between items-center sticky top-0 z-50">
-              <div className="flex items-center gap-2">
-                <div className="p-1 bg-amber-500 text-slate-950 rounded-lg font-black">☕</div>
-                <span className="font-extrabold text-white text-sm">{cafeteria.nome}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {!isLoggedInAdmin && !isClientAccessFromQr && (
-                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold">
-                    Login Proprietário
-                  </button>
-                )}
-                {!isClientAccessFromQr && (
-                  <button onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} className="px-3 py-1 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-bold">
-                    Acesso Equipa
-                  </button>
-                )}
-              </div>
-            </header>
-
-            {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
-              <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
-                <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-                  Acelere o fluxo de pedidos da sua cafetaria
-                </h1>
-                <div className="flex justify-center gap-4 pt-4">
-                  <button onClick={() => window.open(PAYMENT_LINK, '_blank')} className="px-8 py-4 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-lg">
-                    Assinar Licença
-                  </button>
-                  <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-800 text-white font-semibold rounded-xl border border-slate-700">
-                    Criar Conta
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'admin_login' && !isLoggedInAdmin && (
-              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-4 shadow-2xl">
-                <h2 className="text-xl font-bold text-center">
-                  {adminAuthMode === 'login' ? 'Entrar no CoffeeFlow' : 'Registar Cafetaria'}
-                </h2>
-                <form onSubmit={handleAdminAuth} className="space-y-3">
-                  {adminAuthMode === 'register' && (
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
-                      <input type="text" placeholder="Central Coffee" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" />
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-[11px] text-slate-400 font-bold block mb-1">E-mail</label>
-                    <input type="email" placeholder="email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-slate-400 font-bold block mb-1">Palavra-passe</label>
-                    <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" />
-                  </div>
-                  {adminAuthError && <div className="text-rose-400 text-xs font-semibold">{adminAuthError}</div>}
-                  <button type="submit" disabled={loadingAuth} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm">
-                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : 'Criar Conta')}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {activeView === 'staff_login' && !isStaffLogged && (
-              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-3xl text-center space-y-6 shadow-2xl">
-                <h3 className="text-xl font-bold text-white">Acesso por PIN</h3>
-                <form onSubmit={handleLoginStaff} className="space-y-4">
-                  <input type="password" maxLength={6} placeholder="••••••" value={pinInput} onChange={e => setPinInput(e.target.value)} className="w-full text-center text-3xl font-mono py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400" autoFocus />
-                  {pinError && <div className="text-rose-400 text-xs font-semibold">{pinError}</div>}
-                  <button type="submit" disabled={loadingPin} className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm">
-                    {loadingPin ? 'A validar...' : 'Entrar no Balcão'}
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</body>
-</html>
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      buscarCafeteriaPorPin: async (pin) => {
-        try {
-          if (!pin) return null;
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?pin_equipe=eq.${encodeURIComponent(pin.trim())}`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      criarCafeteria: async (userId, email, nome, pin) => {
-        try {
-          const cleanEmail = (email || '').trim().toLowerCase();
-
-          if (!cleanEmail) {
-            throw new Error('E-mail obrigatório para criar a cafeteria.');
-          }
-
-          const agora = new Date();
-          const dataExpiracao = new Date(
-            agora.getTime() + 15 * 24 * 60 * 60 * 1000
-          );
-
-          const payload = {
-            nome: nome || 'A Minha Cafetaria',
-            pin_equipe: pin || gerarPinAleatorio(),
-            email: cleanEmail,
-            dono_email: cleanEmail,
-            plano_ativo: true,
-            data_inscricao: agora.toISOString(),
-            data_expiracao: dataExpiracao.toISOString()
-          };
-
-          if (userId) {
-            payload.user_id = userId;
-          }
-
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
-            method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const responseText = await res.text();
-
-          if (!res.ok) {
-            console.error('Erro ao criar cafeteria:', responseText);
-            throw new Error(
-              `Não foi possível criar a cafeteria. ${responseText}`
-            );
-          }
-
-          const data = JSON.parse(responseText);
-
-          if (!Array.isArray(data) || !data[0]) {
-            throw new Error('O Supabase não retornou a cafeteria criada.');
-          }
-
-          return data[0];
-
-        } catch (err) {
-          console.error('Erro em criarCafeteria:', err);
-          throw err;
-        }
-      },
-
-      atualizarPlano: async (cafeteriaId, novoEstado, novaDataExpiracao = null) => {
-        if (!cafeteriaId) return false;
-        try {
-          const payload = { plano_ativo: novoEstado };
-          if (novaDataExpiracao) payload.data_expiracao = novaDataExpiracao;
-              
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      atualizarPin: async (cafeteriaId, novoPin) => {
-        if (!cafeteriaId) return false;
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ pin_equipe: novoPin })
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      buscarProdutos: async (cafeteriaId) => {
-        try {
-          if (!cafeteriaId) return [];
-          const res = await fetch(`${API_URL}/rest/v1/produtos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&order=created_at.desc`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return [];
-          return await res.json();
-        } catch (err) {
-          return [];
-        }
-      },
-
-      salvarProduto: async (produto) => {
-        try {
-          const isEdit = Boolean(produto.id && !produto.id.startsWith('p_'));
-          const url = isEdit ? `${API_URL}/rest/v1/produtos?id=eq.${produto.id}` : `${API_URL}/rest/v1/produtos`;
-          const method = isEdit ? 'PATCH' : 'POST';
-
-          const body = { ...produto };
-          if (!isEdit) delete body.id;
-
-          const res = await fetch(url, {
-            method: method,
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(body)
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      deletarProduto: async (id) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${id}`, {
-            method: 'DELETE',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      buscarPedidos: async (cafeteriaId) => {
-        try {
-          if (!cafeteriaId) return [];
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&status=neq.entregue&order=created_at.desc`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return [];
-          return await res.json();
-        } catch (err) {
-          return [];
-        }
-      },
-
-      criarPedido: async (pedido) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos`, {
-            method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(pedido)
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      atualizarStatusPedido: async (id, status) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status })
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      }
-    };
-
-    const authService = {
-      login: async (email, password) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) throw new Error(error.message || 'E-mail ou palavra-passe incorretos.');
-        return { user: data.user, session: data.session };
-      },
-
-      signUp: async (email, password, nomeCafeteria) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const jaExisteCafetaria = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
-        if (jaExisteCafetaria) {
-          throw new Error('Este e-mail já está registado na plataforma. Por favor, faça login ou recupere a palavra-passe.');
-        }
-
-        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) {
-          throw new Error(error.message || 'Erro ao criar conta.');
-        }
-
-        if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-          throw new Error('Este e-mail já possui uma conta ativa. Escolha a opção Login.');
-        }
-
-        const pinUnico = gerarPinAleatorio();
-        const userId = data?.user?.id || null;
-        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
-
-        return { authData: data, cafeteria: cafeteriaSalva };
-      },
-
-      recuperarSenha: async (email) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const redirectTo = window.location.origin + window.location.pathname + '?reset=true';
-
-        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: redirectTo
-        });
-
-        if (error) {
-          throw new Error(error.message || 'Erro ao solicitar a recuperação de palavra-passe.');
-        }
-
-        return data;
-      }
-    };
-
-    const INITIAL_CATEGORIES = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
-
-    function App() {
-      const urlInfo = getUrlParams();
-      const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
-
-      const [isResetPassword, setIsResetPassword] = useState(() => {
-        return urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery'
-          || Boolean(urlInfo.accessToken) || Boolean(urlInfo.code);
-      });
-
-      const [newPassword, setNewPassword] = useState('');
-      const [confirmNewPassword, setConfirmNewPassword] = useState('');
-      const [resetPasswordError, setResetPasswordError] = useState('');
-      const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
-      const [loadingResetPassword, setLoadingResetPassword] = useState(false);
-
-      useEffect(() => {
-        const trocarSessao = async () => {
-          try {
-            if (urlInfo.code) {
-              const { error } = await supabaseClient.auth.exchangeCodeForSession(urlInfo.code);
-              if (error) throw error;
-            } else if (urlInfo.accessToken && urlInfo.refreshToken) {
-              const { error } = await supabaseClient.auth.setSession({
-                access_token: urlInfo.accessToken,
-                refresh_token: urlInfo.refreshToken
-              });
-              if (error) throw error;
-            } else if (isResetPassword) {
-              setResetPasswordError('O link de recuperação é inválido ou expirou. Por favor solicite um novo.');
-            }
-          } catch (err) {
-            setResetPasswordError('O link de recuperação é inválido ou expirou. Por favor solicite um novo.');
-          }
-        };
-        if (isResetPassword) {
-          trocarSessao();
-        }
-      }, []);
-
-      const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
-      const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
-
-      const [cafeteria, setCafeteria] = useState(() => {
-        const salva = localStorage.getItem('coffeeflow_cafeteria');
-        if (salva) {
-          try {
-            return JSON.parse(salva);
-          } catch (err) {}
-        }
-        return { 
-          id: urlInfo.cafeteriaId || 'caf_demo_01', 
-          nome: 'CoffeeFlow Central', 
-          pinEquipe: '123456', 
-          planoAtivo: true, 
-          donoEmail: '', 
-          dataInscricao: new Date().toISOString(),
-          dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          isVitalicio: false 
-        };
-      });
-
-      const [produtos, setProdutos] = useState([]);
-      const [pedidos, setPedidos] = useState([]);
-      const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
 
       const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
       const [adminEmailInput, setAdminEmailInput] = useState('');
@@ -2398,10 +466,7 @@
             throw new Error('Sessão de recuperação não encontrada. Solicite um novo link de redefinição.');
           }
 
-          const { error } = await supabaseClient.auth.updateUser({
-            password: newPassword
-          });
-
+          const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
           if (error) throw error;
 
           setResetPasswordSuccess('Palavra-passe alterada com sucesso! Redirecionando...');
@@ -2414,7 +479,6 @@
             setAdminAuthMode('login');
             setActiveView('admin_login');
           }, 2000);
-
         } catch (err) {
           setResetPasswordError(err?.message || 'Não foi possível alterar a palavra-passe.');
         } finally {
@@ -2492,9 +556,7 @@
         };
 
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            processarSessaoAtiva(session);
-          }
+          if (session) processarSessaoAtiva(session);
         });
 
         const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -2505,9 +567,7 @@
           }
         });
 
-        return () => {
-          subscription?.unsubscribe();
-        };
+        return () => subscription?.unsubscribe();
       }, []);
 
       const carregarDadosDoBanco = async () => {
@@ -2549,9 +609,7 @@
         setTimeout(() => setLinkCopiado(false), 3000);
       };
 
-      const solicitarNovoPin = () => {
-        setConfirmarNovoPinOpen(true);
-      };
+      const solicitarNovoPin = () => setConfirmarNovoPinOpen(true);
 
       const confirmarGerarNovoPin = async () => {
         setGerandoPin(true);
@@ -2569,9 +627,7 @@
         setConfirmarNovoPinOpen(false);
       };
 
-      const cancelarNovoPin = () => {
-        setConfirmarNovoPinOpen(false);
-      };
+      const cancelarNovoPin = () => setConfirmarNovoPinOpen(false);
 
       const handleAdminAuth = async (e) => {
         e.preventDefault();
@@ -2632,7 +688,6 @@
       const handleDevBypass = async (e) => {
         e.preventDefault();
         setDevError('');
-            
         try {
           const encoded = btoa(devPinInput.trim());
           if (encoded === DEV_BYPASS_HASH) {
@@ -2743,7 +798,7 @@
         if (criado) {
           setCarrinho([]);
           setPedidoEnviado(true);
-          setNotificacao(`Pedido enviado com sucesso!`);
+          setNotificacao('Pedido enviado com sucesso!');
           setTimeout(() => setNotificacao(''), 5000);
         } else {
           setNotificacao('Erro ao enviar pedido.');
@@ -2757,9 +812,7 @@
         carregarDadosDoBanco();
       };
 
-      const abrirPagamento = () => {
-        window.open(PAYMENT_LINK, '_blank');
-      };
+      const abrirPagamento = () => window.open(PAYMENT_LINK, '_blank');
 
       const produtosFiltrados = produtos.filter(p => {
         const bateCat = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
@@ -2772,65 +825,23 @@
           <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex items-center justify-center p-4">
             <div className="max-w-md w-full p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-5 shadow-2xl">
               <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl text-2xl">
-                  🔐
-                </div>
-                <h2 className="text-xl font-bold text-white">
-                  Criar nova palavra-passe
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Escolha uma nova palavra-passe para a sua conta CoffeeFlow.
-                </p>
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl text-2xl">🔐</div>
+                <h2 className="text-xl font-bold text-white">Criar nova palavra-passe</h2>
+                <p className="text-xs text-slate-400">Escolha uma nova palavra-passe para a sua conta CoffeeFlow.</p>
               </div>
 
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
-                    Nova palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Digite a nova palavra-passe"
-                    minLength={6}
-                    required
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="text-[11px] text-slate-400 font-bold block mb-1">Nova palavra-passe</label>
+                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Digite a nova palavra-passe" minLength={6} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
                 </div>
-
                 <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
-                    Confirmar palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={e => setConfirmNewPassword(e.target.value)}
-                    placeholder="Digite novamente"
-                    minLength={6}
-                    required
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="text-[11px] text-slate-400 font-bold block mb-1">Confirmar palavra-passe</label>
+                  <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Digite novamente" minLength={6} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
                 </div>
-
-                {resetPasswordError && (
-                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                    {resetPasswordError}
-                  </div>
-                )}
-
-                {resetPasswordSuccess && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">
-                    {resetPasswordSuccess}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loadingResetPassword}
-                  className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition"
-                >
+                {resetPasswordError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordError}</div>}
+                {resetPasswordSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordSuccess}</div>}
+                <button type="submit" disabled={loadingResetPassword} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
                   {loadingResetPassword ? 'A alterar...' : 'Alterar palavra-passe'}
                 </button>
               </form>
@@ -2867,13 +878,7 @@
                     </button>
                   )}
                   <button 
-                    onClick={() => {
-                      if (isStaffLogged) {
-                        setActiveView('staff_panel');
-                      } else {
-                        setActiveView('staff_login');
-                      }
-                    }} 
+                    onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} 
                     className={`px-3 py-1 border border-slate-700 rounded-lg font-bold transition ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
                   >
                     Acesso Equipa (PIN)
@@ -2913,15 +918,9 @@
                 </h2>
                     
                 <div className="flex bg-slate-900 p-1 rounded-xl text-xs font-bold gap-1">
-                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Login
-                  </button>
-                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Registar
-                  </button>
-                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Recuperar
-                  </button>
+                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Login</button>
+                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Registar</button>
+                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Recuperar</button>
                 </div>
 
                 <form onSubmit={handleAdminAuth} className="space-y-3">
@@ -2944,22 +943,11 @@
                     </div>
                   )}
 
-                  {adminAuthError && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                      {adminAuthError}
-                    </div>
-                  )}
-
-                  {adminAuthSuccess && (
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">
-                      {adminAuthSuccess}
-                    </div>
-                  )}
+                  {adminAuthError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{adminAuthError}</div>}
+                  {adminAuthSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">{adminAuthSuccess}</div>}
 
                   <button type="submit" disabled={loadingAuth} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
-                    {loadingAuth ? 'A processar...' : (
-                      adminAuthMode === 'login' ? 'Entrar' : (adminAuthMode === 'register' ? 'Criar Conta' : 'Enviar Link de Recuperação')
-                    )}
+                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : (adminAuthMode === 'register' ? 'Criar Conta' : 'Enviar Link de Recuperação'))}
                   </button>
                 </form>
               </div>
@@ -2979,12 +967,10 @@
 
                 {!planoAindaValido ? (
                   <div className="bg-amber-500/10 border border-amber-500/30 p-8 rounded-3xl text-center space-y-4">
-                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl font-black">
-                      🔒
-                    </div>
+                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl font-black">🔒</div>
                     <h3 className="text-xl font-bold text-white">Assinatura Pendente ou Expirada</h3>
                     <p className="text-xs text-slate-300 max-w-md mx-auto">
-                      Para aceder ao Painel de Gestão e manter a sua ementa a funcionar, realize a assinatura da sua licença. Os seus dados e produtos continuam guardados em segurança.
+                      Para aceder ao Painel de Gestão e manter a sua ementa a funcionar, realize a assinatura da sua licença.
                     </p>
                     <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center items-center">
                       <button onClick={abrirPagamento} className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
@@ -2999,12 +985,8 @@
                   <div className="space-y-6">
                     {!cafeteria.isVitalicio && (
                       <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-bold">
-                          Período de Teste / Assinatura
-                        </span>
-                        <span className="text-amber-400 font-bold">
-                          {calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes
-                        </span>
+                        <span className="text-xs text-slate-400 font-bold">Período de Teste / Assinatura</span>
+                        <span className="text-amber-400 font-bold">{calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes</span>
                       </div>
                     )}
 
@@ -3014,9 +996,7 @@
                         <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
                         <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
                           <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
-                          <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">
-                            Gerar Novo
-                          </button>
+                          <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">Gerar Novo</button>
                         </div>
                       </div>
 
@@ -3029,13 +1009,9 @@
                           </span>
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">
-                            📱 QR Code Mesas
-                          </button>
+                          <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">📱 QR Code Mesas</button>
                           {!cafeteria.isVitalicio && (
-                            <button onClick={abrirPagamento} className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
-                              💳 Renovar
-                            </button>
+                            <button onClick={abrirPagamento} className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition">💳 Renovar</button>
                           )}
                         </div>
                       </div>
@@ -3045,7 +1021,7 @@
               </div>
             )}
 
-            {(activeView === 'staff_panel' || (activeView === 'staff_login' && isStaffLogged)) && isStaffLogged && (
+            {activeView === 'staff_panel' && isStaffLogged && (
               <div className="max-w-6xl mx-auto p-4 space-y-6">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-4 flex-wrap gap-2">
                   <div>
@@ -3053,15 +1029,9 @@
                     <p className="text-xs text-slate-400">Modo operacional ativo</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">
-                      📱 QR Code Mesas
-                    </button>
-                    <button onClick={() => setModalProduto({ open: true, data: null })} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg">
-                      + Adicionar Item
-                    </button>
-                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">
-                      Sair do Balcão
-                    </button>
+                    <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">📱 QR Code Mesas</button>
+                    <button onClick={() => setModalProduto({ open: true, data: null })} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg">+ Adicionar Item</button>
+                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">Sair do Balcão</button>
                   </div>
                 </div>
 
@@ -3069,9 +1039,7 @@
                   <div className="space-y-3">
                     <h3 className="font-bold text-amber-400 text-sm">Pedidos Pendentes ({pedidos.length})</h3>
                     {pedidos.length === 0 ? (
-                      <div className="bg-slate-800/60 p-6 rounded-xl text-center text-xs text-slate-400 border border-slate-700/60">
-                        Sem pedidos pendentes de momento.
-                      </div>
+                      <div className="bg-slate-800/60 p-6 rounded-xl text-center text-xs text-slate-400 border border-slate-700/60">Sem pedidos pendentes de momento.</div>
                     ) : (
                       pedidos.map(p => (
                         <div key={p.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 shadow-md">
@@ -3109,9 +1077,7 @@
                           <button onClick={() => toggleDisponibilidadeProduto(p.id, p.disponivel)} className={`px-2 py-1 rounded text-[10px] font-bold ${p.disponivel ? 'bg-slate-700 text-slate-300' : 'bg-amber-500/20 text-amber-400'}`}>
                             {p.disponivel ? 'Pausar' : 'Ativar'}
                           </button>
-                          <button onClick={() => handleRemoverProduto(p.id)} className="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold">
-                            Eliminar
-                          </button>
+                          <button onClick={() => handleRemoverProduto(p.id)} className="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold">Eliminar</button>
                         </div>
                       </div>
                     ))}
@@ -3127,47 +1093,23 @@
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white">Acesso Operacional por PIN</h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.
-                  </p>
+                  <p className="text-xs text-slate-400 mt-1">Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.</p>
                 </div>
 
                 <form onSubmit={handleLoginStaff} className="space-y-4">
                   <div>
-                    <input 
-                      type="password" 
-                      maxLength={6} 
-                      placeholder="••••••" 
-                      value={pinInput} 
-                      onChange={e => setPinInput(e.target.value)} 
-                      className="w-full text-center text-3xl font-mono tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400 focus:outline-none focus:border-amber-500 shadow-inner" 
-                      autoFocus
-                    />
+                    <input type="password" maxLength={6} placeholder="••••••" value={pinInput} onChange={e => setPinInput(e.target.value)} className="w-full text-center text-3xl font-mono tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400 focus:outline-none focus:border-amber-500 shadow-inner" autoFocus />
                     <p className="text-[11px] text-slate-500 mt-2">O PIN é gerado pelo proprietário no Painel de Gestão.</p>
                   </div>
-
-                  {pinError && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                      {pinError}
-                    </div>
-                  )}
-
-                  <button 
-                    type="submit" 
-                    disabled={loadingPin} 
-                    className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/10"
-                  >
+                  {pinError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{pinError}</div>}
+                  <button type="submit" disabled={loadingPin} className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/10">
                     {loadingPin ? 'A validar PIN...' : 'Entrar no Balcão & Cozinha'}
                   </button>
                 </form>
 
                 <div className="pt-2 border-t border-slate-700/60 flex justify-between items-center text-xs">
-                  <button onClick={() => setActiveView('landing')} className="text-slate-400 hover:text-white transition">
-                    ← Voltar
-                  </button>
-                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="text-amber-400 hover:underline font-semibold">
-                    É o proprietário? Faça login
-                  </button>
+                  <button onClick={() => setActiveView('landing')} className="text-slate-400 hover:text-white transition">← Voltar</button>
+                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="text-amber-400 hover:underline font-semibold">É o proprietário? Faça login</button>
                 </div>
               </div>
             )}
@@ -3225,21 +1167,10 @@
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
                   <h3 className="text-lg font-bold text-white text-center">🔐 Ativação Vitalícia de Administrador</h3>
-                  <p className="text-xs text-slate-400 text-center">
-                    Introduza o PIN mestre para libertar o acesso ilimitado e sem vencimento para esta conta.
-                  </p>
+                  <p className="text-xs text-slate-400 text-center">Introduza o PIN mestre para libertar o acesso ilimitado.</p>
                   <form onSubmit={handleDevBypass} className="space-y-3">
-                    <input 
-                      type="password" 
-                      placeholder="PIN Secreto" 
-                      value={devPinInput} 
-                      onChange={e => setDevPinInput(e.target.value)} 
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-amber-500" 
-                      autoFocus
-                    />
-                    {devError && (
-                      <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>
-                    )}
+                    <input type="password" placeholder="PIN Secreto" value={devPinInput} onChange={e => setDevPinInput(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-amber-500" autoFocus />
+                    {devError && <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>}
                     <div className="flex gap-2">
                       <button type="button" onClick={() => setDevModalOpen(false)} className="flex-1 py-2 bg-slate-700 text-xs rounded-xl font-bold">Cancelar</button>
                       <button type="submit" className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl">Ativar Vitalício</button>
@@ -3255,12 +1186,9 @@
                   <h3 className="text-lg font-bold text-white">Gerar novo PIN?</h3>
                   <p className="text-xs text-slate-400">
                     O PIN atual (<span className="font-mono text-amber-400">{cafeteria.pinEquipe}</span>) será substituído por um novo código de 6 dígitos.
-                    Toda a equipa terá de usar o novo PIN para aceder ao balcão.
                   </p>
                   <div className="flex gap-2 pt-2">
-                    <button onClick={cancelarNovoPin} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
-                      Não mudar
-                    </button>
+                    <button onClick={cancelarNovoPin} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">Não mudar</button>
                     <button onClick={confirmarGerarNovoPin} disabled={gerandoPin} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs hover:bg-amber-400 transition">
                       {gerandoPin ? 'A gerar...' : 'Mudar PIN'}
                     </button>
@@ -3280,12 +1208,7 @@
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-bold text-slate-300 block mb-1">Mesa ou Posição:</label>
-                      <input 
-                        type="text" 
-                        value={mesaQr} 
-                        onChange={(e) => setMesaQr(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
+                      <input type="text" value={mesaQr} onChange={(e) => setMesaQr(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500" />
                     </div>
 
                     <div id="print-qr-section" className="flex justify-center py-2">
@@ -3301,9 +1224,7 @@
                       <button onClick={copiarLinkCardapio} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs">
                         {linkCopiado ? '✓ Link Copiado' : 'Copiar Link'}
                       </button>
-                      <button onClick={() => window.print()} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs">
-                        🖨️ Imprimir Placa
-                      </button>
+                      <button onClick={() => window.print()} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs">🖨️ Imprimir Placa</button>
                     </div>
                   </div>
                 </div>
@@ -3313,37 +1234,30 @@
             {modalProduto.open && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white">
-                    {modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}
-                  </h3>
+                  <h3 className="text-lg font-bold text-white">{modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}</h3>
                   <form onSubmit={handleSalvarProduto} className="space-y-3">
                     <div>
                       <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome do Produto</label>
                       <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Ex: Espresso Duplo" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
-
                     <div>
                       <label className="text-[11px] text-slate-400 font-bold block mb-1">Preço (€)</label>
                       <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
-
                     <div>
                       <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
                       <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
                         {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
-
                     <div>
                       <label className="text-[11px] text-slate-400 font-bold block mb-1">Descrição</label>
-                      <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado 100% Arábica" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                      <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
-
                     <div>
                       <label className="text-[11px] text-slate-400 font-bold block mb-1">URL da Imagem</label>
                       <input type="url" name="imagem" defaultValue={modalProduto.data?.imagem || ''} placeholder="https://..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
-
                     <div className="flex justify-end gap-2 pt-2 border-t border-slate-700">
                       <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
                       <button type="submit" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg">Guardar</button>
@@ -3361,1346 +1275,3 @@
   </script>
 </body>
 </html>
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      buscarCafeteriaPorPin: async (pin) => {
-        try {
-          if (!pin) return null;
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?pin_equipe=eq.${encodeURIComponent(pin.trim())}`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      criarCafeteria: async (userId, email, nome, pin) => {
-        try {
-          const cleanEmail = (email || '').trim().toLowerCase();
-          const agora = new Date();
-          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
-
-          const payload = { 
-            nome: nome || 'A Minha Cafetaria', 
-            pin_equipe: pin || gerarPinAleatorio(),
-            email: cleanEmail,
-            dono_email: cleanEmail,
-            plano_ativo: true,
-            data_inscricao: agora.toISOString(),
-            data_expiracao: dataExpiracao.toISOString() 
-          };
-          if (userId) payload.user_id = userId;
-
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
-            method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(payload)
-          });
-          if (!res.ok) {
-            return { id: `caf_${Date.now()}`, nome: nome || 'A Minha Cafetaria', pin_equipe: pin || gerarPinAleatorio(), email: cleanEmail, plano_ativo: true, data_inscricao: agora.toISOString(), data_expiracao: dataExpiracao.toISOString() };
-          }
-          const data = await res.json();
-          return data?.[0] || { id: `caf_${Date.now()}`, nome, pin_equipe: pin, email: cleanEmail, plano_ativo: true, data_inscricao: agora.toISOString(), data_expiracao: dataExpiracao.toISOString() };
-        } catch (err) {
-          const agora = new Date();
-          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
-          return { id: `caf_${Date.now()}`, nome, pin_equipe: pin, email: (email || '').trim().toLowerCase(), plano_ativo: true, data_inscricao: agora.toISOString(), data_expiracao: dataExpiracao.toISOString() };
-        }
-      },
-
-      atualizarPlano: async (cafeteriaId, novoEstado, novaDataExpiracao = null) => {
-        if (!cafeteriaId) return false;
-        try {
-          const payload = { plano_ativo: novoEstado };
-          if (novaDataExpiracao) payload.data_expiracao = novaDataExpiracao;
-              
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      atualizarPin: async (cafeteriaId, novoPin) => {
-        if (!cafeteriaId) return false;
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ pin_equipe: novoPin })
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      buscarProdutos: async (cafeteriaId) => {
-        try {
-          if (!cafeteriaId) return [];
-          const res = await fetch(`${API_URL}/rest/v1/produtos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&order=created_at.desc`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return [];
-          return await res.json();
-        } catch (err) {
-          return [];
-        }
-      },
-
-      salvarProduto: async (produto) => {
-        try {
-          const isEdit = Boolean(produto.id && !produto.id.startsWith('p_'));
-          const url = isEdit ? `${API_URL}/rest/v1/produtos?id=eq.${produto.id}` : `${API_URL}/rest/v1/produtos`;
-          const method = isEdit ? 'PATCH' : 'POST';
-
-          const body = { ...produto };
-          if (!isEdit) delete body.id;
-
-          const res = await fetch(url, {
-            method: method,
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(body)
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      deletarProduto: async (id) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${id}`, {
-            method: 'DELETE',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
-
-      buscarPedidos: async (cafeteriaId) => {
-        try {
-          if (!cafeteriaId) return [];
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&status=neq.entregue&order=created_at.desc`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return [];
-          return await res.json();
-        } catch (err) {
-          return [];
-        }
-      },
-
-      criarPedido: async (pedido) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos`, {
-            method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(pedido)
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
-      },
-
-      atualizarStatusPedido: async (id, status) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status })
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      }
-    };
-
-    const authService = {
-      login: async (email, password) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) throw new Error(error.message || 'E-mail ou palavra-passe incorretos.');
-        return { user: data.user, session: data.session };
-      },
-
-      signUp: async (email, password, nomeCafeteria) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const jaExisteCafetaria = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
-        if (jaExisteCafetaria) {
-          throw new Error('Este e-mail já está registado na plataforma. Por favor, faça login ou recupere a palavra-passe.');
-        }
-
-        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) {
-          throw new Error(error.message || 'Erro ao criar conta.');
-        }
-
-        if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-          throw new Error('Este e-mail já possui uma conta ativa. Escolha a opção Login.');
-        }
-
-        const pinUnico = gerarPinAleatorio();
-        const userId = data?.user?.id || null;
-        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
-
-        return { authData: data, cafeteria: cafeteriaSalva };
-      },
-
-      recuperarSenha: async (email) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const redirectTo = window.location.origin + window.location.pathname + '?reset=true';
-
-        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: redirectTo
-        });
-
-        if (error) {
-          throw new Error(error.message || 'Erro ao solicitar a recuperação de palavra-passe.');
-        }
-
-        return data;
-      }
-    };
-
-    const INITIAL_CATEGORIES = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
-
-    function App() {
-      const urlInfo = getUrlParams();
-      const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
-
-      const [isResetPassword, setIsResetPassword] = useState(() => {
-        return urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery'
-          || Boolean(urlInfo.accessToken) || Boolean(urlInfo.code);
-      });
-
-      const [newPassword, setNewPassword] = useState('');
-      const [confirmNewPassword, setConfirmNewPassword] = useState('');
-      const [resetPasswordError, setResetPasswordError] = useState('');
-      const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
-      const [loadingResetPassword, setLoadingResetPassword] = useState(false);
-
-      useEffect(() => {
-        const trocarSessao = async () => {
-          try {
-            if (urlInfo.code) {
-              const { error } = await supabaseClient.auth.exchangeCodeForSession(urlInfo.code);
-              if (error) throw error;
-            } else if (urlInfo.accessToken && urlInfo.refreshToken) {
-              const { error } = await supabaseClient.auth.setSession({
-                access_token: urlInfo.accessToken,
-                refresh_token: urlInfo.refreshToken
-              });
-              if (error) throw error;
-            } else if (isResetPassword) {
-              setResetPasswordError('O link de recuperação é inválido ou expirou. Por favor solicite um novo.');
-            }
-          } catch (err) {
-            setResetPasswordError('O link de recuperação é inválido ou expirou. Por favor solicite um novo.');
-          }
-        };
-        if (isResetPassword) {
-          trocarSessao();
-        }
-      }, []);
-
-      const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
-      const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
-
-      const [cafeteria, setCafeteria] = useState(() => {
-        const salva = localStorage.getItem('coffeeflow_cafeteria');
-        if (salva) {
-          try {
-            return JSON.parse(salva);
-          } catch (err) {}
-        }
-        return { 
-          id: urlInfo.cafeteriaId || 'caf_demo_01', 
-          nome: 'CoffeeFlow Central', 
-          pinEquipe: '123456', 
-          planoAtivo: true, 
-          donoEmail: '', 
-          dataInscricao: new Date().toISOString(),
-          dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          isVitalicio: false 
-        };
-      });
-
-      const [produtos, setProdutos] = useState([]);
-      const [pedidos, setPedidos] = useState([]);
-      const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
-
-      const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
-      const [adminEmailInput, setAdminEmailInput] = useState('');
-      const [adminPasswordInput, setAdminPasswordInput] = useState('');
-      const [nomeCafeteriaInput, setNomeCafeteriaInput] = useState('');
-      const [adminAuthMode, setAdminAuthMode] = useState('login');
-      const [adminAuthError, setAdminAuthError] = useState('');
-      const [adminAuthSuccess, setAdminAuthSuccess] = useState('');
-      const [loadingAuth, setLoadingAuth] = useState(false);
-
-      const [pinInput, setPinInput] = useState('');
-      const [pinError, setPinError] = useState('');
-      const [loadingPin, setLoadingPin] = useState(false);
-
-      const [devModalOpen, setDevModalOpen] = useState(false);
-      const [devPinInput, setDevPinInput] = useState('');
-      const [devError, setDevError] = useState('');
-
-      const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
-      const [gerandoPin, setGerandoPin] = useState(false);
-
-      const [carrinho, setCarrinho] = useState([]);
-      const [pedidoEnviado, setPedidoEnviado] = useState(false);
-      const [notificacao, setNotificacao] = useState('');
-      const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-      const [termoPesquisa, setTermoPesquisa] = useState('');
-      const [modalProduto, setModalProduto] = useState({ open: false, data: null });
-
-      const [mesaQr, setMesaQr] = useState(urlInfo.mesaNum || '01');
-      const [linkCopiado, setLinkCopiado] = useState(false);
-      const [modalQrOpen, setModalQrOpen] = useState(false);
-
-      const mudarModoAuth = (modo) => {
-        setAdminAuthMode(modo);
-        setAdminAuthError('');
-        setAdminAuthSuccess('');
-      };
-
-      const handleResetPassword = async (e) => {
-        e.preventDefault();
-        setResetPasswordError('');
-        setResetPasswordSuccess('');
-
-        if (newPassword.length < 6) {
-          setResetPasswordError('A nova palavra-passe deve ter pelo menos 6 caracteres.');
-          return;
-        }
-
-        if (newPassword !== confirmNewPassword) {
-          setResetPasswordError('As palavras-passe não coincidem.');
-          return;
-        }
-
-        setLoadingResetPassword(true);
-
-        try {
-          const { data: sessionData } = await supabaseClient.auth.getSession();
-          if (!sessionData?.session) {
-            throw new Error('Sessão de recuperação não encontrada. Solicite um novo link de redefinição.');
-          }
-
-          const { error } = await supabaseClient.auth.updateUser({
-            password: newPassword
-          });
-
-          if (error) throw error;
-
-          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Redirecionando...');
-          setNewPassword('');
-          setConfirmNewPassword('');
-
-          setTimeout(() => {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            setIsResetPassword(false);
-            setAdminAuthMode('login');
-            setActiveView('admin_login');
-          }, 2000);
-
-        } catch (err) {
-          setResetPasswordError(err?.message || 'Não foi possível alterar a palavra-passe.');
-        } finally {
-          setLoadingResetPassword(false);
-        }
-      };
-
-      const planoEstaValido = (caf) => {
-        if (!caf) return false;
-        if (caf.isVitalicio) return true;
-        if (!caf.planoAtivo) return false;
-        if (!caf.dataExpiracao) return false;
-        return new Date(caf.dataExpiracao) > new Date();
-      };
-
-      const calcularDiasRestantes = (dataExpiracao, isVitalicio = false) => {
-        if (isVitalicio) return 9999;
-        if (!dataExpiracao) return 0;
-        const diferenca = new Date(dataExpiracao).getTime() - Date.now();
-        if (diferenca <= 0) return 0;
-        return Math.ceil(diferenca / (1000 * 60 * 60 * 24));
-      };
-
-      const planoAindaValido = planoEstaValido(cafeteria);
-
-      useEffect(() => {
-        const idParaBuscar = urlInfo.cafeteriaId || cafeteria.id;
-        if (idParaBuscar && isClientAccessFromQr) {
-          supabaseService.buscarCafeteriaPorId(idParaBuscar).then(dados => {
-            if (dados) {
-              const eVitalicio = dados.data_expiracao && new Date(dados.data_expiracao).getFullYear() > 2090;
-              setCafeteria({
-                id: dados.id,
-                nome: dados.nome,
-                pinEquipe: dados.pin_equipe,
-                planoAtivo: dados.plano_ativo === true,
-                donoEmail: dados.email || dados.dono_email,
-                dataInscricao: dados.data_inscricao || new Date().toISOString(),
-                dataExpiracao: dados.data_expiracao || null,
-                isVitalicio: eVitalicio
-              });
-            }
-          });
-        }
-      }, [urlInfo.cafeteriaId]);
-
-      useEffect(() => {
-        if (cafeteria && cafeteria.id) {
-          localStorage.setItem('coffeeflow_cafeteria', JSON.stringify(cafeteria));
-        }
-      }, [cafeteria]);
-
-      // Restaura a sessão do proprietário de forma robusta e persistente via Supabase Auth
-      useEffect(() => {
-        if (isClientAccessFromQr || isResetPassword) return;
-
-        const processarSessaoAtiva = async (session) => {
-          if (session?.user?.email) {
-            const dadosCaf = await supabaseService.buscarCafeteriaPorEmail(session.user.email);
-            if (dadosCaf) {
-              const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-              setCafeteria({
-                id: dadosCaf.id,
-                nome: dadosCaf.nome,
-                pinEquipe: dadosCaf.pin_equipe,
-                planoAtivo: dadosCaf.plano_ativo === true,
-                donoEmail: dadosCaf.email || dadosCaf.dono_email,
-                dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
-                dataExpiracao: dadosCaf.data_expiracao || null,
-                isVitalicio: eVitalicio
-              });
-              setIsLoggedInAdmin(true);
-              // Mantém na visão de admin se já estiver logado
-              setActiveView(prev => prev === 'landing' || prev === 'admin_login' ? 'admin' : prev);
-            }
-          }
-        };
-
-        // 1. Verifica sessão atual ao carregar
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            processarSessaoAtiva(session);
-          }
-        });
-
-        // 2. Escuta mudanças contínuas de autenticação (evita logout ao atualizar)
-        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
-          if (session) {
-            processarSessaoAtiva(session);
-          } else if (event === 'SIGNED_OUT') {
-            setIsLoggedInAdmin(false);
-          }
-        });
-
-        return () => {
-          subscription?.unsubscribe();
-        };
-      }, []);
-
-      const carregarDadosDoBanco = async () => {
-        if (cafeteria.id) {
-          const prods = await supabaseService.buscarProdutos(cafeteria.id);
-          if (prods) setProdutos(prods);
-
-          const peds = await supabaseService.buscarPedidos(cafeteria.id);
-          if (peds) setPedidos(peds);
-        }
-      };
-
-      useEffect(() => {
-        carregarDadosDoBanco();
-      }, [cafeteria.id]);
-
-      useEffect(() => {
-        let interval;
-        if (isStaffLogged && cafeteria.id) {
-          interval = setInterval(() => {
-            supabaseService.buscarPedidos(cafeteria.id).then(peds => {
-              if (peds) setPedidos(peds);
-            });
-          }, 4000);
-        }
-        return () => clearInterval(interval);
-      }, [isStaffLogged, cafeteria.id]);
-
-      const getUrlCardapioMesa = (numMesa) => {
-        const baseUrl = window.location.origin + window.location.pathname;
-        return `${baseUrl}?cafeteria=${encodeURIComponent(cafeteria.id)}&mesa=${encodeURIComponent(numMesa)}`;
-      };
-
-      const linkAtualCardapio = getUrlCardapioMesa(mesaQr);
-
-      const copiarLinkCardapio = () => {
-        navigator.clipboard.writeText(linkAtualCardapio);
-        setLinkCopiado(true);
-        setTimeout(() => setLinkCopiado(false), 3000);
-      };
-
-      const solicitarNovoPin = () => {
-        setConfirmarNovoPinOpen(true);
-      };
-
-      const confirmarGerarNovoPin = async () => {
-        setGerandoPin(true);
-        const novoPin = gerarPinAleatorio();
-        const ok = await supabaseService.atualizarPin(cafeteria.id, novoPin);
-        if (ok) {
-          setCafeteria(prev => ({ ...prev, pinEquipe: novoPin }));
-          setNotificacao(`Novo PIN gerado com sucesso: ${novoPin}`);
-          setTimeout(() => setNotificacao(''), 4000);
-        } else {
-          setNotificacao('Não foi possível atualizar o PIN.');
-          setTimeout(() => setNotificacao(''), 4000);
-        }
-        setGerandoPin(false);
-        setConfirmarNovoPinOpen(false);
-      };
-
-      const cancelarNovoPin = () => {
-        setConfirmarNovoPinOpen(false);
-      };
-
-      const handleAdminAuth = async (e) => {
-        e.preventDefault();
-        setAdminAuthError('');
-        setAdminAuthSuccess('');
-        setLoadingAuth(true);
-
-        try {
-          if (adminAuthMode === 'forgot') {
-            if (!adminEmailInput) throw new Error('Por favor, introduza o e-mail associado à sua conta.');
-            await authService.recuperarSenha(adminEmailInput);
-            setAdminAuthSuccess('E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada.');
-          } else if (adminAuthMode === 'login') {
-            await authService.login(adminEmailInput, adminPasswordInput);
-            let dadosCaf = await supabaseService.buscarCafeteriaPorEmail(adminEmailInput);
-                
-            if (!dadosCaf) {
-              const { data: { user } } = await supabaseClient.auth.getUser();
-              dadosCaf = await supabaseService.criarCafeteria(user?.id, adminEmailInput, nomeCafeteriaInput || 'A Minha Cafetaria', gerarPinAleatorio());
-            }
-
-            const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: dadosCaf.id,
-              nome: dadosCaf.nome,
-              pinEquipe: dadosCaf.pin_equipe,
-              planoAtivo: dadosCaf.plano_ativo === true,
-              donoEmail: adminEmailInput,
-              dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: dadosCaf.data_expiracao || null,
-              isVitalicio: eVitalicio
-            });
-            setActiveView('admin');
-          } else {
-            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput);
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: novaCaf.id,
-              nome: novaCaf.nome,
-              pinEquipe: novaCaf.pin_equipe,
-              planoAtivo: true,
-              donoEmail: adminEmailInput,
-              dataInscricao: novaCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: novaCaf.data_expiracao || null,
-              isVitalicio: false
-            });
-            setActiveView('admin');
-          }
-        } catch (err) {
-          setAdminAuthError(err.message || 'Erro na autenticação.');
-        } finally {
-          setLoadingAuth(false);
-        }
-      };
-
-      const handleDevBypass = async (e) => {
-        e.preventDefault();
-        setDevError('');
-            
-        try {
-          const encoded = btoa(devPinInput.trim());
-          if (encoded === DEV_BYPASS_HASH) {
-            const dataVitaliciaIso = new Date('2099-12-31T23:59:59.000Z').toISOString();
-            await supabaseService.atualizarPlano(cafeteria.id, true, dataVitaliciaIso);
-                
-            setCafeteria(prev => ({
-              ...prev,
-              planoAtivo: true,
-              dataExpiracao: dataVitaliciaIso,
-              isVitalicio: true
-            }));
-
-            setDevModalOpen(false);
-            setDevPinInput('');
-            setNotificacao('Acesso Vitalício de Administrador Ativado!');
-            setTimeout(() => setNotificacao(''), 4000);
-          } else {
-            setDevError('PIN Secreto inválido.');
-          }
-        } catch (err) {
-          setDevError('Erro ao validar o PIN Secreto.');
-        }
-      };
-
-      const handleLoginStaff = async (e) => {
-        e.preventDefault();
-        setPinError('');
-        setLoadingPin(true);
-
-        try {
-          const caf = await supabaseService.buscarCafeteriaPorPin(pinInput.trim());
-          if (caf) {
-            const eVitalicio = caf.data_expiracao && new Date(caf.data_expiracao).getFullYear() > 2090;
-            setCafeteria({
-              id: caf.id,
-              nome: caf.nome,
-              pinEquipe: caf.pin_equipe,
-              planoAtivo: caf.plano_ativo === true,
-              donoEmail: caf.email || caf.dono_email,
-              dataInscricao: caf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: caf.data_expiracao || null,
-              isVitalicio: eVitalicio
-            });
-            localStorage.setItem('coffeeflow_staff_session', 'true');
-            setIsStaffLogged(true);
-            setPinInput('');
-            setActiveView('staff_panel');
-          } else {
-            setPinError('PIN de acesso incorreto.');
-          }
-        } catch (err) {
-          setPinError('Erro ao validar o PIN.');
-        } finally {
-          setLoadingPin(false);
-        }
-      };
-
-      const toggleDisponibilidadeProduto = async (id, dispAtual) => {
-        const item = produtos.find(p => p.id === id);
-        if (item) {
-          await supabaseService.salvarProduto({ ...item, disponivel: !dispAtual });
-          carregarDadosDoBanco();
-        }
-      };
-
-      const handleRemoverProduto = async (id) => {
-        if (confirm('Deseja eliminar este item da ementa?')) {
-          await supabaseService.deletarProduto(id);
-          carregarDadosDoBanco();
-        }
-      };
-
-      const handleSalvarProduto = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const prodData = {
-          id: modalProduto.data?.id,
-          cafeteria_id: cafeteria.id,
-          nome: formData.get('nome'),
-          preco: parseFloat(formData.get('preco')),
-          categoria: formData.get('categoria'),
-          descricao: formData.get('descricao') || '',
-          imagem: formData.get('imagem') || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60',
-          disponivel: modalProduto.data ? modalProduto.data.disponivel : true
-        };
-
-        await supabaseService.salvarProduto(prodData);
-        setModalProduto({ open: false, data: null });
-        carregarDadosDoBanco();
-      };
-
-      const enviarPedidoCliente = async () => {
-        if (carrinho.length === 0) return;
-        const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-            
-        const pedidoData = {
-          cafeteria_id: cafeteria.id,
-          codigo_pedido: `CF-${Math.floor(100 + Math.random() * 900)}`,
-          mesa: selectedMesaCliente,
-          itens: carrinho.map(c => ({ nome: c.nome, qtd: c.qtd, preco: c.preco })),
-          total: total,
-          status: 'pendente',
-          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-
-        const criado = await supabaseService.criarPedido(pedidoData);
-        if (criado) {
-          setCarrinho([]);
-          setPedidoEnviado(true);
-          setNotificacao(`Pedido enviado com sucesso!`);
-          setTimeout(() => setNotificacao(''), 5000);
-        } else {
-          setNotificacao('Erro ao enviar pedido.');
-          setTimeout(() => setNotificacao(''), 5000);
-        }
-      };
-
-      const atualizarStatusPedido = async (id, statusAtual) => {
-        const novoStatus = statusAtual === 'pendente' ? 'em_preparo' : 'entregue';
-        await supabaseService.atualizarStatusPedido(id, novoStatus);
-        carregarDadosDoBanco();
-      };
-
-      const abrirPagamento = () => {
-        window.open(PAYMENT_LINK, '_blank');
-      };
-
-      const produtosFiltrados = produtos.filter(p => {
-        const bateCat = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
-        const bateNome = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
-        return bateCat && bateNome;
-      });
-
-      if (isResetPassword) {
-        return (
-          <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex items-center justify-center p-4">
-            <div className="max-w-md w-full p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-5 shadow-2xl">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl text-2xl">
-                  🔐
-                </div>
-                <h2 className="text-xl font-bold text-white">
-                  Criar nova palavra-passe
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Escolha uma nova palavra-passe para a sua conta CoffeeFlow.
-                </p>
-              </div>
-
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
-                    Nova palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Digite a nova palavra-passe"
-                    minLength={6}
-                    required
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">
-                    Confirmar palavra-passe
-                  </label>
-                  <input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={e => setConfirmNewPassword(e.target.value)}
-                    placeholder="Digite novamente"
-                    minLength={6}
-                    required
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                {resetPasswordError && (
-                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                    {resetPasswordError}
-                  </div>
-                )}
-
-                {resetPasswordSuccess && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">
-                    {resetPasswordSuccess}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loadingResetPassword}
-                  className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition"
-                >
-                  {loadingResetPassword ? 'A alterar...' : 'Alterar palavra-passe'}
-                </button>
-              </form>
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col justify-between">
-          <div>
-            <header className="bg-slate-950 border-b border-slate-800 px-4 py-2.5 text-xs flex justify-between items-center sticky top-0 z-50">
-              <div className="flex items-center gap-2">
-                <div className="p-1 bg-amber-500 text-slate-950 rounded-lg font-black">☕</div>
-                <span className="font-extrabold text-white text-sm">{cafeteria.nome}</span>
-              </div>
-
-              {notificacao && (
-                <div className="bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded-full text-xs animate-bounce shadow-lg shadow-amber-500/20">
-                  {notificacao}
-                </div>
-              )}
-
-              {!isClientAccessFromQr && (
-                <div className="flex items-center gap-2">
-                  {!isLoggedInAdmin && (
-                    <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
-                      Login Proprietário
-                    </button>
-                  )}
-                  {isLoggedInAdmin && (
-                    <button onClick={() => setActiveView('admin')} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
-                      Painel Gestão
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => {
-                      if (isStaffLogged) {
-                        setActiveView('staff_panel');
-                      } else {
-                        setActiveView('staff_login');
-                      }
-                    }} 
-                    className={`px-3 py-1 border border-slate-700 rounded-lg font-bold transition ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
-                  >
-                    Acesso Equipa (PIN)
-                  </button>
-                  <button onClick={() => setActiveView('customer')} className="px-3 py-1 bg-slate-800 text-slate-200 border border-slate-700 rounded-lg font-bold hover:bg-slate-700 transition">
-                    Ver Ementa
-                  </button>
-                </div>
-              )}
-            </header>
-
-            {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
-              <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
-                <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-                  Acelere o fluxo de pedidos da sua cafetaria por <span className="text-amber-500">Assinatura Mensal</span>
-                </h1>
-                <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                  Sistema leve para pedidos por mesa via QR Code isolado por estabelecimento e com acesso operacional rápido por PIN.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                  <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition">
-                    Assinar e Ativar Licença
-                  </button>
-                  <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition">
-                    Criar Conta de Proprietário
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'admin_login' && !isLoggedInAdmin && (
-              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-4 shadow-2xl">
-                <h2 className="text-xl font-bold text-center">
-                  {adminAuthMode === 'login' && 'Entrar no CoffeeFlow'}
-                  {adminAuthMode === 'register' && 'Registar Cafetaria'}
-                  {adminAuthMode === 'forgot' && 'Recuperar Palavra-passe'}
-                </h2>
-                    
-                <div className="flex bg-slate-900 p-1 rounded-xl text-xs font-bold gap-1">
-                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Login
-                  </button>
-                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Registar
-                  </button>
-                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-                    Recuperar
-                  </button>
-                </div>
-
-                <form onSubmit={handleAdminAuth} className="space-y-3">
-                  {adminAuthMode === 'register' && (
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
-                      <input type="text" placeholder="Ex: Central Coffee" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="text-[11px] text-slate-400 font-bold block mb-1">E-mail</label>
-                    <input type="email" placeholder="seu-email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                  </div>
-
-                  {adminAuthMode !== 'forgot' && (
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Palavra-passe</label>
-                      <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                  )}
-
-                  {adminAuthError && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                      {adminAuthError}
-                    </div>
-                  )}
-
-                  {adminAuthSuccess && (
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">
-                      {adminAuthSuccess}
-                    </div>
-                  )}
-
-                  <button type="submit" disabled={loadingAuth} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
-                    {loadingAuth ? 'A processar...' : (
-                      adminAuthMode === 'login' ? 'Entrar' : (adminAuthMode === 'register' ? 'Criar Conta' : 'Enviar Link de Recuperação')
-                    )}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {activeView === 'admin' && isLoggedInAdmin && (
-              <div className="max-w-4xl mx-auto p-6 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold">{cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">ID da Cafetaria: <span className="font-mono text-amber-400">{cafeteria.id}</span></p>
-                  </div>
-                  <button onClick={async () => { await supabaseClient.auth.signOut(); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300">
-                    Sair da Conta
-                  </button>
-                </div>
-
-                {!planoAindaValido ? (
-                  <div className="bg-amber-500/10 border border-amber-500/30 p-8 rounded-3xl text-center space-y-4">
-                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl font-black">
-                      🔒
-                    </div>
-                    <h3 className="text-xl font-bold text-white">Assinatura Pendente ou Expirada</h3>
-                    <p className="text-xs text-slate-300 max-w-md mx-auto">
-                      Para aceder ao Painel de Gestão e manter a sua ementa a funcionar, realize a assinatura da sua licença. Os seus dados e produtos continuam guardados em segurança.
-                    </p>
-                    <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                      <button onClick={abrirPagamento} className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
-                        💳 Pagar / Renovar Assinatura (30 Dias)
-                      </button>
-                      <button onClick={() => setDevModalOpen(true)} className="text-slate-500 hover:text-slate-400 text-[11px] underline">
-                        Acesso Programador / VIP
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {!cafeteria.isVitalicio && (
-                      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-bold">
-                          Período de Teste / Assinatura
-                        </span>
-                        <span className="text-amber-400 font-bold">
-                          {calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">PIN de Acesso da Equipa</h3>
-                        <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
-                        <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
-                          <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
-                          <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">
-                            Gerar Novo
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">Estado da Licença</h3>
-                        <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
-                          <span className="text-slate-400">Estado:</span>
-                          <span className="text-emerald-400 font-bold">
-                            {cafeteria.isVitalicio ? '✓ Ativa (Vitalícia Admin)' : `✓ Ativa (${calcularDiasRestantes(cafeteria.dataExpiracao)} dias restantes)`}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">
-                            📱 QR Code Mesas
-                          </button>
-                          {!cafeteria.isVitalicio && (
-                            <button onClick={abrirPagamento} className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
-                              💳 Renovar
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {(activeView === 'staff_panel' || (activeView === 'staff_login' && isStaffLogged)) && isStaffLogged && (
-              <div className="max-w-6xl mx-auto p-4 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4 flex-wrap gap-2">
-                  <div>
-                    <h2 className="text-xl font-bold">Balcão & Cozinha - {cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">Modo operacional ativo</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">
-                      📱 QR Code Mesas
-                    </button>
-                    <button onClick={() => setModalProduto({ open: true, data: null })} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg">
-                      + Adicionar Item
-                    </button>
-                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">
-                      Sair do Balcão
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Pedidos Pendentes ({pedidos.length})</h3>
-                    {pedidos.length === 0 ? (
-                      <div className="bg-slate-800/60 p-6 rounded-xl text-center text-xs text-slate-400 border border-slate-700/60">
-                        Sem pedidos pendentes de momento.
-                      </div>
-                    ) : (
-                      pedidos.map(p => (
-                        <div key={p.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 shadow-md">
-                          <div className="flex justify-between font-bold text-xs border-b border-slate-700 pb-2">
-                            <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Mesa {p.mesa}</span>
-                            <span className="text-slate-400 font-mono">{p.hora}</span>
-                            <span className="text-amber-400 font-mono text-sm">{parseFloat(p.total).toFixed(2)}€</span>
-                          </div>
-                          <div className="text-xs text-slate-300 space-y-1">
-                            {p.itens.map((it, idx) => (
-                              <div key={idx} className="flex justify-between">
-                                <span>{it.qtd}x {it.nome}</span>
-                                <span className="text-slate-400">{(it.preco * it.qtd).toFixed(2)}€</span>
-                              </div>
-                            ))}
-                          </div>
-                          <button onClick={() => atualizarStatusPedido(p.id, p.status)} className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">
-                            {p.status === 'pendente' ? 'Iniciar Preparação' : '✓ Concluir / Marcar Entregue'}
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Ementa Ativa ({produtos.length} itens)</h3>
-                    {produtos.map(p => (
-                      <div key={p.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
-                        <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-900 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white truncate">{p.nome}</p>
-                          <p className="text-amber-400 font-bold font-mono">{parseFloat(p.preco).toFixed(2)}€</p>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <button onClick={() => toggleDisponibilidadeProduto(p.id, p.disponivel)} className={`px-2 py-1 rounded text-[10px] font-bold ${p.disponivel ? 'bg-slate-700 text-slate-300' : 'bg-amber-500/20 text-amber-400'}`}>
-                            {p.disponivel ? 'Pausar' : 'Ativar'}
-                          </button>
-                          <button onClick={() => handleRemoverProduto(p.id)} className="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold">
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'staff_login' && !isStaffLogged && (
-              <div className="max-w-md mx-auto my-12 p-6 sm:p-8 bg-slate-800 border border-slate-700 rounded-3xl text-center space-y-6 shadow-2xl">
-                <div className="inline-flex items-center justify-center p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl mb-1">
-                  <span className="text-2xl">🔑</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Acesso Operacional por PIN</h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.
-                  </p>
-                </div>
-
-                <form onSubmit={handleLoginStaff} className="space-y-4">
-                  <div>
-                    <input 
-                      type="password" 
-                      maxLength={6} 
-                      placeholder="••••••" 
-                      value={pinInput} 
-                      onChange={e => setPinInput(e.target.value)} 
-                      className="w-full text-center text-3xl font-mono tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400 focus:outline-none focus:border-amber-500 shadow-inner" 
-                      autoFocus
-                    />
-                    <p className="text-[11px] text-slate-500 mt-2">O PIN é gerado pelo proprietário no Painel de Gestão.</p>
-                  </div>
-
-                  {pinError && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">
-                      {pinError}
-                    </div>
-                  )}
-
-                  <button 
-                    type="submit" 
-                    disabled={loadingPin} 
-                    className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/10"
-                  >
-                    {loadingPin ? 'A validar PIN...' : 'Entrar no Balcão & Cozinha'}
-                  </button>
-                </form>
-
-                <div className="pt-2 border-t border-slate-700/60 flex justify-between items-center text-xs">
-                  <button onClick={() => setActiveView('landing')} className="text-slate-400 hover:text-white transition">
-                    ← Voltar
-                  </button>
-                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="text-amber-400 hover:underline font-semibold">
-                    É o proprietário? Faça login
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'customer' && (
-              <div className="max-w-md mx-auto p-4 space-y-4 pb-28">
-                <div className="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 text-xs flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-white text-sm">{cafeteria.nome}</h3>
-                    <p className="text-amber-400 font-bold mt-0.5">Mesa / Posição: {selectedMesaCliente}</p>
-                  </div>
-                  {!isClientAccessFromQr && (
-                    <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-slate-800 text-amber-400 font-bold rounded-lg px-2 py-1 text-xs border border-slate-700">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
-                    </select>
-                  )}
-                </div>
-
-                {pedidoEnviado && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl text-center">
-                    <p className="font-bold text-sm">Pedido enviado para a cozinha!</p>
-                    <p className="text-xs text-emerald-300/80 mt-1">Aguarde na Mesa {selectedMesaCliente}.</p>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {produtosFiltrados.filter(p => p.disponivel).map(prod => (
-                    <div key={prod.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-3">
-                      <img src={prod.imagem} alt={prod.nome} className="w-16 h-16 rounded-lg object-cover bg-slate-800 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-white truncate">{prod.nome}</h4>
-                        <p className="text-xs text-slate-400 line-clamp-1">{prod.descricao}</p>
-                        <p className="text-xs font-bold text-amber-400 mt-1 font-mono">{parseFloat(prod.preco).toFixed(2)}€</p>
-                      </div>
-                      <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">+ Pedir</button>
-                    </div>
-                  ))}
-                </div>
-
-                {carrinho.length > 0 && (
-                  <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-slate-900/95 border-t border-slate-800 flex justify-between items-center z-40">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Total</p>
-                      <p className="text-amber-400 font-bold font-mono text-base">{carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0).toFixed(2)}€</p>
-                    </div>
-                    <button onClick={enviarPedidoCliente} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs transition">
-                      Enviar Pedido (Mesa {selectedMesaCliente})
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {devModalOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white text-center">🔐 Ativação Vitalícia de Administrador</h3>
-                  <p className="text-xs text-slate-400 text-center">
-                    Introduza o PIN mestre para libertar o acesso ilimitado e sem vencimento para esta conta.
-                  </p>
-                  <form onSubmit={handleDevBypass} className="space-y-3">
-                    <input 
-                      type="password" 
-                      placeholder="PIN Secreto" 
-                      value={devPinInput} 
-                      onChange={e => setDevPinInput(e.target.value)} 
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-amber-500" 
-                      autoFocus
-                    />
-                    {devError && (
-                      <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>
-                    )}
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setDevModalOpen(false)} className="flex-1 py-2 bg-slate-700 text-xs rounded-xl font-bold">Cancelar</button>
-                      <button type="submit" className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl">Ativar Vitalício</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {confirmarNovoPinOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
-                  <h3 className="text-lg font-bold text-white">Gerar novo PIN?</h3>
-                  <p className="text-xs text-slate-400">
-                    O PIN atual (<span className="font-mono text-amber-400">{cafeteria.pinEquipe}</span>) será substituído por um novo código de 6 dígitos.
-                    Toda a equipa terá de usar o novo PIN para aceder ao balcão.
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={cancelarNovoPin} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">
-                      Não mudar
-                    </button>
-                    <button onClick={confirmarGerarNovoPin} disabled={gerandoPin} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs hover:bg-amber-400 transition">
-                      {gerandoPin ? 'A gerar...' : 'Mudar PIN'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {modalQrOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">📱 QR Code da Mesa</h3>
-                    <button onClick={() => setModalQrOpen(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-bold text-slate-300 block mb-1">Mesa ou Posição:</label>
-                      <input 
-                        type="text" 
-                        value={mesaQr} 
-                        onChange={(e) => setMesaQr(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-
-                    <div id="print-qr-section" className="flex justify-center py-2">
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center text-slate-900 space-y-2 max-w-xs w-full">
-                        <div className="text-lg font-black">{cafeteria.nome}</div>
-                        <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR Code" className="w-44 h-44 rounded-lg mx-auto" />
-                        <p className="text-xs font-bold text-amber-600">MESA {mesaQr}</p>
-                        <p className="text-[10px] text-slate-500">Aponte a câmara do telemóvel para fazer o pedido.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button onClick={copiarLinkCardapio} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs">
-                        {linkCopiado ? '✓ Link Copiado' : 'Copiar Link'}
-                      </button>
-                      <button onClick={() => window.print()} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs">
-                        🖨️ Imprimir Placa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {modalProduto.open && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white">
-                    {modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}
-                  </h3>
-                  <form onSubmit={handleSalvarProduto} className="space-y-3">
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome do Produto</label>
-                      <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Ex: Espresso Duplo" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Preço (€)</label>
-                      <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
-                      <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
-                        {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Descrição</label>
-                      <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado 100% Arábica" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">URL da Imagem</label>
-                      <input type="url" name="imagem" defaultValue={modalProduto.data?.imagem || ''} placeholder="https://..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-700">
-                      <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
-                      <button type="submit" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg">Guardar</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</body>
-</html>
-```
-    </script>
