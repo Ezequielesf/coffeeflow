@@ -284,19 +284,23 @@
         }
       },
 
-      atualizarStatusPedido: async (id, status) => {
+      atualizarStatusPedido: async (id, status, cafeteriaId) => {
         try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${id}`, {
+          const res = await fetch('/api/staff-pedido', {
             method: 'PATCH',
             headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ status })
+            body: JSON.stringify({
+              pedidoId: id,
+              status,
+              cafeteriaId
+            })
           });
+
           return res.ok;
         } catch (err) {
+          console.error('Erro ao atualizar status do pedido:', err);
           return false;
         }
       }
@@ -851,7 +855,7 @@
 
       const atualizarStatusPedido = async (id, statusAtual) => {
         const novoStatus = statusAtual === 'pendente' ? 'em_preparo' : 'entregue';
-        await supabaseService.atualizarStatusPedido(id, novoStatus);
+        await supabaseService.atualizarStatusPedido(id, novoStatus, cafeteria.id);
         carregarDadosDoBanco();
       };
 
