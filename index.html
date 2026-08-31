@@ -56,13 +56,22 @@
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
     const getUrlParams = () => {
+      const pathSegments = window.location.pathname.split('/').filter(Boolean);
+      const menuIndex = pathSegments.indexOf('menu');
+      let cafeteriaIdFromPath = null;
+      let mesaNumFromPath = '1';
+
+      if (menuIndex !== -1 && pathSegments[menuIndex + 1]) {
+        cafeteriaIdFromPath = pathSegments[menuIndex + 1];
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       const hashString = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
       const hashParams = new URLSearchParams(hashString);
 
       return {
-        cafeteriaId: searchParams.get('cafeteria'),
-        mesaNum: searchParams.get('mesa') || '1',
+        cafeteriaId: cafeteriaIdFromPath || searchParams.get('cafeteria'),
+        mesaNum: mesaNumFromPath || searchParams.get('mesa') || '1',
         resetQuery: searchParams.get('reset') === 'true',
         accessToken: hashParams.get('access_token') || searchParams.get('access_token'),
         refreshToken: hashParams.get('refresh_token') || searchParams.get('refresh_token'),
@@ -430,7 +439,7 @@
       const [termoPesquisa, setTermoPesquisa] = useState('');
       const [modalProduto, setModalProduto] = useState({ open: false, data: null });
 
-      const [mesaQr, setMesaQr] = useState(urlInfo.mesaNum || '01');
+      const [mesaQr, setMesaQr] = useState('01');
       const [linkCopiado, setLinkCopiado] = useState(false);
       const [modalQrOpen, setModalQrOpen] = useState(false);
 
@@ -594,8 +603,8 @@
       }, [isStaffLogged, cafeteria.id]);
 
       const getUrlCardapioMesa = (numMesa) => {
-        const baseUrl = window.location.origin + window.location.pathname;
-        return `${baseUrl}?cafeteria=${encodeURIComponent(cafeteria.id)}&mesa=${encodeURIComponent(numMesa)}`;
+        const origin = window.location.origin;
+        return `${origin}/menu/${encodeURIComponent(cafeteria.id)}`;
       };
 
       const linkAtualCardapio = getUrlCardapioMesa(mesaQr);
@@ -884,9 +893,6 @@
                   >
                     Acesso Equipa (PIN)
                   </button>
-                  <button onClick={() => setActiveView('customer')} className="px-3 py-1 bg-slate-800 text-slate-200 border border-slate-700 rounded-lg font-bold hover:bg-slate-700 transition">
-                    Ver Ementa
-                  </button>
                 </div>
               )}
             </header>
@@ -1122,11 +1128,9 @@
                     <h3 className="font-bold text-white text-sm">{cafeteria.nome}</h3>
                     <p className="text-amber-400 font-bold mt-0.5">Mesa / Posição: {selectedMesaCliente}</p>
                   </div>
-                  {!isClientAccessFromQr && (
-                    <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-slate-800 text-amber-400 font-bold rounded-lg px-2 py-1 text-xs border border-slate-700">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
-                    </select>
-                  )}
+                  <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-slate-800 text-amber-400 font-bold rounded-lg px-2 py-1 text-xs border border-slate-700">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
+                  </select>
                 </div>
 
                 {pedidoEnviado && (
