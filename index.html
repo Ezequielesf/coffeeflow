@@ -316,23 +316,65 @@
 
       signUp: async (email, password, nomeCafeteria) => {
         const cleanEmail = email.trim().toLowerCase();
-        const jaExisteCafetaria = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
+
+        const jaExisteCafetaria =
+          await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
+
         if (jaExisteCafetaria) {
-          throw new Error('Este e-mail já está registado na plataforma. Por favor, faça login ou recupere a palavra-passe.');
+          throw new Error(
+            'Este e-mail já está registado na plataforma. Por favor, faça login ou recupere a palavra-passe.'
+          );
         }
 
-        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) throw new Error(error.message || 'Erro ao criar conta.');
+        const { data, error } = await supabaseClient.auth.signUp({
+          email: cleanEmail,
+          password
+        });
 
-        if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-          throw new Error('Este e-mail já possui uma conta ativa. Escolha a opção Login.');
+        if (error) {
+          throw new Error(error.message || 'Erro ao criar conta.');
+        }
+
+        if (
+          data?.user &&
+          Array.isArray(data.user.identities) &&
+          data.user.identities.length === 0
+        ) {
+          throw new Error(
+            'Este e-mail já possui uma conta ativa. Escolha a opção Login.'
+          );
+        }
+
+        /*
+         * Se o Supabase exigir confirmação de e-mail,
+         * o usuário ainda não possui uma sessão autenticada.
+         *
+         * Nesse caso NÃO tentamos criar a cafeteria,
+         * pois o RLS corretamente bloquearia a operação.
+         */
+        if (!data?.session) {
+          return {
+            authData: data,
+            cafeteria: null,
+            precisaConfirmarEmail: true
+          };
         }
 
         const pinUnico = gerarPinAleatorio();
-        const userId = data?.user?.id || null;
-        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
+        const userId = data.user?.id || null;
 
-        return { authData: data, cafeteria: cafeteriaSalva };
+        const cafeteriaSalva = await supabaseService.criarCafeteria(
+          userId,
+          cleanEmail,
+          nomeCafeteria,
+          pinUnico
+        );
+
+        return {
+          authData: data,
+          cafeteria: cafeteriaSalva,
+          precisaConfirmarEmail: false
+        };
       },
 
       recuperarSenha: async (email) => {
@@ -667,8 +709,24 @@
             });
             setActiveView('admin');
           } else {
-            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput);
+            const resultadoCadastro = await authService.signUp(
+              adminEmailInput,
+              adminPasswordInput,
+              nomeCafeteriaInput
+            );
+
+            if (resultadoCadastro.precisaConfirmarEmail) {
+              setAdminAuthSuccess(
+                'Conta criada! Verifique seu e-mail para confirmar a conta. Depois volte aqui e faça login.'
+              );
+              setAdminAuthMode('login');
+              return;
+            }
+
+            const novaCaf = resultadoCadastro.cafeteria;
+
             setIsLoggedInAdmin(true);
+
             setCafeteria({
               id: novaCaf.id,
               nome: novaCaf.nome,
@@ -679,6 +737,7 @@
               dataExpiracao: novaCaf.data_expiracao || null,
               isVitalicio: false
             });
+
             setActiveView('admin');
           }
         } catch (err) {
