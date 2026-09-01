@@ -138,7 +138,7 @@
           const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
 
           const payload = {
-            nome: nome || 'A Minha Cafetaria',
+            nome: nome || 'CoffeeFlow',
             pin_equipe: pin || gerarPinAleatorio(),
             email: cleanEmail,
             dono_email: cleanEmail,
@@ -398,7 +398,7 @@
         }
         return { 
           id: urlInfo.cafeteriaId || 'caf_demo_01', 
-          nome: 'CoffeeFlow Central', 
+          nome: 'CoffeeFlow', 
           pinEquipe: '123456', 
           planoAtivo: true, 
           donoEmail: '', 
@@ -652,7 +652,7 @@
                 
             if (!dadosCaf) {
               const { data: { user } } = await supabaseClient.auth.getUser();
-              dadosCaf = await supabaseService.criarCafeteria(user?.id, adminEmailInput, nomeCafeteriaInput || 'A Minha Cafetaria', gerarPinAleatorio());
+              dadosCaf = await supabaseService.criarCafeteria(user?.id, adminEmailInput, nomeCafeteriaInput || 'CoffeeFlow', gerarPinAleatorio());
             }
 
             const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
@@ -670,7 +670,7 @@
             });
             setActiveView('admin');
           } else {
-            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput);
+            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
             setIsLoggedInAdmin(true);
             setCafeteria({
               id: novaCaf.id,
@@ -934,7 +934,7 @@
                   {adminAuthMode === 'register' && (
                     <div>
                       <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
-                      <input type="text" placeholder="Ex: Central Coffee" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                      <input type="text" placeholder="Ex: CoffeeFlow" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
                     </div>
                   )}
 
