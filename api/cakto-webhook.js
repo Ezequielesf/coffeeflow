@@ -126,7 +126,8 @@ export default async function handler(req, res) {
     // EVENTO IGNORADO
     // ==========================================
 
-    return res.status(200).json({
+        return res.status(200).json({ success: true });
+
       ok: true,
       ignorado: evento
     });
