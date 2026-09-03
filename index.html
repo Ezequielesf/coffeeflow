@@ -189,6 +189,49 @@
         }
       },
 
+      atualizarEmailCafeteria: async (cafeteriaId, novoEmail) => {
+        if (!cafeteriaId || !novoEmail) return false;
+        try {
+          const cleanEmail = novoEmail.trim().toLowerCase();
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: cleanEmail, dono_email: cleanEmail })
+          });
+          return res.ok;
+        } catch (err) {
+          return false;
+        }
+      },
+
+      deletarCafeteriaCompleta: async (cafeteriaId) => {
+        if (!cafeteriaId) return false;
+        try {
+          await fetch(`${API_URL}/rest/v1/produtos?cafeteria_id=eq.${cafeteriaId}`, {
+            method: 'DELETE',
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+
+          await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${cafeteriaId}`, {
+            method: 'DELETE',
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
+            method: 'DELETE',
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+
+          return res.ok;
+        } catch (err) {
+          return false;
+        }
+      },
+
       atualizarPlanoVitalicio: async (cafeteriaId) => {
         if (!cafeteriaId) return false;
         try {
@@ -363,6 +406,12 @@
       const [resetPasswordError, setResetPasswordError] = useState('');
       const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
       const [loadingResetPassword, setLoadingResetPassword] = useState(false);
+
+      const [novoEmailInput, setNovoEmailInput] = useState('');
+      const [emailEditando, setEmailEditando] = useState(false);
+
+      const [confirmarExclusaoModal, setConfirmarExclusaoModal] = useState(false);
+      const [eliminandoConta, setEliminandoConta] = useState(false);
 
       useEffect(() => {
         const trocarSessao = async () => {
@@ -634,6 +683,42 @@
       };
 
       const cancelarNovoPin = () => setConfirmarNovoPinOpen(false);
+
+      const alterarEmailDaCafeteria = async (e) => {
+        e.preventDefault();
+        if (!novoEmailInput) return;
+        const ok = await supabaseService.atualizarEmailCafeteria(cafeteria.id, novoEmailInput);
+        if (ok) {
+          setCafeteria(prev => ({ ...prev, donoEmail: novoEmailInput.trim().toLowerCase() }));
+          setNotificacao('E-mail da cafeteria atualizado com sucesso!');
+          setNovoEmailInput('');
+          setEmailEditando(false);
+          setTimeout(() => setNotificacao(''), 4000);
+        } else {
+          setNotificacao('Erro ao atualizar o e-mail.');
+          setTimeout(() => setNotificacao(''), 4000);
+        }
+      };
+
+      const executarExclusaoConta = async () => {
+        setEliminandoConta(true);
+        const ok = await supabaseService.deletarCafeteriaCompleta(cafeteria.id);
+        if (ok) {
+          await supabaseClient.auth.signOut();
+          localStorage.removeItem('coffeeflow_cafeteria');
+          localStorage.removeItem('coffeeflow_staff_session');
+          setIsLoggedInAdmin(false);
+          setIsStaffLogged(false);
+          setConfirmarExclusaoModal(false);
+          setActiveView('landing');
+          setNotificacao('Conta e dados eliminados com sucesso.');
+          setTimeout(() => setNotificacao(''), 5000);
+        } else {
+          setNotificacao('Erro ao eliminar a conta.');
+          setTimeout(() => setNotificacao(''), 4000);
+        }
+        setEliminandoConta(false);
+      };
 
       const handleAdminAuth = async (e) => {
         e.preventDefault();
@@ -1023,6 +1108,40 @@
                         </div>
                       </div>
                     </div>
+
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                      <h3 className="font-bold text-lg">Definições da Conta e Acesso</h3>
+                      <p className="text-xs text-slate-400">Altere o e-mail de acesso exclusivo para esta cafeteria ou elimine a conta permanentemente.</p>
+                      
+                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+                        <div className="flex justify-between items-center text-xs">
+                          <div>
+                            <span className="text-slate-400 block">E-mail atual da Cafetaria:</span>
+                            <span className="font-bold text-white text-sm">{cafeteria.donoEmail || 'Não definido'}</span>
+                          </div>
+                          <button onClick={() => setEmailEditando(!emailEditando)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg font-bold text-amber-400">
+                            {emailEditando ? 'Cancelar' : 'Alterar E-mail'}
+                          </button>
+                        </div>
+
+                        {emailEditando && (
+                          <form onSubmit={alterarEmailDaCafeteria} className="pt-2 border-t border-slate-800 flex gap-2">
+                            <input type="email" placeholder="Novo e-mail de acesso" value={novoEmailInput} onChange={e => setNovoEmailInput(e.target.value)} required className="flex-1 p-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
+                            <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs">Salvar</button>
+                          </form>
+                        )}
+                      </div>
+
+                      <div className="pt-2 flex justify-between items-center border-t border-slate-700/60">
+                        <div>
+                          <p className="text-xs font-bold text-rose-400">Zona de Perigo</p>
+                          <p className="text-[11px] text-slate-400">Apagar permanentemente todos os dados e acesso desta cafeteria.</p>
+                        </div>
+                        <button onClick={() => setConfirmarExclusaoModal(true)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/40 rounded-xl text-xs font-bold transition">
+                          Excluir Conta
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1168,6 +1287,24 @@
               </div>
             )}
 
+            {confirmarExclusaoModal && (
+              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
+                  <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
+                  <h3 className="text-lg font-bold text-white">Tem a certeza?</h3>
+                  <p className="text-xs text-slate-300">
+                    Esta ação é irreversível. Todos os dados, produtos, pedidos e acessos associados a esta cafeteria serão eliminados permanentemente.
+                  </p>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={() => setConfirmarExclusaoModal(false)} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">Cancelar</button>
+                    <button onClick={executarExclusaoConta} disabled={eliminandoConta} className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs transition">
+                      {eliminandoConta ? 'A eliminar...' : 'Excluir Conta'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {devModalOpen && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
@@ -1280,3 +1417,4 @@
   </script>
 </body>
 </html>
+
