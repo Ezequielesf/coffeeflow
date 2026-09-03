@@ -12,37 +12,43 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const evento = req.body;
-  
-  // 1. Validar estrutura básica do evento da Cakto
-  const eventId = evento?.id || evento?.event_id || evento?.transaction_id;
-  const statusPagamento = evento?.status || evento?.event;
-  const customerEmail = (evento?.customer?.email || evento?.email || '').trim().toLowerCase();
-
-  if (!eventId || !customerEmail) {
-    return res.status(400).json({ error: 'Payload inválido: faltando eventId ou customerEmail' });
-  }
-
   try {
-    // 2. Garantir Idempotência (verificar se o evento já foi processado)
-    const { data: eventoExistente, error: erroBuscaEvento } = await supabaseAdmin
+    const evento = req.body || {};
+    
+    // Tenta extrair o ID do evento e o e-mail de vários locais possíveis do payload da Cakto
+    const eventId = evento.id || evento.event_id || evento.transaction_id || evento.data?.id || 'evt_' + Date.now();
+    const statusPagamento = evento.status || evento.event || evento.type || evento.data?.status || 'approved';
+    
+    const customerEmail = (
+      evento.customer?.email || 
+      evento.email || 
+      evento.client?.email || 
+      evento.data?.customer?.email || 
+      evento.data?.email || 
+      ''
+    ).trim().toLowerCase();
+
+    if (!customerEmail) {
+      console.warn('Webhook recebido sem e-mail do cliente:', JSON.stringify(evento));
+      return res.status(200).json({ status: 'ignored', message: 'E-mail do cliente não encontrado no payload.' });
+    }
+
+    // 1. Garantir Idempotência
+    const { data: eventoExistente } = await supabaseAdmin
       .from('webhooks_processados')
       .select('id')
-      .eq('event_id', eventId)
+      .eq('event_id', String(eventId))
       .maybeSingle();
-
-    if (erroBuscaEvento) {
-      console.error('Erro ao verificar idempotência:', erroBuscaEvento);
-    }
 
     if (eventoExistente) {
       return res.status(200).json({ status: 'ignored', message: 'Evento já processado anteriormente.' });
     }
 
-    // 3. Verificar eventos aprovados de pagamento
-    const eventosAprovados = ['purchase_approved', 'subscription_renewed', 'order.paid', 'approved'];
-    
-    if (eventosAprovados.includes(statusPagamento)) {
+    // 2. Considera aprovado se contiver termos de sucesso ou se for um teste manual da plataforma
+    const statusStr = String(statusPagamento).toLowerCase();
+    const eAprovado = statusStr.includes('approved') || statusStr.includes('paid') || statusStr.includes('renewed') || statusStr.includes('compra aprovada');
+
+    if (eAprovado) {
       // Buscar cafeteria pelo e-mail
       const { data: cafeteria, error: erroCafeteria } = await supabaseAdmin
         .from('cafeterias')
@@ -51,19 +57,18 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       if (erroCafeteria || !cafeteria) {
-        // Se a cafeteria não existir ainda, podemos registrar o webhook como pendente ou ignorar temporariamente
         console.warn(`Cafeteria não encontrada para o e-mail: ${customerEmail}`);
         return res.status(200).json({ status: 'warning', message: 'Cafeteria não localizada para este e-mail.' });
       }
 
-      // 4. Calcular Renovação Acumulativa (+30 Dias)
+      // 3. Calcular Renovação Acumulativa (+30 Dias)
       const agora = new Date();
       const expiracaoAtual = cafeteria.data_expiracao ? new Date(cafeteria.data_expiracao) : null;
       
       const base = (expiracaoAtual && expiracaoAtual > agora) ? expiracaoAtual : agora;
       const novaExpiracao = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      // 5. Atualizar Cafeteria
+      // 4. Atualizar Cafeteria
       const { error: erroUpdate } = await supabaseAdmin
         .from('cafeterias')
         .update({
@@ -75,38 +80,18 @@ export default async function handler(req, res) {
       if (erroUpdate) throw erroUpdate;
     }
 
-    // 6. Registra o evento como processado para garantir a idempotência
+    // 5. Registra o evento como processado
     await supabaseAdmin
       .from('webhooks_processados')
-      .insert([{ event_id: eventId, processado_em: new Date().toISOString() }]);
+      .insert([{ event_id: String(eventId), processado_em: new Date().toISOString() }])
+      .catch(() => {}); // ignora duplicata se houver concorrência
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error('Erro ao processar webhook da Cakto:', err);
-    return res.status(500).json({ error: 'Erro interno ao processar webhook' });
+    console.error('Erro crítico no webhook da Cakto:', err);
+    return res.status(500).json({ error: 'Erro interno ao processar webhook', details: err.message });
   }
 }
-          resposta.status,
-          texto
-        );
-
-        return res.status(500).json({
-          error: 'Erro ao atualizar cafeteria'
-        });
-      }
-
-      if (
-        !Array.isArray(atualizados) ||
-        atualizados.length === 0
-      ) {
-        return res.status(200).json({
-          ok: true,
-          aviso:
-            'Pagamento recebido, mas nenhuma cafeteria foi encontrada com esse e-mail.'
-        });
-      }
-
-      return res.status(200).json({
         ok: true,
         cafeteriaAtivada: emailNormalizado,
         dataExpiracao: dataExpiracao.toISOString()
