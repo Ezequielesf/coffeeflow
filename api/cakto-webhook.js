@@ -1,4 +1,3 @@
-// api/cakto-webhook.js
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -86,27 +85,12 @@ export default async function handler(req, res) {
       .insert([{ event_id: String(eventId), processado_em: new Date().toISOString() }])
       .catch(() => {}); // ignora duplicata se houver concorrência
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: ;});
   } catch (err) {
     console.error('Erro crítico no webhook da Cakto:', err);
     return res.status(500).json({ error: 'Erro interno ao processar webhook', details: err.message });
   }
 }
-        ok: true,
-        cafeteriaAtivada: emailNormalizado,
-        dataExpiracao: dataExpiracao.toISOString()
-      });
-    }
-
-    // ==========================================
-    // REEMBOLSO / CHARGEBACK / CANCELAMENTO
-    // ==========================================
-
-    if (eventosQueRevogamAcesso.includes(evento)) {
-      const resposta = await fetch(
-        `${SUPABASE_URL}/rest/v1/cafeterias?email=eq.${encodeURIComponent(emailNormalizado)}`,
-        {
-          method: 'PATCH',
           headers: {
             'apikey': SUPABASE_SERVICE_ROLE_KEY,
             'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
