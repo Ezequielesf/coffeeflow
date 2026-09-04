@@ -12,22 +12,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const evento = req.body || {};
+    const payload = req.body || {};
+    const evento = payload.data || payload;
     
-    const eventId = evento.id || evento.event_id || evento.transaction_id || evento.data?.id || 'evt_' + Date.now();
-    const statusPagamento = evento.status || evento.event || evento.type || evento.data?.status || 'approved';
+    const eventId = evento.id || payload.id || evento.event_id || evento.transaction_id || 'evt_' + Date.now();
+    const statusPagamento = evento.status || payload.status || evento.event || evento.type || 'approved';
     
     const customerEmail = (
       evento.customer?.email || 
+      payload.customer?.email || 
       evento.email || 
+      payload.email || 
       evento.client?.email || 
-      evento.data?.customer?.email || 
-      evento.data?.email || 
+      payload.client?.email || 
       ''
     ).trim().toLowerCase();
 
     if (!customerEmail) {
-      console.warn('Webhook recebido sem e-mail do cliente:', JSON.stringify(evento));
+      console.warn('Webhook recebido sem e-mail do cliente:', JSON.stringify(payload));
       return res.status(200).json({ status: 'ignored', message: 'E-mail do cliente não encontrado no payload.' });
     }
 
