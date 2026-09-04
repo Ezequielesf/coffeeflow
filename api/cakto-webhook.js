@@ -12,18 +12,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Validação opcional do secret da Cakto, caso esteja configurado na Vercel
-    const webhookSecret = process.env.CAKTO_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const incomingSecret = req.headers['x-webhook-secret'] || req.headers['authorization'] || req.headers['x-sigur-signature'];
-      // Se a Cakto enviar o header e ele não bater com o secret (e não for um teste vazio), você pode barrar ou apenas registrar.
-      // Aqui deixamos flexível para aceitar caso o header venha correto ou ausente em testes manuais.
-      if (incomingSecret && incomingSecret !== webhookSecret && !incomingSecret.includes(webhookSecret)) {
-        console.warn('Tentativa de webhook com secret inválido.');
-      }
+    const payload = req.body || {};
+    
+    // Validação correta do secret enviado pela Cakto no corpo JSON (se configurado na Vercel)
+    const expectedSecret = process.env.CAKTO_WEBHOOK_SECRET;
+    if (expectedSecret && payload.secret && payload.secret !== expectedSecret) {
+      console.warn('Tentativa de webhook com secret incorreto.');
+      return.status(200).json({ received: true, warning: 'Secret inválido' });
     }
 
-    const payload = req.body || {};
     const evento = payload.data || payload;
     
     const eventId = evento.id || payload.id || evento.event_id || evento.transaction_id || 'evt_' + Date.now();
@@ -55,7 +52,7 @@ export default async function handler(req, res) {
     }
 
     const statusStr = String(statusPagamento).toLowerCase();
-    const eAprovado = statusStr.includes('approved') || statusStr.includes('paid') || statusStr.includes('renewed') || statusStr.includes('compra aprovada');
+    const eAprovado = statusStr.includes('approved') || statusStr.includes('paid') || statusStr.includes('renewed') || statusStr.includes('compra aprovada') || statusStr.includes('purchase_approved');
 
     if (eAprovado) {
       const { data: cafeteria, error: erroCafeteria } = await supabaseAdmin
