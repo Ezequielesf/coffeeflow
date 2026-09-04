@@ -8,6 +8,11 @@
   ],
   "routes": [
     {
+      "src": "/api/cakto-webhook",
+      "dest": "/api/cakto-webhook.js",
+      "methods": ["POST"]
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },
