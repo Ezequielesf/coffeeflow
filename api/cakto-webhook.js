@@ -49,98 +49,93 @@ export default async function handler(req, res) {
     }
 
     // ============================================================
-    // 3. IDENTIFICAR EVENTO
+    // 3. NORMALIZAR OBJETO DE DADOS (SUPORTA OBJETO OU ARRAY)
     // ============================================================
 
-    const evento = payload.data || payload;
-
-    console.log(
-      'EVENTO:',
-      JSON.stringify(evento, null, 2)
-    );
+    let dadosObj = payload.data;
+    if (Array.isArray(dadosObj)) {
+      dadosObj = dadosObj[0] || {};
+    } else if (!dadosObj || typeof dadosObj !== 'object') {
+      dadosObj = {};
+    }
 
     // ============================================================
-    // 4. EVENT ID
+    // 4. EVENT ID (COM MÚLTIPLOS FALLBACKS)
     // ============================================================
 
     const eventId =
-      evento.id ||
+      dadosObj.id ||
       payload.id ||
-      evento.event_id ||
+      dadosObj.event_id ||
       payload.event_id ||
-      evento.transaction_id ||
-      payload.transaction_id;
+      dadosObj.transaction_id ||
+      payload.transaction_id ||
+      dadosObj.uuid ||
+      payload.uuid;
 
     if (!eventId) {
-      console.warn(
-        'Webhook sem ID de evento.'
-      );
-
-      return res.status(400).json({
-        error: 'Event ID não encontrado'
+      console.warn('Webhook sem ID de evento. Ignorando para evitar crash.');
+      // Retorna 200 para a Cakto não ficar re-enviando loops de eventos de teste malformados
+      return res.status(200).json({
+        received: true,
+        success: false,
+        warning: 'Event ID não encontrado, mas ignorado com sucesso'
       });
     }
 
-    console.log(
-      'EVENT ID:',
-      String(eventId)
-    );
+    console.log('EVENT ID:', String(eventId));
 
     // ============================================================
-    // 5. STATUS
+    // 5. STATUS (COM MÚLTIPLOS FALLBACKS)
     // ============================================================
 
     const statusPagamento =
-      evento.status ||
+      dadosObj.status ||
       payload.status ||
-      evento.event ||
+      dadosObj.event ||
       payload.event ||
-      evento.type ||
+      dadosObj.type ||
       payload.type ||
+      dadosObj.action ||
+      payload.action ||
       '';
 
     const statusStr = String(statusPagamento)
       .trim()
       .toLowerCase();
 
-    console.log(
-      'STATUS ORIGINAL:',
-      statusPagamento
-    );
-
-    console.log(
-      'STATUS NORMALIZADO:',
-      statusStr
-    );
+    console.log('STATUS ORIGINAL:', statusPagamento);
+    console.log('STATUS NORMALIZADO:', statusStr);
 
     // ============================================================
-    // 6. EMAIL
+    // 6. EMAIL (COM MÚLTIPLOS FALLBACKS SEGUROS)
     // ============================================================
 
     const customerEmail = String(
-      evento.customer?.email ||
+      dadosObj.customer?.email ||
       payload.customer?.email ||
-      evento.client?.email ||
+      dadosObj.client?.email ||
       payload.client?.email ||
-      evento.email ||
+      dadosObj.buyer?.email ||
+      payload.buyer?.email ||
+      dadosObj.customer_email ||
+      payload.customer_email ||
+      dadosObj.email ||
       payload.email ||
       ''
     )
       .trim()
       .toLowerCase();
 
-    console.log(
-      'EMAIL ENCONTRADO:',
-      customerEmail
-    );
+    console.log('EMAIL ENCONTRADO:', customerEmail);
 
     if (!customerEmail) {
-      console.warn(
-        'Nenhum email encontrado no payload.'
-      );
+      console.warn('Nenhum email encontrado no payload (comum em testes manuais da plataforma).');
 
-      return res.status(400).json({
-        error: 'E-mail não encontrado'
+      return res.status(200).json({
+        received: true,
+        success: false,
+        warning: 'E-mail não encontrado no payload do evento'
       });
     }
 
@@ -148,9 +143,7 @@ export default async function handler(req, res) {
     // 7. VERIFICAR DUPLICIDADE
     // ============================================================
 
-    console.log(
-      'Verificando evento no Supabase...'
-    );
+    console.log('Verificando evento no Supabase...');
 
     const {
       data: eventoExistente,
@@ -162,18 +155,12 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (erroEventoExistente) {
-      console.error(
-        'ERRO SUPABASE - verificar evento:',
-        erroEventoExistente
-      );
-
+      console.error('ERRO SUPABASE - verificar evento:', erroEventoExistente);
       throw erroEventoExistente;
     }
 
     if (eventoExistente) {
-      console.log(
-        'Evento já processado.'
-      );
+      console.log('Evento já processado.');
 
       return res.status(200).json({
         received: true,
@@ -197,15 +184,10 @@ export default async function handler(req, res) {
       statusStr === 'success' ||
       statusStr === 'successful';
 
-    console.log(
-      'PAGAMENTO APROVADO:',
-      eAprovado
-    );
+    console.log('PAGAMENTO APROVADO:', eAprovado);
 
     if (!eAprovado) {
-      console.log(
-        'Pagamento não aprovado. Apenas registrando evento.'
-      );
+      console.log('Pagamento não aprovado. Apenas registrando evento.');
 
       const {
         error: erroRegistroNaoAprovado
@@ -219,11 +201,7 @@ export default async function handler(req, res) {
         ]);
 
       if (erroRegistroNaoAprovado) {
-        console.error(
-          'ERRO AO REGISTRAR EVENTO:',
-          erroRegistroNaoAprovado
-        );
-
+        console.error('ERRO AO REGISTRAR EVENTO:', erroRegistroNaoAprovado);
         throw erroRegistroNaoAprovado;
       }
 
@@ -238,10 +216,7 @@ export default async function handler(req, res) {
     // 9. BUSCAR CAFETERIA PELO EMAIL
     // ============================================================
 
-    console.log(
-      'Procurando cafeteria pelo email:',
-      customerEmail
-    );
+    console.log('Procurando cafeteria pelo email:', customerEmail);
 
     let cafeteria = null;
 
@@ -250,18 +225,12 @@ export default async function handler(req, res) {
       error: erroBuscaEmail
     } = await supabaseAdmin
       .from('cafeterias')
-      .select(
-        'id, email, "dono email", data_expiracao, plano_ativo'
-      )
+      .select('id, email, "dono email", data_expiracao, plano_ativo')
       .ilike('email', customerEmail)
       .maybeSingle();
 
     if (erroBuscaEmail) {
-      console.error(
-        'ERRO SUPABASE - busca por email:',
-        erroBuscaEmail
-      );
-
+      console.error('ERRO SUPABASE - busca por email:', erroBuscaEmail);
       throw erroBuscaEmail;
     }
 
@@ -272,27 +241,19 @@ export default async function handler(req, res) {
     // ============================================================
 
     if (!cafeteria) {
-      console.log(
-        'Não encontrado por email. Tentando "dono email"...'
-      );
+      console.log('Não encontrado por email. Tentando "dono email"...');
 
       const {
         data: cafeteriaPorDonoEmail,
         error: erroBuscaDonoEmail
       } = await supabaseAdmin
         .from('cafeterias')
-        .select(
-          'id, email, "dono email", data_expiracao, plano_ativo'
-        )
+        .select('id, email, "dono email", data_expiracao, plano_ativo')
         .ilike('"dono email"', customerEmail)
         .maybeSingle();
 
       if (erroBuscaDonoEmail) {
-        console.error(
-          'ERRO SUPABASE - busca por dono email:',
-          erroBuscaDonoEmail
-        );
-
+        console.error('ERRO SUPABASE - busca por dono email:', erroBuscaDonoEmail);
         throw erroBuscaDonoEmail;
       }
 
@@ -304,10 +265,7 @@ export default async function handler(req, res) {
     // ============================================================
 
     if (!cafeteria) {
-      console.warn(
-        'CAFETERIA NÃO ENCONTRADA:',
-        customerEmail
-      );
+      console.warn('CAFETERIA NÃO ENCONTRADA:', customerEmail);
 
       return res.status(200).json({
         received: true,
@@ -316,10 +274,7 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log(
-      'CAFETERIA ENCONTRADA:',
-      JSON.stringify(cafeteria, null, 2)
-    );
+    console.log('CAFETERIA ENCONTRADA:', JSON.stringify(cafeteria, null, 2));
 
     // ============================================================
     // 12. CALCULAR EXPIRAÇÃO
@@ -348,18 +303,13 @@ export default async function handler(req, res) {
       30 * 24 * 60 * 60 * 1000
     );
 
-    console.log(
-      'NOVA EXPIRAÇÃO:',
-      novaExpiracao.toISOString()
-    );
+    console.log('NOVA EXPIRAÇÃO:', novaExpiracao.toISOString());
 
     // ============================================================
     // 13. ATIVAR PLANO
     // ============================================================
 
-    console.log(
-      'Atualizando cafeteria...'
-    );
+    console.log('Atualizando cafeteria...');
 
     const {
       data: cafeteriaAtualizada,
@@ -375,26 +325,17 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (erroUpdate) {
-      console.error(
-        'ERRO SUPABASE - atualizar cafeteria:',
-        erroUpdate
-      );
-
+      console.error('ERRO SUPABASE - atualizar cafeteria:', erroUpdate);
       throw erroUpdate;
     }
 
-    console.log(
-      'CAFETERIA ATUALIZADA:',
-      JSON.stringify(cafeteriaAtualizada, null, 2)
-    );
+    console.log('CAFETERIA ATUALIZADA:', JSON.stringify(cafeteriaAtualizada, null, 2));
 
     // ============================================================
     // 14. REGISTRAR EVENTO
     // ============================================================
 
-    console.log(
-      'Registrando webhook como processado...'
-    );
+    console.log('Registrando webhook como processado...');
 
     const {
       error: erroRegistro
@@ -408,17 +349,11 @@ export default async function handler(req, res) {
       ]);
 
     if (erroRegistro) {
-      console.error(
-        'ERRO SUPABASE - registrar webhook:',
-        erroRegistro
-      );
-
+      console.error('ERRO SUPABASE - registrar webhook:', erroRegistro);
       throw erroRegistro;
     }
 
-    console.log(
-      '========== WEBHOOK CONCLUÍDO COM SUCESSO =========='
-    );
+    console.log('========== WEBHOOK CONCLUÍDO COM SUCESSO ==========');
 
     return res.status(200).json({
       received: true,
@@ -429,20 +364,9 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-
-    console.error(
-      '========== ERRO CRÍTICO CAKTO =========='
-    );
-
-    console.error(
-      'Mensagem:',
-      err?.message
-    );
-
-    console.error(
-      'Erro completo:',
-      err
-    );
+    console.error('========== ERRO CRÍTICO CAKTO ==========');
+    console.error('Mensagem:', err?.message);
+    console.error('Erro completo:', err);
 
     return res.status(500).json({
       error: 'Erro interno',
@@ -450,3 +374,4 @@ export default async function handler(req, res) {
     });
   }
 }
+
