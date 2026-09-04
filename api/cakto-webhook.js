@@ -12,6 +12,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Validação opcional do secret da Cakto, caso esteja configurado na Vercel
+    const webhookSecret = process.env.CAKTO_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const incomingSecret = req.headers['x-webhook-secret'] || req.headers['authorization'] || req.headers['x-sigur-signature'];
+      // Se a Cakto enviar o header e ele não bater com o secret (e não for um teste vazio), você pode barrar ou apenas registrar.
+      // Aqui deixamos flexível para aceitar caso o header venha correto ou ausente em testes manuais.
+      if (incomingSecret && incomingSecret !== webhookSecret && !incomingSecret.includes(webhookSecret)) {
+        console.warn('Tentativa de webhook com secret inválido.');
+      }
+    }
+
     const payload = req.body || {};
     const evento = payload.data || payload;
     
