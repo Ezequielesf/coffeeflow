@@ -30,7 +30,8 @@ export default async function handler(req, res) {
 
     if (!customerEmail) {
       console.warn('Webhook recebido sem e-mail do cliente:', JSON.stringify(payload));
-      return res.status(200).json({ status: 'ignored', message: 'E-mail do cliente não encontrado no payload.' });
+      // Retorna 200 para a Cakto não ficar retransmitindo o erro
+      return.status(200).json({ received: true, warning: 'E-mail não encontrado' });
     }
 
     const { data: eventoExistente } = await supabaseAdmin
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (eventoExistente) {
-      return res.status(200).json({ status: 'ignored', message: 'Evento já processado anteriormente.' });
+      return.status(200).json({ received: true, message: 'Evento já processado' });
     }
 
     const statusStr = String(statusPagamento).toLowerCase();
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
 
       if (erroCafeteria || !cafeteria) {
         console.warn(`Cafeteria não encontrada para o e-mail: ${customerEmail}`);
-        return res.status(200).json({ status: 'warning', message: 'Cafeteria não localizada para este e-mail.' });
+        return.status(200).json({ received: true, warning: 'Cafeteria não localizada' });
       }
 
       const agora = new Date();
@@ -80,9 +81,11 @@ export default async function handler(req, res) {
       .insert([{ event_id: String(eventId), processado_em: new Date().toISOString() }])
       .catch(() => {});
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ received: true, success: true });
   } catch (err) {
     console.error('Erro crítico no webhook da Cakto:', err);
-    return res.status(500).json({ error: 'Erro interno ao processar webhook', details: err.message });
+    // Retorna 200 com erro tratado ou 500 dependendo da criticidade, 
+    // mas se a Cakto der 422, garantir que o formato do JSON seja aceito é fundamental.
+    return res.status(500).json({ error: 'Erro interno', details: err.message });
   }
 }
