@@ -101,9 +101,9 @@
       },
 
       buscarCafeteriaPorUserId: async (userId) => {
-        try {
-          if (!userId) return null;
+        if (!userId) return null;
 
+        try {
           const res = await fetch(
             `${API_URL}/rest/v1/cafeterias?user_id=eq.${encodeURIComponent(userId)}&limit=1`,
             {
@@ -114,11 +114,13 @@
             }
           );
 
-          if (!res.ok) return null;
+          if (!res.ok) {
+            throw new Error('Erro ao buscar cafeteria pelo usuário.');
+          }
 
           const data = await res.json();
-
           return data?.[0] || null;
+
         } catch (err) {
           console.error('Erro ao buscar cafeteria por user_id:', err);
           return null;
@@ -265,30 +267,6 @@
                   error: error.message || 'Erro ao alterar o e-mail.'
               };
           }
-      },
-
-      deletarCafeteriaCompleta: async (cafeteriaId) => {
-        if (!cafeteriaId) return false;
-        try {
-          await fetch(`${API_URL}/rest/v1/produtos?cafeteria_id=eq.${cafeteriaId}`, {
-            method: 'DELETE',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-
-          await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${cafeteriaId}`, {
-            method: 'DELETE',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
-            method: 'DELETE',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
       },
 
       atualizarPlanoVitalicio: async (cafeteriaId) => {
