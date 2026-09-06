@@ -28,21 +28,20 @@ function send(res, status, body) {
 module.exports = async (req, res) => {
   if (req.method !== 'DELETE' && req.method !== 'POST') {
     res.setHeader('Allow', 'DELETE, POST');
+
     return send(res, 405, {
       error: 'Método não permitido.'
     });
   }
 
   try {
-    // ==============================
-    // 1. VALIDAR TOKEN
-    // ==============================
+    // =========================================================
+    // 1. Pegar o token da sessão
+    // =========================================================
 
     const authorization = req.headers.authorization || '';
 
-    const match = authorization.match(
-      /^Bearer\s+(.+)$/i
-    );
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
 
     if (!match) {
       return send(res, 401, {
@@ -51,6 +50,10 @@ module.exports = async (req, res) => {
     }
 
     const accessToken = match[1];
+
+    // =========================================================
+    // 2. Validar o usuário no Supabase Auth
+    // =========================================================
 
     const {
       data: { user },
@@ -63,129 +66,54 @@ module.exports = async (req, res) => {
       });
     }
 
-    // ==============================
-    // 2. LOCALIZAR CAFETERIA DO USUÁRIO
-    // ==============================
+    // =========================================================
+    // 3. Apagar todos os dados da cafeteria
+    //    usando uma transação SQL
+    // =========================================================
 
-    const {
-      data: cafeteria,
-      error: cafeteriaError
-    } = await supabaseAdmin
-      .from('cafeterias')
-      .select('id, user_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (cafeteriaError) {
-      console.error(
-        'Erro ao localizar cafeteria:',
-        cafeteriaError
+    const { data: deleteResult, error: deleteDataError } =
+      await supabaseAdmin.rpc(
+        'excluir_dados_cafeteria',
+        {
+          p_user_id: user.id
+        }
       );
 
-      return send(res, 500, {
-        error: 'Não foi possível localizar a cafeteria.'
-      });
-    }
-
-    if (!cafeteria) {
-      return send(res, 404, {
-        error: 'Nenhuma cafeteria vinculada a esta conta.'
-      });
-    }
-
-    const cafeteriaId = cafeteria.id;
-
-    // ==============================
-    // 3. APAGAR PRODUTOS
-    // ==============================
-
-    const { error: produtosError } =
-      await supabaseAdmin
-        .from('produtos')
-        .delete()
-        .eq('cafeteria_id', cafeteriaId);
-
-    if (produtosError) {
+    if (deleteDataError) {
       console.error(
-        'Erro ao apagar produtos:',
-        produtosError
+        'Erro ao excluir dados da cafeteria:',
+        deleteDataError
       );
 
       return send(res, 500, {
         error:
-          'Não foi possível apagar os produtos da cafeteria.'
+          'Não foi possível excluir os dados da cafeteria.'
       });
     }
 
-    // ==============================
-    // 4. APAGAR PEDIDOS
-    // ==============================
-
-    const { error: pedidosError } =
-      await supabaseAdmin
-        .from('pedidos')
-        .delete()
-        .eq('cafeteria_id', cafeteriaId);
-
-    if (pedidosError) {
-      console.error(
-        'Erro ao apagar pedidos:',
-        pedidosError
-      );
-
-      return send(res, 500, {
-        error:
-          'Não foi possível apagar os pedidos da cafeteria.'
-      });
-    }
-
-    // ==============================
-    // 5. APAGAR CAFETERIA
-    // ==============================
-
-    const { error: deleteCafeteriaError } =
-      await supabaseAdmin
-        .from('cafeterias')
-        .delete()
-        .eq('id', cafeteriaId)
-        .eq('user_id', user.id);
-
-    if (deleteCafeteriaError) {
-      console.error(
-        'Erro ao apagar cafeteria:',
-        deleteCafeteriaError
-      );
-
-      return send(res, 500, {
-        error:
-          'Não foi possível apagar a cafeteria.'
-      });
-    }
-
-    // ==============================
-    // 6. APAGAR USUÁRIO DO AUTH
-    // ==============================
+    // =========================================================
+    // 4. Depois que os dados foram apagados com sucesso,
+    //    remover o usuário do Supabase Auth
+    // =========================================================
 
     const { error: deleteUserError } =
-      await supabaseAdmin.auth.admin.deleteUser(
-        user.id
-      );
+      await supabaseAdmin.auth.admin.deleteUser(user.id);
 
     if (deleteUserError) {
       console.error(
-        'Erro ao apagar usuário Auth:',
+        'Erro ao excluir usuário do Auth:',
         deleteUserError
       );
 
       return send(res, 500, {
         error:
-          'Os dados da cafeteria foram apagados, mas não foi possível remover o acesso de autenticação. Contate o suporte.'
+          'Os dados da cafeteria foram excluídos, mas não foi possível remover o acesso da conta. Entre em contato com o suporte.'
       });
     }
 
-    // ==============================
-    // 7. SUCESSO
-    // ==============================
+    // =========================================================
+    // 5. Sucesso
+    // =========================================================
 
     return send(res, 200, {
       ok: true,
