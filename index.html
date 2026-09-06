@@ -736,22 +736,60 @@
 
       const executarExclusaoConta = async () => {
         setEliminandoConta(true);
-        const ok = await supabaseService.deletarCafeteriaCompleta(cafeteria.id);
-        if (ok) {
+
+        try {
+          const {
+            data: { session },
+            error: sessionError
+          } = await supabaseClient.auth.getSession();
+
+          if (sessionError || !session?.access_token) {
+            throw new Error(
+              'Sua sessão expirou. Faça login novamente.'
+            );
+          }
+
+          const response = await fetch('/api/delete-account', {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(
+              result.error ||
+              'Não foi possível excluir sua conta.'
+            );
+          }
+
           await supabaseClient.auth.signOut();
-          localStorage.removeItem('coffeeflow_cafeteria');
-          localStorage.removeItem('coffeeflow_staff_session');
-          setIsLoggedInAdmin(false);
-          setIsStaffLogged(false);
+
           setConfirmarExclusaoModal(false);
-          setActiveView('landing');
-          setNotificacao('Conta e dados eliminados com sucesso.');
-          setTimeout(() => setNotificacao(''), 5000);
-        } else {
-          setNotificacao('Erro ao eliminar a conta.');
-          setTimeout(() => setNotificacao(''), 4000);
+
+          alert(
+            'Sua conta e todos os dados da cafeteria foram excluídos permanentemente.'
+          );
+
+          window.location.href = '/';
+
+        } catch (error) {
+          console.error(
+            'Erro ao excluir conta:',
+            error
+          );
+
+          alert(
+            error.message ||
+            'Ocorreu um erro ao excluir sua conta.'
+          );
+
+        } finally {
+          setEliminandoConta(false);
         }
-        setEliminandoConta(false);
       };
 
       const handleAdminAuth = async (e) => {
@@ -1451,4 +1489,3 @@
   </script>
 </body>
 </html>
-
