@@ -4,10 +4,13 @@ const supabaseUrl =
   process.env.SUPABASE_URL ||
   'https://tuecuhzmsyauzkdclrdv.supabase.co';
 
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseServiceKey) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY não configurada.');
+  throw new Error(
+    'SUPABASE_SERVICE_ROLE_KEY não configurada.'
+  );
 }
 
 const supabaseAdmin = createClient(
@@ -26,8 +29,12 @@ function send(res, status, body) {
 }
 
 module.exports = async (req, res) => {
-  if (req.method !== 'DELETE' && req.method !== 'POST') {
-    res.setHeader('Allow', 'DELETE, POST');
+  // =========================================================
+  // SOMENTE DELETE
+  // =========================================================
+
+  if (req.method !== 'DELETE') {
+    res.setHeader('Allow', 'DELETE');
 
     return send(res, 405, {
       error: 'Método não permitido.'
@@ -36,12 +43,14 @@ module.exports = async (req, res) => {
 
   try {
     // =========================================================
-    // 1. Pegar o token da sessão
+    // 1. PEGAR TOKEN DA SESSÃO
     // =========================================================
 
-    const authorization = req.headers.authorization || '';
+    const authorization =
+      req.headers.authorization || '';
 
-    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    const match =
+      authorization.match(/^Bearer\s+(.+)$/i);
 
     if (!match) {
       return send(res, 401, {
@@ -52,52 +61,85 @@ module.exports = async (req, res) => {
     const accessToken = match[1];
 
     // =========================================================
-    // 2. Validar o usuário no Supabase Auth
+    // 2. VALIDAR USUÁRIO NO SUPABASE AUTH
     // =========================================================
 
     const {
       data: { user },
       error: authError
-    } = await supabaseAdmin.auth.getUser(accessToken);
+    } = await supabaseAdmin.auth.getUser(
+      accessToken
+    );
 
     if (authError || !user) {
+      console.error(
+        'Erro ao validar sessão:',
+        authError
+      );
+
       return send(res, 401, {
-        error: 'Sessão inválida ou expirada.'
+        error:
+          authError?.message ||
+          'Sessão inválida ou expirada.',
+        code: authError?.code || null
       });
     }
 
+    console.log(
+      'Iniciando exclusão da conta:',
+      user.id
+    );
+
     // =========================================================
-    // 3. Apagar todos os dados da cafeteria
-    //    usando uma transação SQL
+    // 3. EXCLUIR DADOS DA CAFETERIA
     // =========================================================
 
-    const { data: deleteResult, error: deleteDataError } =
-      await supabaseAdmin.rpc(
-        'excluir_dados_cafeteria',
-        {
-          p_user_id: user.id
-        }
-      );
+    const {
+      data: deleteResult,
+      error: deleteDataError
+    } = await supabaseAdmin.rpc(
+      'excluir_dados_cafeteria',
+      {
+        p_user_id: user.id
+      }
+    );
 
     if (deleteDataError) {
       console.error(
-        'Erro ao excluir dados da cafeteria:',
+        'Erro no RPC excluir_dados_cafeteria:',
         deleteDataError
       );
 
       return send(res, 500, {
         error:
-          'Não foi possível excluir os dados da cafeteria.'
+          `Erro ao excluir os dados: ${
+            deleteDataError.message ||
+            'erro desconhecido'
+          }`,
+        code:
+          deleteDataError.code || null,
+        details:
+          deleteDataError.details || null,
+        hint:
+          deleteDataError.hint || null
       });
     }
 
+    console.log(
+      'Dados da cafeteria excluídos:',
+      deleteResult
+    );
+
     // =========================================================
-    // 4. Depois que os dados foram apagados com sucesso,
-    //    remover o usuário do Supabase Auth
+    // 4. EXCLUIR USUÁRIO DO SUPABASE AUTH
     // =========================================================
 
-    const { error: deleteUserError } =
-      await supabaseAdmin.auth.admin.deleteUser(user.id);
+    const {
+      error: deleteUserError
+    } =
+      await supabaseAdmin.auth.admin.deleteUser(
+        user.id
+      );
 
     if (deleteUserError) {
       console.error(
@@ -107,13 +149,26 @@ module.exports = async (req, res) => {
 
       return send(res, 500, {
         error:
-          'Os dados da cafeteria foram excluídos, mas não foi possível remover o acesso da conta. Entre em contato com o suporte.'
+          `Os dados da cafeteria foram excluídos, ` +
+          `mas ocorreu um erro ao remover a conta: ${
+            deleteUserError.message ||
+            'erro desconhecido'
+          }`,
+        code:
+          deleteUserError.code || null,
+        details:
+          deleteUserError.details || null
       });
     }
 
     // =========================================================
-    // 5. Sucesso
+    // 5. SUCESSO
     // =========================================================
+
+    console.log(
+      'Conta excluída completamente:',
+      user.id
+    );
 
     return send(res, 200, {
       ok: true,
@@ -122,13 +177,25 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
+    // =========================================================
+    // ERRO INESPERADO
+    // =========================================================
+
     console.error(
       'Erro inesperado em delete-account:',
       error
     );
 
     return send(res, 500, {
-      error: 'Erro interno ao excluir a conta.'
+      error:
+        error?.message ||
+        'Erro interno ao excluir a conta.',
+      code:
+        error?.code || null,
+      details:
+        error?.details || null,
+      hint:
+        error?.hint || null
     });
   }
 };
