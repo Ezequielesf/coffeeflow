@@ -189,57 +189,27 @@
         }
       },
 
-      atualizarEmailCafeteria: async (novoEmail) => {
-          try {
-              const email = novoEmail.trim().toLowerCase();
+      atualizarEmailCafeteria: async (cafeteriaId, novoEmail) => {
+        try {
+          const email = novoEmail.trim().toLowerCase();
+          if (!email) throw new Error('Informe um e-mail válido.');
 
-              if (!email) {
-                  throw new Error('Informe um e-mail válido.');
-              }
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${cafeteriaId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({ email: email, dono_email: email })
+          });
 
-              const { data: { session }, error: sessionError } =
-                  await supabaseClient.auth.getSession();
-
-              if (sessionError) {
-                  throw sessionError;
-              }
-
-              if (!session?.access_token) {
-                  throw new Error('Sua sessão expirou. Faça login novamente.');
-              }
-
-              const response = await fetch('/api/account-email', {
-                  method: 'PATCH',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${session.access_token}`
-                  },
-                  body: JSON.stringify({
-                      email
-                  })
-              });
-
-              const result = await response.json().catch(() => ({}));
-
-              if (!response.ok) {
-                  throw new Error(
-                      result.error || 'Não foi possível alterar o e-mail.'
-                  );
-              }
-
-              return {
-                  success: true,
-                  email: result.email
-              };
-
-          } catch (error) {
-              console.error('Erro ao alterar e-mail:', error);
-
-              return {
-                  success: false,
-                  error: error.message || 'Erro ao alterar o e-mail.'
-              };
-          }
+          if (!res.ok) throw new Error('Não foi possível atualizar o e-mail no banco de dados.');
+          return { success: true, email };
+        } catch (error) {
+          return { success: false, error: error.message || 'Erro ao alterar o e-mail.' };
+        }
       },
 
       deletarCafeteriaCompleta: async (cafeteriaId) => {
@@ -721,7 +691,7 @@
       const alterarEmailDaCafeteria = async (e) => {
         e.preventDefault();
         if (!novoEmailInput) return;
-        const res = await supabaseService.atualizarEmailCafeteria(novoEmailInput);
+        const res = await supabaseService.atualizarEmailCafeteria(cafeteria.id, novoEmailInput);
         if (res.success) {
           setCafeteria(prev => ({ ...prev, donoEmail: res.email || novoEmailInput.trim().toLowerCase() }));
           setNotificacao('E-mail da cafeteria atualizado com sucesso!');
@@ -738,32 +708,9 @@
         setEliminandoConta(true);
 
         try {
-          const {
-            data: { session },
-            error: sessionError
-          } = await supabaseClient.auth.getSession();
-
-          if (sessionError || !session?.access_token) {
-            throw new Error(
-              'Sua sessão expirou. Faça login novamente.'
-            );
-          }
-
-          const response = await fetch('/api/delete-account', {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          const result = await response.json().catch(() => ({}));
-
-          if (!response.ok) {
-            throw new Error(
-              result.error ||
-              'Não foi possível excluir sua conta.'
-            );
+          const sucesso = await supabaseService.deletarCafeteriaCompleta(cafeteria.id);
+          if (!sucesso) {
+            throw new Error('Não foi possível eliminar os dados da cafeteria.');
           }
 
           await supabaseClient.auth.signOut();
@@ -937,7 +884,7 @@
           nome: formData.get('nome'),
           preco: parseFloat(formData.get('preco')),
           categoria: formData.get('categoria'),
-          descricao: formData.get('descricao') || '',
+          descricao: formData.get('descricao'] || '',
           imagem: formData.get('imagem') || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60',
           disponivel: modalProduto.data ? modalProduto.data.disponivel : true
         };
@@ -1489,3 +1436,4 @@
   </script>
 </body>
 </html>
+
