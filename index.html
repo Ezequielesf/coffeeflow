@@ -100,6 +100,31 @@
         }
       },
 
+      buscarCafeteriaPorUserId: async (userId) => {
+        try {
+          if (!userId) return null;
+
+          const res = await fetch(
+            `${API_URL}/rest/v1/cafeterias?user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+            {
+              headers: {
+                'apikey': API_KEY,
+                'Authorization': `Bearer ${API_KEY}`
+              }
+            }
+          );
+
+          if (!res.ok) return null;
+
+          const data = await res.json();
+
+          return data?.[0] || null;
+        } catch (err) {
+          console.error('Erro ao buscar cafeteria por user_id:', err);
+          return null;
+        }
+      },
+
       buscarCafeteriaPorEmail: async (email) => {
         try {
           if (!email) return null;
@@ -624,8 +649,8 @@
         if (isClientAccessFromQr || isResetPassword) return;
 
         const processarSessaoAtiva = async (session) => {
-          if (session?.user?.email) {
-            const dadosCaf = await supabaseService.buscarCafeteriaPorEmail(session.user.email);
+          if (session?.user?.id) {
+            const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(session.user.id);
             if (dadosCaf) {
               const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
               setCafeteria({
@@ -804,12 +829,20 @@
             await authService.recuperarSenha(adminEmailInput);
             setAdminAuthSuccess('E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada.');
           } else if (adminAuthMode === 'login') {
-            await authService.login(adminEmailInput, adminPasswordInput);
-            let dadosCaf = await supabaseService.buscarCafeteriaPorEmail(adminEmailInput);
-                
+            const { user } = await authService.login(
+              adminEmailInput,
+              adminPasswordInput
+            );
+
+            const dadosCaf =
+              await supabaseService.buscarCafeteriaPorUserId(user.id);
+
             if (!dadosCaf) {
-              const { data: { user } } = await supabaseClient.auth.getUser();
-              dadosCaf = await supabaseService.criarCafeteria(user?.id, adminEmailInput, nomeCafeteriaInput || 'CoffeeFlow', gerarPinAleatorio());
+              await supabaseClient.auth.signOut();
+
+              throw new Error(
+                'Esta conta não possui uma cafeteria associada. A conta pode ter sido excluída.'
+              );
             }
 
             const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
