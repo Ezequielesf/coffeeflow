@@ -44,12 +44,12 @@
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    });
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
+  }
+});
 
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
 
