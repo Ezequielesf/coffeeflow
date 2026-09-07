@@ -404,13 +404,6 @@
           throw new Error('Preencha o e-mail e a palavra-passe.');
         }
 
-        /*
-         * Primeiro verificamos se já existe uma cafeteria vinculada
-         * a esse e-mail.
-         *
-         * Isso evita que o cadastro tente criar uma segunda cafeteria
-         * quando o usuário já possui uma conta no CoffeeFlow.
-         */
         const cafeteriaExistente =
           await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
 
@@ -420,9 +413,6 @@
           );
         }
 
-        /*
-         * Cria o usuário no Supabase Auth.
-         */
         const { data, error } =
           await supabaseClient.auth.signUp({
             email: cleanEmail,
@@ -435,10 +425,6 @@
           );
         }
 
-        /*
-         * O Supabase pode retornar um usuário sem identities
-         * quando o e-mail já pertence a uma conta.
-         */
         if (
           data?.user &&
           Array.isArray(data.user.identities) &&
@@ -457,14 +443,6 @@
           );
         }
 
-        /*
-         * Segurança adicional:
-         * verificamos novamente pelo user_id imediatamente antes
-         * de criar a cafeteria.
-         *
-         * Isso protege contra duplicação mesmo que o primeiro
-         * teste por e-mail não encontre nada.
-         */
         const cafeteriaPorUsuario =
           await supabaseService.buscarCafeteriaPorUserId(userId);
 
@@ -492,10 +470,6 @@
             error
           );
 
-          /*
-           * Trata especificamente a violação da constraint
-           * cafeterias_user_id_unique.
-           */
           const mensagem =
             error?.message || '';
 
@@ -609,8 +583,6 @@
                   'O link de recuperação é inválido ou expirou.'
                 );
               }
-            } else if (isResetPassword) {
-              setResetPasswordError('O link de recuperação é inválido ou expirou. Por favor solicite um novo.');
             }
 
             /*
@@ -648,8 +620,6 @@
               document.title,
               '/'
             );
-
-            setResetPasswordError('O link de recuperação é inválido ou expirou. Por favor solicite um novo.');
           }
         };
         if (isResetPassword) {
@@ -724,38 +694,60 @@
         setResetPasswordSuccess('');
 
         if (newPassword.length < 6) {
-          setResetPasswordError('A nova palavra-passe deve ter pelo menos 6 caracteres.');
+          alert('A palavra-passe deve ter pelo menos 6 caracteres.');
           return;
         }
 
         if (newPassword !== confirmNewPassword) {
-          setResetPasswordError('As palavras-passe não coincidem.');
+          alert('As palavras-passe não coincidem.');
           return;
         }
 
-        setLoadingResetPassword(true);
-
         try {
-          const { data: sessionData } = await supabaseClient.auth.getSession();
-          if (!sessionData?.session) {
-            throw new Error('Sessão de recuperação não encontrada. Solicite um novo link de redefinição.');
+          setLoadingResetPassword(true);
+
+          const { error } =
+            await supabaseClient.auth.updateUser({
+              password: newPassword
+            });
+
+          if (error) {
+            throw error;
           }
 
-          const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-          if (error) throw error;
+          /*
+           * A senha foi alterada com sucesso.
+           *
+           * Não queremos manter a sessão de recuperação.
+           */
+          await supabaseClient.auth.signOut();
 
-          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Redirecionando...');
-          setNewPassword('');
-          setConfirmNewPassword('');
+          /*
+           * Remove completamente os parâmetros do link.
+           */
+          window.history.replaceState(
+            {},
+            document.title,
+            '/'
+          );
 
-          setTimeout(() => {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            setIsResetPassword(false);
-            setAdminAuthMode('login');
-            setActiveView('admin_login');
-          }, 2000);
-        } catch (err) {
-          setResetPasswordError(err?.message || 'Não foi possível alterar a palavra-passe.');
+          alert(
+            'Palavra-passe alterada com sucesso! Agora faça login com a sua nova palavra-passe.'
+          );
+
+          window.location.href = '/';
+
+        } catch (error) {
+          console.error(
+            'Erro ao alterar palavra-passe:',
+            error
+          );
+
+          alert(
+            error.message ||
+            'Não foi possível alterar a palavra-passe.'
+          );
+
         } finally {
           setLoadingResetPassword(false);
         }
