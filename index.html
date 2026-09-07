@@ -537,16 +537,10 @@
       useEffect(() => {
         const trocarSessao = async () => {
           try {
-            /*
-             * O Supabase envia o link de recuperação com tokens
-             * na URL.
-             *
-             * Esses tokens devem ser usados somente para permitir
-             * a troca da palavra-passe.
-             *
-             * Não queremos que o usuário seja automaticamente
-             * tratado como logado depois do processo.
-             */
+            // Limpa sessão e dados locais antigos antes de processar o fluxo de recuperação
+            await supabaseClient.auth.signOut();
+            localStorage.removeItem('coffeeflow_cafeteria');
+            localStorage.removeItem('coffeeflow_staff_session');
 
             if (urlInfo.code) {
               const { data, error } =
@@ -1672,4 +1666,3 @@
   </script>
 </body>
 </html>
-
