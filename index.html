@@ -44,12 +44,12 @@
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false
-      }
-    });
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
+  }
+});
 
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
 
@@ -538,10 +538,15 @@
         const trocarSessao = async () => {
           try {
             /*
-             * Alteração 1: Ao entrar na página de recuperação, 
-             * encerrar qualquer sessão antiga antes de processar o link.
+             * O Supabase envia o link de recuperação com tokens
+             * na URL.
+             *
+             * Esses tokens devem ser usados somente para permitir
+             * a troca da palavra-passe.
+             *
+             * Não queremos que o usuário seja automaticamente
+             * tratado como logado depois do processo.
              */
-            await supabaseClient.auth.signOut();
 
             if (urlInfo.code) {
               const { data, error } =
@@ -582,6 +587,9 @@
 
             /*
              * Remove tokens da barra de endereço.
+             *
+             * Isso impede que o navegador reutilize o mesmo
+             * access_token/refresh_token ao recarregar a página.
              */
             if (
               urlInfo.accessToken ||
@@ -601,6 +609,10 @@
               error
             );
 
+            /*
+             * Limpa qualquer sessão que tenha sido criada
+             * durante o processamento de um link inválido.
+             */
             await supabaseClient.auth.signOut();
 
             window.history.replaceState(
@@ -703,14 +715,8 @@
             throw error;
           }
 
-          /*
-           * Alteração 2: Depois de alterar a senha, executar signOut().
-           */
           await supabaseClient.auth.signOut();
 
-          /*
-           * Alteração 3: Apagar coffeeflow_cafeteria e coffeeflow_staff_session antes de voltar ao login.
-           */
           localStorage.removeItem('coffeeflow_cafeteria');
           localStorage.removeItem('coffeeflow_staff_session');
 
@@ -720,11 +726,13 @@
             '/'
           );
 
-          alert(
-            'Palavra-passe alterada com sucesso! Agora faça login com a sua nova palavra-passe.'
-          );
+          setIsResetPassword(false);
+          setAdminAuthMode('login');
+          setActiveView('admin_login');
 
-          window.location.href = '/';
+          setResetPasswordSuccess(
+            'Palavra-passe alterada com sucesso! Agora faça login com a nova palavra-passe.'
+          );
 
         } catch (error) {
           console.error(
