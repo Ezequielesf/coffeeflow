@@ -400,10 +400,34 @@
       signUp: async (email, password, nomeCafeteria) => {
         const cleanEmail = email.trim().toLowerCase();
 
-        const { data, error } = await supabaseClient.auth.signUp({
-          email: cleanEmail,
-          password
-        });
+        if (!cleanEmail || !password) {
+          throw new Error('Preencha o e-mail e a palavra-passe.');
+        }
+
+        /*
+         * Primeiro verificamos se já existe uma cafeteria vinculada
+         * a esse e-mail.
+         *
+         * Isso evita que o cadastro tente criar uma segunda cafeteria
+         * quando o usuário já possui uma conta no CoffeeFlow.
+         */
+        const cafeteriaExistente =
+          await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
+
+        if (cafeteriaExistente) {
+          throw new Error(
+            'Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a palavra-passe.'
+          );
+        }
+
+        /*
+         * Cria o usuário no Supabase Auth.
+         */
+        const { data, error } =
+          await supabaseClient.auth.signUp({
+            email: cleanEmail,
+            password
+          });
 
         if (error) {
           throw new Error(
@@ -413,10 +437,7 @@
 
         /*
          * O Supabase pode retornar um usuário sem identities
-         * quando o e-mail já possui uma conta.
-         *
-         * Isso evita criar uma nova cafeteria associada a uma
-         * conta que já existe.
+         * quando o e-mail já pertence a uma conta.
          */
         if (
           data?.user &&
@@ -424,14 +445,10 @@
           data.user.identities.length === 0
         ) {
           throw new Error(
-            'Este e-mail já possui uma conta ativa. Escolha a opção Login.'
+            'Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a palavra-passe.'
           );
         }
 
-        /*
-         * O ID do usuário do Supabase Auth é a identidade
-         * principal da cafeteria.
-         */
         const userId = data?.user?.id || null;
 
         if (!userId) {
@@ -440,28 +457,67 @@
           );
         }
 
+        /*
+         * Segurança adicional:
+         * verificamos novamente pelo user_id imediatamente antes
+         * de criar a cafeteria.
+         *
+         * Isso protege contra duplicação mesmo que o primeiro
+         * teste por e-mail não encontre nada.
+         */
+        const cafeteriaPorUsuario =
+          await supabaseService.buscarCafeteriaPorUserId(userId);
+
+        if (cafeteriaPorUsuario) {
+          throw new Error(
+            'Este usuário já possui uma cafeteria cadastrada. Faça login em vez de criar outra conta.'
+          );
+        }
+
         const pinUnico = gerarPinAleatorio();
 
-        const cafeteriaSalva =
-          await supabaseService.criarCafeteria(
-            userId,
-            cleanEmail,
-            nomeCafeteria,
-            pinUnico
+        let cafeteriaSalva;
+
+        try {
+          cafeteriaSalva =
+            await supabaseService.criarCafeteria(
+              userId,
+              cleanEmail,
+              nomeCafeteria,
+              pinUnico
+            );
+        } catch (error) {
+          console.error(
+            'Erro ao criar cafeteria após cadastro:',
+            error
           );
 
-        if (!cafeteriaSalva) {
           /*
-           * Se a cafeteria não puder ser criada, tentamos
-           * remover a conta Auth recém-criada para evitar
-           * uma conta sem cafeteria associada.
-           *
-           * A exclusão administrativa não pode ser feita
-           * diretamente pelo navegador, então nesse caso
-           * apenas informamos o erro.
+           * Trata especificamente a violação da constraint
+           * cafeterias_user_id_unique.
            */
+          const mensagem =
+            error?.message || '';
+
+          if (
+            mensagem.includes('cafeterias_user_id_unique') ||
+            mensagem.includes('duplicate key') ||
+            mensagem.includes('23505')
+          ) {
+            throw new Error(
+              'Este usuário já possui uma cafeteria cadastrada. Faça login em vez de criar outra conta.'
+            );
+          }
+
           throw new Error(
-            'A conta foi criada, mas não foi possível criar a cafeteria. Entre em contato com o suporte.'
+            mensagem ||
+            'Não foi possível criar a cafeteria.'
+          );
+        }
+
+        if (!cafeteriaSalva) {
+          throw new Error(
+            'A conta foi criada, mas não foi possível criar a cafeteria.'
           );
         }
 
@@ -1554,4 +1610,3 @@
   </script>
 </body>
 </html>
-
