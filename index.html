@@ -399,23 +399,77 @@
 
       signUp: async (email, password, nomeCafeteria) => {
         const cleanEmail = email.trim().toLowerCase();
-        const jaExisteCafetaria = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
-        if (jaExisteCafetaria) {
-          throw new Error('Este e-mail já está registado na plataforma. Por favor, faça login ou recupere a palavra-passe.');
+
+        const { data, error } = await supabaseClient.auth.signUp({
+          email: cleanEmail,
+          password
+        });
+
+        if (error) {
+          throw new Error(
+            error.message || 'Erro ao criar conta.'
+          );
         }
 
-        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) throw new Error(error.message || 'Erro ao criar conta.');
+        /*
+         * O Supabase pode retornar um usuário sem identities
+         * quando o e-mail já possui uma conta.
+         *
+         * Isso evita criar uma nova cafeteria associada a uma
+         * conta que já existe.
+         */
+        if (
+          data?.user &&
+          Array.isArray(data.user.identities) &&
+          data.user.identities.length === 0
+        ) {
+          throw new Error(
+            'Este e-mail já possui uma conta ativa. Escolha a opção Login.'
+          );
+        }
 
-        if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-          throw new Error('Este e-mail já possui uma conta ativa. Escolha a opção Login.');
+        /*
+         * O ID do usuário do Supabase Auth é a identidade
+         * principal da cafeteria.
+         */
+        const userId = data?.user?.id || null;
+
+        if (!userId) {
+          throw new Error(
+            'A conta foi criada, mas o ID do usuário não foi retornado.'
+          );
         }
 
         const pinUnico = gerarPinAleatorio();
-        const userId = data?.user?.id || null;
-        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
 
-        return { authData: data, cafeteria: cafeteriaSalva };
+        const cafeteriaSalva =
+          await supabaseService.criarCafeteria(
+            userId,
+            cleanEmail,
+            nomeCafeteria,
+            pinUnico
+          );
+
+        if (!cafeteriaSalva) {
+          /*
+           * Se a cafeteria não puder ser criada, tentamos
+           * remover a conta Auth recém-criada para evitar
+           * uma conta sem cafeteria associada.
+           *
+           * A exclusão administrativa não pode ser feita
+           * diretamente pelo navegador, então nesse caso
+           * apenas informamos o erro.
+           */
+          throw new Error(
+            'A conta foi criada, mas não foi possível criar a cafeteria. Entre em contato com o suporte.'
+          );
+        }
+
+        return {
+          user: data.user,
+          session: data.session,
+          cafeteria: cafeteriaSalva
+        };
       },
 
       recuperarSenha: async (email) => {
