@@ -61,7 +61,7 @@ module.exports = async (req, res) => {
     const accessToken = match[1];
 
     // =========================================================
-    // 2. VALIDAR USUÁRIO NO SUPABASE AUTH
+    // 2. VALIDAR O USUÁRIO
     // =========================================================
 
     const {
@@ -73,7 +73,7 @@ module.exports = async (req, res) => {
 
     if (authError || !user) {
       console.error(
-        'Erro ao validar sessão:',
+        '[delete-account] Erro ao validar sessão:',
         authError
       );
 
@@ -86,116 +86,91 @@ module.exports = async (req, res) => {
     }
 
     console.log(
-      'Iniciando exclusão da conta:',
+      '[delete-account] Usuário autenticado:',
       user.id
     );
 
     // =========================================================
-    // 3. EXCLUIR DADOS DA CAFETERIA
+    // 3. ENCONTRAR A CAFETERIA PELO USER_ID
     // =========================================================
 
     const {
-      data: deleteResult,
-      error: deleteDataError
-    } = await supabaseAdmin.rpc(
-      'excluir_dados_cafeteria',
-      {
-        p_user_id: user.id
-      }
-    );
+      data: cafeteria,
+      error: cafeteriaError
+    } = await supabaseAdmin
+      .from('cafeterias')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (deleteDataError) {
+    if (cafeteriaError) {
       console.error(
-        'Erro no RPC excluir_dados_cafeteria:',
-        deleteDataError
+        '[delete-account] Erro ao buscar cafeteria:',
+        cafeteriaError
       );
 
       return send(res, 500, {
         error:
-          `Erro ao excluir os dados: ${
-            deleteDataError.message ||
-            'erro desconhecido'
-          }`,
+          'Erro ao localizar os dados da cafeteria.',
         code:
-          deleteDataError.code || null,
+          cafeteriaError.code || null,
         details:
-          deleteDataError.details || null,
+          cafeteriaError.details || null,
         hint:
-          deleteDataError.hint || null
+          cafeteriaError.hint || null
       });
     }
 
+    if (!cafeteria) {
+      return send(res, 404, {
+        error:
+          'Nenhuma cafeteria encontrada para esta conta.'
+      });
+    }
+
+    const cafeteriaId = cafeteria.id;
+
     console.log(
-      'Dados da cafeteria excluídos:',
-      deleteResult
+      '[delete-account] Cafeteria encontrada:',
+      cafeteriaId
     );
 
     // =========================================================
-    // 4. EXCLUIR USUÁRIO DO SUPABASE AUTH
+    // 4. APAGAR PRODUTOS
     // =========================================================
 
     const {
-      error: deleteUserError
-    } =
-      await supabaseAdmin.auth.admin.deleteUser(
-        user.id
-      );
+      error: produtosError
+    } = await supabaseAdmin
+      .from('produtos')
+      .delete()
+      .eq('cafeteria_id', cafeteriaId);
 
-    if (deleteUserError) {
+    if (produtosError) {
       console.error(
-        'Erro ao excluir usuário do Auth:',
-        deleteUserError
+        '[delete-account] Erro ao excluir produtos:',
+        produtosError
       );
 
       return send(res, 500, {
         error:
-          `Os dados da cafeteria foram excluídos, ` +
-          `mas ocorreu um erro ao remover a conta: ${
-            deleteUserError.message ||
-            'erro desconhecido'
-          }`,
+          'Erro ao excluir os produtos da cafeteria.',
         code:
-          deleteUserError.code || null,
+          produtosError.code || null,
         details:
-          deleteUserError.details || null
+          produtosError.details || null,
+        hint:
+          produtosError.hint || null
       });
     }
 
-    // =========================================================
-    // 5. SUCESSO
-    // =========================================================
-
     console.log(
-      'Conta excluída completamente:',
-      user.id
+      '[delete-account] Produtos excluídos.'
     );
 
-    return send(res, 200, {
-      ok: true,
-      message:
-        'Conta, dados e acesso excluídos permanentemente.'
-    });
-
-  } catch (error) {
     // =========================================================
-    // ERRO INESPERADO
+    // 5. APAGAR PEDIDOS
     // =========================================================
 
-    console.error(
-      'Erro inesperado em delete-account:',
-      error
-    );
-
-    return send(res, 500, {
-      error:
-        error?.message ||
-        'Erro interno ao excluir a conta.',
-      code:
-        error?.code || null,
-      details:
-        error?.details || null,
-      hint:
-        error?.hint || null
-    });
-  }
-};
+    const {
+      error: pedidosError
