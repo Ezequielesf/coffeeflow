@@ -302,205 +302,151 @@
       },
 
       salvarProduto: async (produto) => {
-  try {
-    // =======================================================
-    // 1. PEGAR SESSÃO ATUAL
-    // =======================================================
+        try {
+          const {
+            data: { session },
+            error: sessionError
+          } = await supabaseClient.auth.getSession();
 
-    const {
-      data: { session },
-      error: sessionError
-    } = await supabaseClient.auth.getSession();
+          if (sessionError) {
+            throw sessionError;
+          }
 
-    if (sessionError) {
-      throw sessionError;
-    }
+          if (!session?.access_token) {
+            throw new Error('Sua sessão expirou. Faça login novamente.');
+          }
 
-    if (!session?.access_token) {
-      throw new Error(
-        'Sua sessão expirou. Faça login novamente.'
-      );
-    }
+          if (!produto?.nome || !produto.nome.trim()) {
+            throw new Error('Informe o nome do produto.');
+          }
 
-    // =======================================================
-    // 2. VALIDAÇÕES
-    // =======================================================
+          if (!Number.isFinite(Number(produto.preco))) {
+            throw new Error('Informe um preço válido.');
+          }
 
-    if (!produto?.nome || !produto.nome.trim()) {
-      throw new Error(
-        'Informe o nome do produto.'
-      );
-    }
+          const isEdit = Boolean(
+            produto.id &&
+            !String(produto.id).startsWith('p_')
+          );
 
-    if (!Number.isFinite(produto.preco)) {
-      throw new Error(
-        'Informe um preço válido.'
-      );
-    }
+          const response = await fetch('/api/products', {
+            method: isEdit ? 'PATCH' : 'POST',
 
-    // =======================================================
-    // 3. DEFINIR SE É CRIAÇÃO OU EDIÇÃO
-    // =======================================================
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
 
-    const isEdit = Boolean(
-      produto.id &&
-      !produto.id.toString().startsWith('p_')
-    );
+            body: JSON.stringify({
+              ...(isEdit ? { id: produto.id } : {}),
 
-    // =======================================================
-    // 4. ENVIAR PARA API SEGURA
-    // =======================================================
+              nome: produto.nome.trim(),
 
-    const response = await fetch(
-      '/api/products',
-      {
-        method: isEdit ? 'PATCH' : 'POST',
+              preco: Number(produto.preco),
 
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+              categoria:
+                produto.categoria?.trim() || 'Cafés',
 
-        body: JSON.stringify({
-          id: isEdit ? produto.id : undefined,
+              descricao:
+                produto.descricao?.trim() || '',
 
-          // cafeteria_id NÃO é usado pela API para autorizar.
-          // A API identifica a cafeteria pelo usuário autenticado.
-          cafeteria_id: produto.cafeteria_id,
+              imagem:
+                produto.imagem?.trim() || '',
 
-          nome: produto.nome.trim(),
+              disponivel:
+                produto.disponivel !== false
+            })
+          });
 
-          preco: produto.preco,
+          const result =
+            await response.json().catch(() => ({}));
 
-          categoria:
-            produto.categoria || 'Cafés',
+          if (!response.ok) {
+            throw new Error(
+              result.error ||
+              'Não foi possível salvar o produto.'
+            );
+          }
 
-          descricao:
-            produto.descricao || '',
+          return {
+            success: true,
+            produto: result.produto || null
+          };
 
-          imagem:
-            produto.imagem || '',
+        } catch (err) {
+          console.error('Erro em salvarProduto:', err);
 
-          disponivel:
-            produto.disponivel !== false
-        })
-      }
-    );
-
-    const result =
-      await response.json().catch(() => ({}));
-
-    // =======================================================
-    // 5. TRATAR ERRO
-    // =======================================================
-
-    if (!response.ok) {
-      throw new Error(
-        result.error ||
-        'Não foi possível salvar o produto.'
-      );
-    }
-
-    // =======================================================
-    // 6. RETORNAR SUCESSO
-    // =======================================================
-
-    return {
-      success: true,
-      produto: result.produto || null
-    };
-
-  } catch (err) {
-    console.error(
-      'Erro em salvarProduto:',
-      err
-    );
-
-    return {
-      success: false,
-      error:
-        err.message ||
-        'Erro desconhecido ao salvar o produto.'
-    };
-  }
-},
+          return {
+            success: false,
+            error:
+              err.message ||
+              'Erro desconhecido ao salvar o produto.'
+          };
+        }
+      },
 
       deletarProduto: async (id) => {
-  try {
-    // =======================================================
-    // 1. PEGAR SESSÃO ATUAL
-    // =======================================================
+        try {
+          const {
+            data: { session },
+            error: sessionError
+          } = await supabaseClient.auth.getSession();
 
-    const {
-      data: { session },
-      error: sessionError
-    } = await supabaseClient.auth.getSession();
+          if (sessionError) {
+            throw sessionError;
+          }
 
-    if (sessionError) {
-      throw sessionError;
-    }
+          if (!session?.access_token) {
+            throw new Error(
+              'Sua sessão expirou. Faça login novamente.'
+            );
+          }
 
-    if (!session?.access_token) {
-      throw new Error(
-        'Sua sessão expirou. Faça login novamente.'
-      );
-    }
+          if (!id) {
+            throw new Error(
+              'ID do produto não informado.'
+            );
+          }
 
-    // =======================================================
-    // 2. VALIDAR ID
-    // =======================================================
+          const response = await fetch('/api/products', {
+            method: 'DELETE',
 
-    if (!id) {
-      throw new Error(
-        'ID do produto não informado.'
-      );
-    }
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
 
-    // =======================================================
-    // 3. ENVIAR PARA API SEGURA
-    // =======================================================
+            body: JSON.stringify({
+              id
+            })
+          });
 
-    const response = await fetch(
-      '/api/products',
-      {
-        method: 'DELETE',
+          const result =
+            await response.json().catch(() => ({}));
 
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+          if (!response.ok) {
+            throw new Error(
+              result.error ||
+              'Não foi possível excluir o produto.'
+            );
+          }
 
-        body: JSON.stringify({
-          id
-        })
-      }
-    );
+          return {
+            success: true,
+            produto: result.produto || null
+          };
 
-    const result =
-      await response.json().catch(() => ({}));
+        } catch (err) {
+          console.error('Erro em deletarProduto:', err);
 
-    // =======================================================
-    // 4. TRATAR ERRO
-    // =======================================================
-
-    if (!response.ok) {
-      throw new Error(
-        result.error ||
-        'Não foi possível excluir o produto.'
-      );
-    }
-
-    return true;
-
-  } catch (err) {
-    console.error(
-      'Erro em deletarProduto:',
-      err
-    );
-
-    return false;
-  }
-},
+          return {
+            success: false,
+            error:
+              err.message ||
+              'Não foi possível excluir o produto.'
+          };
+        }
+      },
 
       buscarPedidos: async (cafeteriaId) => {
         try {
@@ -1419,9 +1365,53 @@
       };
 
       const handleRemoverProduto = async (id) => {
-        if (confirm('Deseja eliminar este item da ementa?')) {
-          await supabaseService.deletarProduto(id);
-          carregarDadosDoBanco();
+        if (!id) {
+          setNotificacao('Produto inválido.');
+          setTimeout(() => setNotificacao(''), 4000);
+          return;
+        }
+
+        if (!confirm('Deseja eliminar este item da ementa?')) {
+          return;
+        }
+
+        try {
+          const resultado =
+            await supabaseService.deletarProduto(id);
+
+          if (!resultado?.success) {
+            throw new Error(
+              resultado?.error ||
+              'Não foi possível eliminar o produto.'
+            );
+          }
+
+          await carregarDadosDoBanco();
+
+          setNotificacao(
+            'Produto eliminado com sucesso!'
+          );
+
+          setTimeout(
+            () => setNotificacao(''),
+            4000
+          );
+
+        } catch (err) {
+          console.error(
+            'Erro ao eliminar produto:',
+            err
+          );
+
+          setNotificacao(
+            err.message ||
+            'Não foi possível eliminar o produto.'
+          );
+
+          setTimeout(
+            () => setNotificacao(''),
+            6000
+          );
         }
       };
 
@@ -1431,35 +1421,57 @@
         try {
           const formData = new FormData(e.target);
 
-          const preco = parseFloat(formData.get('preco'));
+          const preco = parseFloat(
+            formData.get('preco')
+          );
 
           const prodData = {
             id: modalProduto.data?.id,
+
             cafeteria_id: cafeteria.id,
-            nome: (formData.get('nome') || '').toString().trim(),
+
+            nome:
+              (formData.get('nome') || '')
+                .toString()
+                .trim(),
+
             preco,
-            categoria: (formData.get('categoria') || 'Cafés').toString(),
-            descricao: (formData.get('descricao') || '').toString().trim(),
+
+            categoria:
+              (formData.get('categoria') || 'Cafés')
+                .toString()
+                .trim(),
+
+            descricao:
+              (formData.get('descricao') || '')
+                .toString()
+                .trim(),
+
             imagem:
-              (formData.get('imagem') || '').toString().trim() ||
-              'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60',
-            disponivel: modalProduto.data
-              ? modalProduto.data.disponivel
-              : true
+              (formData.get('imagem') || '')
+                .toString()
+                .trim(),
+
+            disponivel:
+              modalProduto.data
+                ? modalProduto.data.disponivel
+                : true
           };
 
-          const resultado = await supabaseService.salvarProduto(prodData);
+          const resultado =
+            await supabaseService.salvarProduto(
+              prodData
+            );
 
           if (!resultado?.success) {
             throw new Error(
-              resultado?.error || 'Não foi possível salvar o produto.'
+              resultado?.error ||
+              'Não foi possível salvar o produto.'
             );
           }
 
-          // Recarrega os produtos diretamente do Supabase.
           await carregarDadosDoBanco();
 
-          // Só fecha o modal depois de confirmar que o salvamento terminou.
           setModalProduto({
             open: false,
             data: null
@@ -1468,19 +1480,29 @@
           setNotificacao(
             modalProduto.data
               ? 'Produto atualizado com sucesso!'
-              : 'Produto adicionado à ementa com sucesso!'
+              : 'Produto adicionado com sucesso!'
           );
 
-          setTimeout(() => setNotificacao(''), 4000);
+          setTimeout(
+            () => setNotificacao(''),
+            4000
+          );
 
         } catch (err) {
-          console.error('Erro ao guardar produto:', err);
-
-          setNotificacao(
-            err.message || 'Não foi possível guardar o produto.'
+          console.error(
+            'Erro ao guardar produto:',
+            err
           );
 
-          setTimeout(() => setNotificacao(''), 6000);
+          setNotificacao(
+            err.message ||
+            'Não foi possível guardar o produto.'
+          );
+
+          setTimeout(
+            () => setNotificacao(''),
+            6000
+          );
         }
       };
 
@@ -1808,11 +1830,34 @@
                           <p className="font-bold text-white truncate">{p.nome}</p>
                           <p className="text-amber-400 font-bold font-mono">{parseFloat(p.preco).toFixed(2)}€</p>
                         </div>
-                        <div className="flex gap-1 shrink-0">
-                          <button onClick={() => toggleDisponibilidadeProduto(p.id, p.disponivel)} className={`px-2 py-1 rounded text-[10px] font-bold ${p.disponivel ? 'bg-slate-700 text-slate-300' : 'bg-amber-500/20 text-amber-400'}`}>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => toggleDisponibilidadeProduto(p.id, p.disponivel)}
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${p.disponivel ? 'bg-slate-700 text-slate-300' : 'bg-amber-500/20 text-amber-400'}`}
+                          >
                             {p.disponivel ? 'Pausar' : 'Ativar'}
                           </button>
-                          <button onClick={() => handleRemoverProduto(p.id)} className="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold">Eliminar</button>
+
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() =>
+                                setModalProduto({
+                                  open: true,
+                                  data: p
+                                })
+                              }
+                              className="px-2 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[10px] font-bold hover:bg-amber-500/30"
+                            >
+                              Editar
+                            </button>
+
+                            <button
+                              onClick={() => handleRemoverProduto(p.id)}
+                              className="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold hover:bg-rose-500/30"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2026,3 +2071,4 @@
   </script>
 </body>
 </html>
+
