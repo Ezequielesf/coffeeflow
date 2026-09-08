@@ -1095,27 +1095,69 @@
             const dadosCaf =
               await supabaseService.buscarCafeteriaPorUserId(user.id);
 
-            if (!dadosCaf) {
-              await supabaseClient.auth.signOut();
+            let cafeteriaFinal = dadosCaf;
 
-              throw new Error(
-                'Esta conta não possui uma cafeteria associada. A conta pode ter sido excluída.'
+            // Se a conta existe no Auth, mas não possui cafeteria,
+            // cria uma nova cafeteria vinculada ao NOVO user.id.
+            if (!cafeteriaFinal) {
+              console.log(
+                '[login] Usuário sem cafeteria. Criando nova cafeteria...',
+                user.id
               );
+
+              try {
+                const novoPin = gerarPinAleatorio();
+
+                cafeteriaFinal =
+                  await supabaseService.criarCafeteria(
+                    user.id,
+                    user.email || adminEmailInput,
+                    'CoffeeFlow',
+                    novoPin
+                  );
+
+                console.log(
+                  '[login] Nova cafeteria criada:',
+                  cafeteriaFinal.id
+                );
+
+              } catch (error) {
+                console.error(
+                  '[login] Erro ao criar cafeteria para usuário existente:',
+                  error
+                );
+
+                await supabaseClient.auth.signOut();
+
+                throw new Error(
+                  'Sua conta existe, mas não foi possível criar a cafeteria. Tente novamente.'
+                );
+              }
             }
 
-            const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
+            const eVitalicio =
+              cafeteriaFinal.data_expiracao &&
+              new Date(cafeteriaFinal.data_expiracao).getFullYear() > 2090;
 
             setIsLoggedInAdmin(true);
+
             setCafeteria({
-              id: dadosCaf.id,
-              nome: dadosCaf.nome,
-              pinEquipe: dadosCaf.pin_equipe,
-              planoAtivo: dadosCaf.plano_ativo === true,
-              donoEmail: adminEmailInput,
-              dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: dadosCaf.data_expiracao || null,
+              id: cafeteriaFinal.id,
+              nome: cafeteriaFinal.nome,
+              pinEquipe: cafeteriaFinal.pin_equipe,
+              planoAtivo: cafeteriaFinal.plano_ativo === true,
+              donoEmail:
+                cafeteriaFinal.email ||
+                cafeteriaFinal.dono_email ||
+                adminEmailInput,
+              dataInscricao:
+                cafeteriaFinal.data_inscricao ||
+                new Date().toISOString(),
+              dataExpiracao:
+                cafeteriaFinal.data_expiracao || null,
               isVitalicio: eVitalicio
             });
+
             setActiveView('admin');
           } else {
             const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
