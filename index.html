@@ -302,108 +302,205 @@
       },
 
       salvarProduto: async (produto) => {
-        try {
-          if (!produto?.cafeteria_id) {
-            throw new Error('A cafeteria do produto não foi identificada.');
-          }
+  try {
+    // =======================================================
+    // 1. PEGAR SESSÃO ATUAL
+    // =======================================================
 
-          if (!produto?.nome || !produto.nome.trim()) {
-            throw new Error('Informe o nome do produto.');
-          }
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabaseClient.auth.getSession();
 
-          if (!Number.isFinite(produto.preco)) {
-            throw new Error('Informe um preço válido.');
-          }
+    if (sessionError) {
+      throw sessionError;
+    }
 
-          const isEdit = Boolean(
-            produto.id &&
-            !produto.id.toString().startsWith('p_')
-          );
+    if (!session?.access_token) {
+      throw new Error(
+        'Sua sessão expirou. Faça login novamente.'
+      );
+    }
 
-          const url = isEdit
-            ? `${API_URL}/rest/v1/produtos?id=eq.${encodeURIComponent(produto.id)}`
-            : `${API_URL}/rest/v1/produtos`;
+    // =======================================================
+    // 2. VALIDAÇÕES
+    // =======================================================
 
-          const method = isEdit ? 'PATCH' : 'POST';
+    if (!produto?.nome || !produto.nome.trim()) {
+      throw new Error(
+        'Informe o nome do produto.'
+      );
+    }
 
-          const body = {
-            cafeteria_id: produto.cafeteria_id,
-            nome: produto.nome.trim(),
-            preco: produto.preco,
-            categoria: produto.categoria || 'Cafés',
-            descricao: produto.descricao || '',
-            imagem: produto.imagem || '',
-            disponivel: produto.disponivel !== false
-          };
+    if (!Number.isFinite(produto.preco)) {
+      throw new Error(
+        'Informe um preço válido.'
+      );
+    }
 
-          const res = await fetch(url, {
-            method,
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(body)
-          });
+    // =======================================================
+    // 3. DEFINIR SE É CRIAÇÃO OU EDIÇÃO
+    // =======================================================
 
-          const responseText = await res.text();
+    const isEdit = Boolean(
+      produto.id &&
+      !produto.id.toString().startsWith('p_')
+    );
 
-          if (!res.ok) {
-            console.error('Erro ao salvar produto:', responseText);
+    // =======================================================
+    // 4. ENVIAR PARA API SEGURA
+    // =======================================================
 
-            let mensagem = responseText;
+    const response = await fetch(
+      '/api/products',
+      {
+        method: isEdit ? 'PATCH' : 'POST',
 
-            try {
-              const erroJson = JSON.parse(responseText);
-              mensagem =
-                erroJson.message ||
-                erroJson.error_description ||
-                erroJson.hint ||
-                erroJson.details ||
-                erroJson.error ||
-                responseText;
-            } catch (_) {}
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
 
-            throw new Error(`Não foi possível salvar o produto: ${mensagem}`);
-          }
+        body: JSON.stringify({
+          id: isEdit ? produto.id : undefined,
 
-          let data = [];
+          // cafeteria_id NÃO é usado pela API para autorizar.
+          // A API identifica a cafeteria pelo usuário autenticado.
+          cafeteria_id: produto.cafeteria_id,
 
-          if (responseText) {
-            try {
-              data = JSON.parse(responseText);
-            } catch (_) {
-              data = [];
-            }
-          }
+          nome: produto.nome.trim(),
 
-          return {
-            success: true,
-            produto: Array.isArray(data) ? data[0] : data
-          };
+          preco: produto.preco,
 
-        } catch (err) {
-          console.error('Erro em salvarProduto:', err);
+          categoria:
+            produto.categoria || 'Cafés',
 
-          return {
-            success: false,
-            error: err.message || 'Erro desconhecido ao salvar o produto.'
-          };
-        }
-      },
+          descricao:
+            produto.descricao || '',
+
+          imagem:
+            produto.imagem || '',
+
+          disponivel:
+            produto.disponivel !== false
+        })
+      }
+    );
+
+    const result =
+      await response.json().catch(() => ({}));
+
+    // =======================================================
+    // 5. TRATAR ERRO
+    // =======================================================
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        'Não foi possível salvar o produto.'
+      );
+    }
+
+    // =======================================================
+    // 6. RETORNAR SUCESSO
+    // =======================================================
+
+    return {
+      success: true,
+      produto: result.produto || null
+    };
+
+  } catch (err) {
+    console.error(
+      'Erro em salvarProduto:',
+      err
+    );
+
+    return {
+      success: false,
+      error:
+        err.message ||
+        'Erro desconhecido ao salvar o produto.'
+    };
+  }
+},
 
       deletarProduto: async (id) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${id}`, {
-            method: 'DELETE',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          return res.ok;
-        } catch (err) {
-          return false;
-        }
-      },
+  try {
+    // =======================================================
+    // 1. PEGAR SESSÃO ATUAL
+    // =======================================================
+
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabaseClient.auth.getSession();
+
+    if (sessionError) {
+      throw sessionError;
+    }
+
+    if (!session?.access_token) {
+      throw new Error(
+        'Sua sessão expirou. Faça login novamente.'
+      );
+    }
+
+    // =======================================================
+    // 2. VALIDAR ID
+    // =======================================================
+
+    if (!id) {
+      throw new Error(
+        'ID do produto não informado.'
+      );
+    }
+
+    // =======================================================
+    // 3. ENVIAR PARA API SEGURA
+    // =======================================================
+
+    const response = await fetch(
+      '/api/products',
+      {
+        method: 'DELETE',
+
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+
+        body: JSON.stringify({
+          id
+        })
+      }
+    );
+
+    const result =
+      await response.json().catch(() => ({}));
+
+    // =======================================================
+    // 4. TRATAR ERRO
+    // =======================================================
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        'Não foi possível excluir o produto.'
+      );
+    }
+
+    return true;
+
+  } catch (err) {
+    console.error(
+      'Erro em deletarProduto:',
+      err
+    );
+
+    return false;
+  }
+},
 
       buscarPedidos: async (cafeteriaId) => {
         try {
