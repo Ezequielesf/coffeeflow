@@ -392,9 +392,64 @@
     const authService = {
       login: async (email, password) => {
         const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) throw new Error(error.message || 'E-mail ou palavra-passe incorretos.');
-        return { user: data.user, session: data.session };
+
+        if (!cleanEmail) {
+          throw new Error('Informe o seu e-mail.');
+        }
+
+        if (!password) {
+          throw new Error('Informe a sua palavra-passe.');
+        }
+
+        // Primeiro verifica se a conta ainda existe.
+        const checkResponse = await fetch(
+          '/api/check-account',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store'
+            },
+            cache: 'no-store',
+            body: JSON.stringify({
+              email: cleanEmail
+            })
+          }
+        );
+
+        const checkResult =
+          await checkResponse.json().catch(() => ({}));
+
+        if (!checkResponse.ok) {
+          throw new Error(
+            checkResult.error ||
+            'Não foi possível verificar a conta.'
+          );
+        }
+
+        if (!checkResult.exists) {
+          throw new Error('Conta não encontrada.');
+        }
+
+        // A conta existe. Agora verifica a senha.
+        const {
+          data,
+          error
+        } = await supabaseClient.auth.signInWithPassword({
+          email: cleanEmail,
+          password
+        });
+
+        if (error) {
+          throw new Error(
+            'E-mail ou palavra-passe incorretos.'
+          );
+        }
+
+        return {
+          user: data.user,
+          session: data.session
+        };
       },
 
       signUp: async (email, password, nomeCafeteria) => {
