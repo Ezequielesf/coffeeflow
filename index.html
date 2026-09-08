@@ -559,10 +559,69 @@
 
       recuperarSenha: async (email) => {
         const cleanEmail = email.trim().toLowerCase();
-        const redirectTo = window.location.origin + window.location.pathname + '?reset=true';
-        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
-        if (error) throw new Error(error.message || 'Erro ao solicitar a recuperação de palavra-passe.');
-        return data;
+
+        if (!cleanEmail) {
+          throw new Error('Informe o e-mail da sua conta.');
+        }
+
+        // Verifica se a conta realmente existe antes
+        // de solicitar o envio do e-mail.
+        const checkResponse = await fetch(
+          '/api/check-account',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store'
+            },
+            cache: 'no-store',
+            body: JSON.stringify({
+              email: cleanEmail
+            })
+          }
+        );
+
+        const checkResult =
+          await checkResponse.json().catch(() => ({}));
+
+        if (!checkResponse.ok) {
+          throw new Error(
+            checkResult.error ||
+            'Não foi possível verificar a conta.'
+          );
+        }
+
+        // Conta excluída ou inexistente.
+        // IMPORTANTE: neste ponto NÃO chamamos
+        // resetPasswordForEmail().
+        if (!checkResult.exists) {
+          throw new Error('Conta não encontrada.');
+        }
+
+        const redirectUrl =
+          `${window.location.origin}${window.location.pathname}?reset=true`;
+
+        const {
+          error
+        } = await supabaseClient.auth.resetPasswordForEmail(
+          cleanEmail,
+          {
+            redirectTo: redirectUrl
+          }
+        );
+
+        if (error) {
+          console.error(
+            'Erro ao enviar e-mail de recuperação:',
+            error
+          );
+
+          throw new Error(
+            'Não foi possível enviar o e-mail de recuperação.'
+          );
+        }
+
+        return true;
       }
     };
 
@@ -1721,4 +1780,3 @@
   </script>
 </body>
 </html>
-
