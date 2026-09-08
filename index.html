@@ -303,15 +303,41 @@
 
       salvarProduto: async (produto) => {
         try {
-          const isEdit = Boolean(produto.id && !produto.id.toString().startsWith('p_'));
-          const url = isEdit ? `${API_URL}/rest/v1/produtos?id=eq.${produto.id}` : `${API_URL}/rest/v1/produtos`;
+          if (!produto?.cafeteria_id) {
+            throw new Error('A cafeteria do produto não foi identificada.');
+          }
+
+          if (!produto?.nome || !produto.nome.trim()) {
+            throw new Error('Informe o nome do produto.');
+          }
+
+          if (!Number.isFinite(produto.preco)) {
+            throw new Error('Informe um preço válido.');
+          }
+
+          const isEdit = Boolean(
+            produto.id &&
+            !produto.id.toString().startsWith('p_')
+          );
+
+          const url = isEdit
+            ? `${API_URL}/rest/v1/produtos?id=eq.${encodeURIComponent(produto.id)}`
+            : `${API_URL}/rest/v1/produtos`;
+
           const method = isEdit ? 'PATCH' : 'POST';
 
-          const body = { ...produto };
-          if (!isEdit) delete body.id;
+          const body = {
+            cafeteria_id: produto.cafeteria_id,
+            nome: produto.nome.trim(),
+            preco: produto.preco,
+            categoria: produto.categoria || 'Cafés',
+            descricao: produto.descricao || '',
+            imagem: produto.imagem || '',
+            disponivel: produto.disponivel !== false
+          };
 
           const res = await fetch(url, {
-            method: method,
+            method,
             headers: {
               'apikey': API_KEY,
               'Authorization': `Bearer ${API_KEY}`,
@@ -320,9 +346,50 @@
             },
             body: JSON.stringify(body)
           });
-          return res.ok;
+
+          const responseText = await res.text();
+
+          if (!res.ok) {
+            console.error('Erro ao salvar produto:', responseText);
+
+            let mensagem = responseText;
+
+            try {
+              const erroJson = JSON.parse(responseText);
+              mensagem =
+                erroJson.message ||
+                erroJson.error_description ||
+                erroJson.hint ||
+                erroJson.details ||
+                erroJson.error ||
+                responseText;
+            } catch (_) {}
+
+            throw new Error(`Não foi possível salvar o produto: ${mensagem}`);
+          }
+
+          let data = [];
+
+          if (responseText) {
+            try {
+              data = JSON.parse(responseText);
+            } catch (_) {
+              data = [];
+            }
+          }
+
+          return {
+            success: true,
+            produto: Array.isArray(data) ? data[0] : data
+          };
+
         } catch (err) {
-          return false;
+          console.error('Erro em salvarProduto:', err);
+
+          return {
+            success: false,
+            error: err.message || 'Erro desconhecido ao salvar o produto.'
+          };
         }
       },
 
@@ -401,6 +468,37 @@
           throw new Error('Informe a sua palavra-passe.');
         }
 
+        // Primeiro verifica se a conta ainda existe.
+        const checkResponse = await fetch(
+          '/api/check-account',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store'
+            },
+            cache: 'no-store',
+            body: JSON.stringify({
+              email: cleanEmail
+            })
+          }
+        );
+
+        const checkResult =
+          await checkResponse.json().catch(() => ({}));
+
+        if (!checkResponse.ok) {
+          throw new Error(
+            checkResult.error ||
+            'Não foi possível verificar a conta.'
+          );
+        }
+
+        if (!checkResult.exists) {
+          throw new Error('Conta não encontrada.');
+        }
+
+        // A conta existe. Agora verifica a senha.
         const {
           data,
           error
@@ -533,6 +631,40 @@
           throw new Error('Informe o e-mail da sua conta.');
         }
 
+        // Verifica se a conta realmente existe antes
+        // de solicitar o envio do e-mail.
+        const checkResponse = await fetch(
+          '/api/check-account',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store'
+            },
+            cache: 'no-store',
+            body: JSON.stringify({
+              email: cleanEmail
+            })
+          }
+        );
+
+        const checkResult =
+          await checkResponse.json().catch(() => ({}));
+
+        if (!checkResponse.ok) {
+          throw new Error(
+            checkResult.error ||
+            'Não foi possível verificar a conta.'
+          );
+        }
+
+        // Conta excluída ou inexistente.
+        // IMPORTANTE: neste ponto NÃO chamamos
+        // resetPasswordForEmail().
+        if (!checkResult.exists) {
+          throw new Error('Conta não encontrada.');
+        }
+
         const redirectUrl =
           `${window.location.origin}${window.location.pathname}?reset=true`;
 
@@ -586,6 +718,7 @@
       useEffect(() => {
         const trocarSessao = async () => {
           try {
+            // Limpa sessão e dados locais antigos antes de processar o fluxo de recuperação
             await supabaseClient.auth.signOut();
             localStorage.removeItem('coffeeflow_cafeteria');
             localStorage.removeItem('coffeeflow_staff_session');
@@ -627,6 +760,12 @@
               }
             }
 
+            /*
+             * Remove tokens da barra de endereço.
+             *
+             * Isso impede que o navegador reutilize o mesmo
+             * access_token/refresh_token ao recarregar a página.
+             */
             if (
               urlInfo.accessToken ||
               urlInfo.refreshToken ||
@@ -645,6 +784,10 @@
               error
             );
 
+            /*
+             * Limpa qualquer sessão que tenha sido criada
+             * durante o processamento de um link inválido.
+             */
             await supabaseClient.auth.signOut();
 
             window.history.replaceState(
@@ -1021,7 +1164,14 @@
 
             let cafeteriaFinal = dadosCaf;
 
+            // Se a conta existe no Auth, mas não possui cafeteria,
+            // cria uma nova cafeteria vinculada ao NOVO user.id.
             if (!cafeteriaFinal) {
+              console.log(
+                '[login] Usuário sem cafeteria. Criando nova cafeteria...',
+                user.id
+              );
+
               try {
                 const novoPin = gerarPinAleatorio();
 
@@ -1032,8 +1182,20 @@
                     'CoffeeFlow',
                     novoPin
                   );
+
+                console.log(
+                  '[login] Nova cafeteria criada:',
+                  cafeteriaFinal.id
+                );
+
               } catch (error) {
+                console.error(
+                  '[login] Erro ao criar cafeteria para usuário existente:',
+                  error
+                );
+
                 await supabaseClient.auth.signOut();
+
                 throw new Error(
                   'Sua conta existe, mas não foi possível criar a cafeteria. Tente novamente.'
                 );
@@ -1168,21 +1330,61 @@
 
       const handleSalvarProduto = async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const prodData = {
-          id: modalProduto.data?.id,
-          cafeteria_id: cafeteria.id,
-          nome: formData.get('nome'),
-          preco: parseFloat(formData.get('preco')),
-          categoria: formData.get('categoria'),
-          descricao: formData.get('descricao') || '',
-          imagem: formData.get('imagem') || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60',
-          disponivel: modalProduto.data ? modalProduto.data.disponivel : true
-        };
 
-        await supabaseService.salvarProduto(prodData);
-        setModalProduto({ open: false, data: null });
-        carregarDadosDoBanco();
+        try {
+          const formData = new FormData(e.target);
+
+          const preco = parseFloat(formData.get('preco'));
+
+          const prodData = {
+            id: modalProduto.data?.id,
+            cafeteria_id: cafeteria.id,
+            nome: (formData.get('nome') || '').toString().trim(),
+            preco,
+            categoria: (formData.get('categoria') || 'Cafés').toString(),
+            descricao: (formData.get('descricao') || '').toString().trim(),
+            imagem:
+              (formData.get('imagem') || '').toString().trim() ||
+              'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60',
+            disponivel: modalProduto.data
+              ? modalProduto.data.disponivel
+              : true
+          };
+
+          const resultado = await supabaseService.salvarProduto(prodData);
+
+          if (!resultado?.success) {
+            throw new Error(
+              resultado?.error || 'Não foi possível salvar o produto.'
+            );
+          }
+
+          // Recarrega os produtos diretamente do Supabase.
+          await carregarDadosDoBanco();
+
+          // Só fecha o modal depois de confirmar que o salvamento terminou.
+          setModalProduto({
+            open: false,
+            data: null
+          });
+
+          setNotificacao(
+            modalProduto.data
+              ? 'Produto atualizado com sucesso!'
+              : 'Produto adicionado à ementa com sucesso!'
+          );
+
+          setTimeout(() => setNotificacao(''), 4000);
+
+        } catch (err) {
+          console.error('Erro ao guardar produto:', err);
+
+          setNotificacao(
+            err.message || 'Não foi possível guardar o produto.'
+          );
+
+          setTimeout(() => setNotificacao(''), 6000);
+        }
       };
 
       const enviarPedidoCliente = async () => {
@@ -1697,7 +1899,7 @@
                       <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block np-1">Categoria</label>
+                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
                       <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
                         {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
