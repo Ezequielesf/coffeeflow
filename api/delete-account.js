@@ -174,3 +174,134 @@ module.exports = async (req, res) => {
 
     const {
       error: pedidosError
+    } = await supabaseAdmin
+      .from('pedidos')
+      .delete()
+      .eq('cafeteria_id', cafeteriaId);
+
+    if (pedidosError) {
+      console.error(
+        '[delete-account] Erro ao excluir pedidos:',
+        pedidosError
+      );
+
+      return send(res, 500, {
+        error:
+          'Erro ao excluir os pedidos da cafeteria.',
+        code:
+          pedidosError.code || null,
+        details:
+          pedidosError.details || null,
+        hint:
+          pedidosError.hint || null
+      });
+    }
+
+    console.log(
+      '[delete-account] Pedidos excluídos.'
+    );
+
+    // =========================================================
+    // 6. APAGAR CAFETERIA
+    // =========================================================
+
+    const {
+      error: cafeteriaDeleteError
+    } = await supabaseAdmin
+      .from('cafeterias')
+      .delete()
+      .eq('id', cafeteriaId)
+      .eq('user_id', user.id);
+
+    if (cafeteriaDeleteError) {
+      console.error(
+        '[delete-account] Erro ao excluir cafeteria:',
+        cafeteriaDeleteError
+      );
+
+      return send(res, 500, {
+        error:
+          'Erro ao excluir a cafeteria.',
+        code:
+          cafeteriaDeleteError.code || null,
+        details:
+          cafeteriaDeleteError.details || null,
+        hint:
+          cafeteriaDeleteError.hint || null
+      });
+    }
+
+    console.log(
+      '[delete-account] Cafeteria excluída:',
+      cafeteriaId
+    );
+
+    // =========================================================
+    // 7. APAGAR USUÁRIO DO SUPABASE AUTH
+    // =========================================================
+
+    const {
+      error: deleteUserError
+    } =
+      await supabaseAdmin.auth.admin.deleteUser(
+        user.id
+      );
+
+    if (deleteUserError) {
+      console.error(
+        '[delete-account] Erro ao excluir usuário do Auth:',
+        deleteUserError
+      );
+
+      return send(res, 500, {
+        error:
+          'Os dados da cafeteria foram excluídos, mas ocorreu um erro ao remover a conta: ' +
+          (
+            deleteUserError.message ||
+            'erro desconhecido'
+          ),
+        code:
+          deleteUserError.code || null,
+        details:
+          deleteUserError.details || null,
+        hint:
+          deleteUserError.hint || null
+      });
+    }
+
+    // =========================================================
+    // 8. SUCESSO
+    // =========================================================
+
+    console.log(
+      '[delete-account] Conta excluída completamente:',
+      user.id
+    );
+
+    return send(res, 200, {
+      ok: true,
+      user_id: user.id,
+      cafeteria_id: cafeteriaId,
+      message:
+        'Conta, dados e acesso excluídos permanentemente.'
+    });
+
+  } catch (error) {
+    console.error(
+      '[delete-account] Erro inesperado:',
+      error
+    );
+
+    return send(res, 500, {
+      error:
+        error?.message ||
+        'Erro interno ao excluir a conta.',
+      code:
+        error?.code || null,
+      details:
+        error?.details || null,
+      hint:
+        error?.hint || null
+    });
+  }
+};
