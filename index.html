@@ -401,37 +401,6 @@
           throw new Error('Informe a sua palavra-passe.');
         }
 
-        // Primeiro verifica se a conta ainda existe.
-        const checkResponse = await fetch(
-          '/api/check-account',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-store'
-            },
-            cache: 'no-store',
-            body: JSON.stringify({
-              email: cleanEmail
-            })
-          }
-        );
-
-        const checkResult =
-          await checkResponse.json().catch(() => ({}));
-
-        if (!checkResponse.ok) {
-          throw new Error(
-            checkResult.error ||
-            'Não foi possível verificar a conta.'
-          );
-        }
-
-        if (!checkResult.exists) {
-          throw new Error('Conta não encontrada.');
-        }
-
-        // A conta existe. Agora verifica a senha.
         const {
           data,
           error
@@ -564,40 +533,6 @@
           throw new Error('Informe o e-mail da sua conta.');
         }
 
-        // Verifica se a conta realmente existe antes
-        // de solicitar o envio do e-mail.
-        const checkResponse = await fetch(
-          '/api/check-account',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-store'
-            },
-            cache: 'no-store',
-            body: JSON.stringify({
-              email: cleanEmail
-            })
-          }
-        );
-
-        const checkResult =
-          await checkResponse.json().catch(() => ({}));
-
-        if (!checkResponse.ok) {
-          throw new Error(
-            checkResult.error ||
-            'Não foi possível verificar a conta.'
-          );
-        }
-
-        // Conta excluída ou inexistente.
-        // IMPORTANTE: neste ponto NÃO chamamos
-        // resetPasswordForEmail().
-        if (!checkResult.exists) {
-          throw new Error('Conta não encontrada.');
-        }
-
         const redirectUrl =
           `${window.location.origin}${window.location.pathname}?reset=true`;
 
@@ -651,7 +586,6 @@
       useEffect(() => {
         const trocarSessao = async () => {
           try {
-            // Limpa sessão e dados locais antigos antes de processar o fluxo de recuperação
             await supabaseClient.auth.signOut();
             localStorage.removeItem('coffeeflow_cafeteria');
             localStorage.removeItem('coffeeflow_staff_session');
@@ -693,12 +627,6 @@
               }
             }
 
-            /*
-             * Remove tokens da barra de endereço.
-             *
-             * Isso impede que o navegador reutilize o mesmo
-             * access_token/refresh_token ao recarregar a página.
-             */
             if (
               urlInfo.accessToken ||
               urlInfo.refreshToken ||
@@ -717,10 +645,6 @@
               error
             );
 
-            /*
-             * Limpa qualquer sessão que tenha sido criada
-             * durante o processamento de um link inválido.
-             */
             await supabaseClient.auth.signOut();
 
             window.history.replaceState(
@@ -1097,14 +1021,7 @@
 
             let cafeteriaFinal = dadosCaf;
 
-            // Se a conta existe no Auth, mas não possui cafeteria,
-            // cria uma nova cafeteria vinculada ao NOVO user.id.
             if (!cafeteriaFinal) {
-              console.log(
-                '[login] Usuário sem cafeteria. Criando nova cafeteria...',
-                user.id
-              );
-
               try {
                 const novoPin = gerarPinAleatorio();
 
@@ -1115,20 +1032,8 @@
                     'CoffeeFlow',
                     novoPin
                   );
-
-                console.log(
-                  '[login] Nova cafeteria criada:',
-                  cafeteriaFinal.id
-                );
-
               } catch (error) {
-                console.error(
-                  '[login] Erro ao criar cafeteria para usuário existente:',
-                  error
-                );
-
                 await supabaseClient.auth.signOut();
-
                 throw new Error(
                   'Sua conta existe, mas não foi possível criar a cafeteria. Tente novamente.'
                 );
@@ -1792,7 +1697,7 @@
                       <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
+                      <label className="text-[11px] text-slate-400 font-bold block np-1">Categoria</label>
                       <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
                         {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
