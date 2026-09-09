@@ -531,13 +531,21 @@
           await checkResponse.json().catch(() => ({}));
 
         if (!checkResponse.ok) {
+          console.error('[LOGIN] /api/check-account falhou:', {
+            status: checkResponse.status,
+            statusText: checkResponse.statusText,
+            response: checkResult
+          });
+
           throw new Error(
             checkResult.error ||
-            'Não foi possível verificar a conta.'
+            `Erro ao verificar a conta (${checkResponse.status}).`
           );
         }
 
         if (!checkResult.exists) {
+          console.error('[LOGIN] Conta não encontrada no check-account:', cleanEmail);
+
           throw new Error('Conta não encontrada.');
         }
 
@@ -548,6 +556,12 @@
         } = await supabaseClient.auth.signInWithPassword({
           email: cleanEmail,
           password
+        });
+
+        console.log('[LOGIN] Resultado do Supabase Auth:', {
+          user: data?.user?.id || null,
+          email: data?.user?.email || null,
+          error: error?.message || null
         });
 
         if (error) {
@@ -610,6 +624,8 @@
 
         const cafeteriaPorUsuario =
           await supabaseService.buscarCafeteriaPorUserId(userId);
+
+        console.log('[LOGIN] Cafeteria encontrada:', cafeteriaPorUsuario);
 
         if (cafeteriaPorUsuario) {
           throw new Error(
@@ -2071,4 +2087,3 @@
   </script>
 </body>
 </html>
-
