@@ -1623,7 +1623,7 @@
                     onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} 
                     className={`px-3 py-1 border border-slate-700 rounded-lg font-bold transition ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
                   >
-                    Acesso Equipa (PIN)
+                    Acesso Equipe (PIN)
                   </button>
                 </div>
               )}
@@ -1728,7 +1728,7 @@
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">PIN de Acesso da Equipa</h3>
+                        <h3 className="font-bold text-lg">PIN de Acesso da Equipe</h3>
                         <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
                         <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
                           <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
@@ -2084,4 +2084,3 @@
   </script>
 </body>
 </html>
-
