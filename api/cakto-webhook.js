@@ -18,6 +18,11 @@ const supabase = createClient(
   supabaseServiceKey
 );
 
+// Regras da assinatura
+const DIAS_ASSINATURA = 30;
+const DIAS_MINIMOS_PARA_RENOVAR = 15;
+const DIAS_MAXIMOS = 60;
+
 export default async function handler(req, res) {
   // Aceita somente POST
   if (req.method !== 'POST') {
@@ -93,7 +98,9 @@ export default async function handler(req, res) {
     const { data: cafeteria, error: searchError } =
       await supabase
         .from('cafeterias')
-        .select('id, email, plano_ativo, data_expiracao')
+        .select(
+          'id, email, plano_ativo, data_expiracao'
+        )
         .eq('email', cleanEmail)
         .maybeSingle();
 
@@ -125,45 +132,126 @@ export default async function handler(req, res) {
 
     /*
      * =====================================================
-     * CÁLCULO DA NOVA DATA DE EXPIRAÇÃO
+     * CONTROLE DA ASSINATURA
      * =====================================================
      *
-     * Se a cafeteria ainda possui dias restantes:
+     * Regras:
      *
-     * data atual:       04/09
-     * expiração atual:  14/09
-     * nova assinatura:  +30 dias
-     * nova expiração:   14/10
+     * - Até 15 dias restantes:
+     *   pagamento pode adicionar +30 dias.
      *
-     * Ou seja, os 10 dias restantes NÃO são perdidos.
+     * - Mais de 15 dias restantes:
+     *   pagamento NÃO concede novos dias.
      *
-     * Se a assinatura já expirou:
+     * - Assinatura expirada:
+     *   +30 dias a partir de agora.
      *
-     * data atual:       04/09
-     * expiração antiga: 01/09
-     * nova assinatura:  +30 dias
-     * nova expiração:   04/10
+     * - Nunca permitir mais de 60 dias acumulados.
      */
 
     const agora = new Date();
 
-    let dataBase = agora;
+    let diasRestantes = 0;
+    let expiracaoAtual = null;
 
     if (cafeteria.data_expiracao) {
-      const expiracaoAtual =
+      expiracaoAtual =
         new Date(cafeteria.data_expiracao);
 
-      // Só usa a data antiga se ela ainda estiver válida
       if (expiracaoAtual > agora) {
-        dataBase = expiracaoAtual;
+        diasRestantes = Math.ceil(
+          (
+            expiracaoAtual.getTime() -
+            agora.getTime()
+          ) /
+          (24 * 60 * 60 * 1000)
+        );
       }
     }
 
-    // Adiciona 30 dias à data-base
-    const novaDataExpiracao = new Date(
+    console.log(
+      'Dias restantes antes da renovação:',
+      diasRestantes
+    );
+
+    /*
+     * =====================================================
+     * BLOQUEIO DE RENOVAÇÃO ANTECIPADA
+     * =====================================================
+     *
+     * Se ainda houver mais de 15 dias,
+     * não concedemos os 30 dias.
+     *
+     * Isso protege o CoffeeFlow mesmo que
+     * o cliente entre diretamente no checkout
+     * da Cakto.
+     */
+
+    if (diasRestantes > DIAS_MINIMOS_PARA_RENOVAR) {
+      console.warn(
+        `Renovação antecipada recusada para ${cleanEmail}. ` +
+        `${diasRestantes} dias restantes.`
+      );
+
+      return res.status(200).json({
+        received: true,
+        processed: false,
+        renewal_allowed: false,
+        reason: 'Renewal only allowed with 15 days or less remaining',
+        days_remaining: diasRestantes
+      });
+    }
+
+    /*
+     * =====================================================
+     * CALCULA NOVA EXPIRAÇÃO
+     * =====================================================
+     */
+
+    let dataBase = agora;
+
+    // Se ainda possui dias, preserva todos eles.
+    if (
+      expiracaoAtual &&
+      expiracaoAtual > agora
+    ) {
+      dataBase = expiracaoAtual;
+    }
+
+    let novaDataExpiracao = new Date(
       dataBase.getTime() +
-      30 * 24 * 60 * 60 * 1000
-    ).toISOString();
+      DIAS_ASSINATURA *
+      24 *
+      60 *
+      60 *
+      1000
+    );
+
+    /*
+     * =====================================================
+     * LIMITE ABSOLUTO DE 60 DIAS
+     * =====================================================
+     */
+
+    const limiteMaximo = new Date(
+      agora.getTime() +
+      DIAS_MAXIMOS *
+      24 *
+      60 *
+      60 *
+      1000
+    );
+
+    if (novaDataExpiracao > limiteMaximo) {
+      console.warn(
+        `Limite de ${DIAS_MAXIMOS} dias atingido.`
+      );
+
+      novaDataExpiracao = limiteMaximo;
+    }
+
+    const novaDataExpiracaoIso =
+      novaDataExpiracao.toISOString();
 
     console.log(
       'Data de expiração anterior:',
@@ -171,17 +259,28 @@ export default async function handler(req, res) {
     );
 
     console.log(
-      'Nova data de expiração:',
-      novaDataExpiracao
+      'Dias restantes:',
+      diasRestantes
     );
 
-    // Atualiza a assinatura
+    console.log(
+      'Nova data de expiração:',
+      novaDataExpiracaoIso
+    );
+
+    /*
+     * =====================================================
+     * ATUALIZA A ASSINATURA
+     * =====================================================
+     */
+
     const { error: updateError } =
       await supabase
         .from('cafeterias')
         .update({
           plano_ativo: true,
-          data_expiracao: novaDataExpiracao
+          data_expiracao:
+            novaDataExpiracaoIso
         })
         .eq('id', cafeteria.id);
 
@@ -199,19 +298,30 @@ export default async function handler(req, res) {
     }
 
     console.log(
-      `Plano ativado com sucesso para ${cleanEmail}`
+      `Plano renovado com sucesso para ${cleanEmail}`
     );
 
     console.log(
-      `Nova data de expiração: ${novaDataExpiracao}`
+      `Dias anteriores: ${diasRestantes}`
+    );
+
+    console.log(
+      `Dias adicionados: ${DIAS_ASSINATURA}`
+    );
+
+    console.log(
+      `Nova data de expiração: ${novaDataExpiracaoIso}`
     );
 
     return res.status(200).json({
       received: true,
       processed: true,
+      renewal_allowed: true,
       email: cleanEmail,
       plano_ativo: true,
-      data_expiracao: novaDataExpiracao
+      previous_days_remaining: diasRestantes,
+      days_added: DIAS_ASSINATURA,
+      data_expiracao: novaDataExpiracaoIso
     });
 
   } catch (error) {
