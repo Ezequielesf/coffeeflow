@@ -451,12 +451,29 @@
       buscarPedidos: async (cafeteriaId) => {
         try {
           if (!cafeteriaId) return [];
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&status=neq.entregue&order=created_at.desc`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+
+          const {
+            data: { session },
+            error: sessionError
+          } = await supabaseClient.auth.getSession();
+
+          if (sessionError || !session?.access_token) {
+            return [];
+          }
+
+          const res = await fetch('/api/orders', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
           });
+
           if (!res.ok) return [];
+
           return await res.json();
+
         } catch (err) {
+          console.error('Erro ao buscar pedidos:', err);
           return [];
         }
       },
@@ -483,17 +500,35 @@
 
       atualizarStatusPedido: async (id, status) => {
         try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${id}`, {
+          const {
+            data: { session },
+            error: sessionError
+          } = await supabaseClient.auth.getSession();
+
+          if (sessionError || !session?.access_token) {
+            return false;
+          }
+
+          const res = await fetch('/api/orders', {
             method: 'PATCH',
             headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
+              'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ status })
+            body: JSON.stringify({
+              id,
+              status
+            })
           });
+
           return res.ok;
+
         } catch (err) {
+          console.error(
+            'Erro ao atualizar status do pedido:',
+            err
+          );
+
           return false;
         }
       }
