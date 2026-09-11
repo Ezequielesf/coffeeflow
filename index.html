@@ -89,13 +89,25 @@
       buscarCafeteriaPorId: async (id) => {
         try {
           if (!id) return null;
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(id)}`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
+
+          const res = await fetch(
+            `/api/cafeteria-public?id=${encodeURIComponent(id)}`
+          );
+
+          const result = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            return null;
+          }
+
+          return result.cafeteria || null;
+
         } catch (err) {
+          console.error(
+            'Erro ao buscar cafeteria por ID:',
+            err
+          );
+
           return null;
         }
       },
