@@ -100,19 +100,36 @@
         }
       },
 
-      buscarCafeteriaPorUserId: async (userId) => {
-        if (!userId) return null;
+buscarCafeteriaPorUserId: async (userId) => {
+  if (!userId) return null;
 
-        try {
-          const res = await fetch(
-            `${API_URL}/rest/v1/cafeterias?user_id=eq.${encodeURIComponent(userId)}&limit=1`,
-            {
-              headers: {
-                'apikey': API_KEY,
-                'Authorization': `Bearer ${API_KEY}`
-              }
-            }
-          );
+  try {
+    const session = await supabaseClient.auth.getSession();
+    const accessToken = session?.data?.session?.access_token;
+
+    if (!accessToken) {
+      return null;
+    }
+
+    const res = await fetch('/api/cafeteria', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    const result = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return null;
+    }
+
+    return result.cafeteria || null;
+
+  } catch (err) {
+    console.error('Erro ao buscar cafeteria do usuário:', err);
+    return null;
+  }
+},
 
           if (!res.ok) {
             throw new Error('Erro ao buscar cafeteria pelo usuário.');
