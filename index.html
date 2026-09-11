@@ -101,7 +101,13 @@
           }
 
           return result.cafeteria || null;
+
         } catch (err) {
+          console.error(
+            'Erro ao buscar cafeteria por ID:',
+            err
+          );
+
           return null;
         }
       },
@@ -136,6 +142,19 @@ buscarCafeteriaPorUserId: async (userId) => {
     return null;
   }
 },
+
+          if (!res.ok) {
+            throw new Error('Erro ao buscar cafeteria pelo usuário.');
+          }
+
+          const data = await res.json();
+          return data?.[0] || null;
+
+        } catch (err) {
+          console.error('Erro ao buscar cafeteria por user_id:', err);
+          return null;
+        }
+      },
 
 buscarCafeteriaPorEmail: async (email) => {
   try {
@@ -319,6 +338,7 @@ buscarCafeteriaPorEmail: async (email) => {
           const isEdit = Boolean(produto.id && !String(produto.id).startsWith('p_'));
           
           if (isEdit) {
+            // Atualização via REST Direta ao Supabase (evita problemas de endpoint serverless inexistente)
             const payload = {
               nome: produto.nome.trim(),
               preco: Number(produto.preco),
@@ -345,6 +365,7 @@ buscarCafeteriaPorEmail: async (email) => {
             const data = JSON.parse(textRes);
             return { success: true, produto: data?.[0] || null };
           } else {
+            // Criação via REST Direta ao Supabase
             const payload = {
               cafeteria_id: produto.cafeteria_id,
               nome: produto.nome.trim(),
