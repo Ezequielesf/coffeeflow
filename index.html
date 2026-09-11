@@ -44,12 +44,12 @@
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false
-  }
-});
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false
+      }
+    });
 
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
 
@@ -217,56 +217,31 @@
       },
 
       atualizarEmailCafeteria: async (novoEmail) => {
-          try {
-              const email = novoEmail.trim().toLowerCase();
+        try {
+          const email = novoEmail.trim().toLowerCase();
+          if (!email) throw new Error('Informe um e-mail válido.');
 
-              if (!email) {
-                  throw new Error('Informe um e-mail válido.');
-              }
+          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+          if (sessionError) throw sessionError;
+          if (!session?.access_token) throw new Error('Sua sessão expirou. Faça login novamente.');
 
-              const { data: { session }, error: sessionError } =
-                  await supabaseClient.auth.getSession();
+          const response = await fetch('/api/account-email', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({ email })
+          });
 
-              if (sessionError) {
-                  throw sessionError;
-              }
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.error || 'Não foi possível alterar o e-mail.');
 
-              if (!session?.access_token) {
-                  throw new Error('Sua sessão expirou. Faça login novamente.');
-              }
-
-              const response = await fetch('/api/account-email', {
-                  method: 'PATCH',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${session.access_token}`
-                  },
-                  body: JSON.stringify({
-                      email
-                  })
-              });
-
-              const result = await response.json().catch(() => ({}));
-
-              if (!response.ok) {
-                  throw new Error(
-                      result.error || 'Não foi possível alterar o e-mail.'
-                  );
-              }
-
-              return {
-                  success: true,
-                  email: result.email
-              };
-
-          } catch (error) {
-              console.error('Erro ao alterar e-mail:', error);
-
-              return {
-                  success: false,
-                  error: error.message || 'Erro ao alterar o e-mail.'
-              };
-          }
+          return { success: true, email: result.email };
+        } catch (error) {
+          console.error('Erro ao alterar e-mail:', error);
+          return { success: false, error: error.message || 'Erro ao alterar o e-mail.' };
+        }
       },
 
       atualizarPlanoVitalicio: async (cafeteriaId) => {
@@ -303,175 +278,108 @@
 
       salvarProduto: async (produto) => {
         try {
-          const {
-            data: { session },
-            error: sessionError
-          } = await supabaseClient.auth.getSession();
-
-          if (sessionError) {
-            throw sessionError;
-          }
-
-          if (!session?.access_token) {
-            throw new Error('Sua sessão expirou. Faça login novamente.');
-          }
-
           if (!produto?.nome || !produto.nome.trim()) {
             throw new Error('Informe o nome do produto.');
           }
-
           if (!Number.isFinite(Number(produto.preco))) {
             throw new Error('Informe um preço válido.');
           }
 
-          const isEdit = Boolean(
-            produto.id &&
-            !String(produto.id).startsWith('p_')
-          );
-
-          const response = await fetch('/api/products', {
-            method: isEdit ? 'PATCH' : 'POST',
-
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            },
-
-            body: JSON.stringify({
-              ...(isEdit ? { id: produto.id } : {}),
-
+          const isEdit = Boolean(produto.id && !String(produto.id).startsWith('p_'));
+          
+          if (isEdit) {
+            // Atualização via REST Direta ao Supabase (evita problemas de endpoint serverless inexistente)
+            const payload = {
               nome: produto.nome.trim(),
-
               preco: Number(produto.preco),
+              categoria: produto.categoria?.trim() || 'Cafés',
+              descricao: produto.descricao?.trim() || '',
+              imagem: produto.imagem?.trim() || '',
+              disponivel: produto.disponivel !== false
+            };
 
-              categoria:
-                produto.categoria?.trim() || 'Cafés',
+            const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${produto.id}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': API_KEY,
+                'Authorization': `Bearer ${API_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify(payload)
+            });
 
-              descricao:
-                produto.descricao?.trim() || '',
+            const textRes = await res.text();
+            if (!res.ok) throw new Error(`Não foi possível atualizar o produto: ${textRes}`);
+            
+            const data = JSON.parse(textRes);
+            return { success: true, produto: data?.[0] || null };
+          } else {
+            // Criação via REST Direta ao Supabase
+            const payload = {
+              cafeteria_id: produto.cafeteria_id,
+              nome: produto.nome.trim(),
+              preco: Number(produto.preco),
+              categoria: produto.categoria?.trim() || 'Cafés',
+              descricao: produto.descricao?.trim() || '',
+              imagem: produto.imagem?.trim() || '',
+              disponivel: produto.disponivel !== false
+            };
 
-              imagem:
-                produto.imagem?.trim() || '',
+            const res = await fetch(`${API_URL}/rest/v1/produtos`, {
+              method: 'POST',
+              headers: {
+                'apikey': API_KEY,
+                'Authorization': `Bearer ${API_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify(payload)
+            });
 
-              disponivel:
-                produto.disponivel !== false
-            })
-          });
+            const textRes = await res.text();
+            if (!res.ok) throw new Error(`Não foi possível criar o produto: ${textRes}`);
 
-          const result =
-            await response.json().catch(() => ({}));
-
-          if (!response.ok) {
-            throw new Error(
-              result.error ||
-              'Não foi possível salvar o produto.'
-            );
+            const data = JSON.parse(textRes);
+            return { success: true, produto: data?.[0] || null };
           }
-
-          return {
-            success: true,
-            produto: result.produto || null
-          };
-
         } catch (err) {
           console.error('Erro em salvarProduto:', err);
-
-          return {
-            success: false,
-            error:
-              err.message ||
-              'Erro desconhecido ao salvar o produto.'
-          };
+          return { success: false, error: err.message || 'Erro desconhecido ao salvar o produto.' };
         }
       },
 
       deletarProduto: async (id) => {
         try {
-          const {
-            data: { session },
-            error: sessionError
-          } = await supabaseClient.auth.getSession();
+          if (!id) throw new Error('ID do produto não informado.');
 
-          if (sessionError) {
-            throw sessionError;
-          }
-
-          if (!session?.access_token) {
-            throw new Error(
-              'Sua sessão expirou. Faça login novamente.'
-            );
-          }
-
-          if (!id) {
-            throw new Error(
-              'ID do produto não informado.'
-            );
-          }
-
-          const response = await fetch('/api/products', {
+          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${id}`, {
             method: 'DELETE',
-
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            },
-
-            body: JSON.stringify({
-              id
-            })
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Prefer': 'return=representation'
+            }
           });
 
-          const result =
-            await response.json().catch(() => ({}));
+          const textRes = await res.text();
+          if (!res.ok) throw new Error(`Não foi possível eliminar o produto: ${textRes}`);
 
-          if (!response.ok) {
-            throw new Error(
-              result.error ||
-              'Não foi possível excluir o produto.'
-            );
-          }
-
-          return {
-            success: true,
-            produto: result.produto || null
-          };
-
+          return { success: true };
         } catch (err) {
           console.error('Erro em deletarProduto:', err);
-
-          return {
-            success: false,
-            error:
-              err.message ||
-              'Não foi possível excluir o produto.'
-          };
+          return { success: false, error: err.message || 'Não foi possível excluir o produto.' };
         }
       },
 
       buscarPedidos: async (cafeteriaId) => {
         try {
           if (!cafeteriaId) return [];
-
-          const {
-            data: { session },
-            error: sessionError
-          } = await supabaseClient.auth.getSession();
-
-          if (sessionError || !session?.access_token) {
-            return [];
-          }
-
-          const res = await fetch('/api/orders', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`
-            }
+          const res = await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&order=created_at.desc`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
           });
-
           if (!res.ok) return [];
-
           return await res.json();
-
         } catch (err) {
           console.error('Erro ao buscar pedidos:', err);
           return [];
@@ -500,25 +408,15 @@
 
       atualizarStatusPedido: async (id, status) => {
         try {
-          const { data: { session }, error: sessionError } =
-            await supabaseClient.auth.getSession();
-
-          if (sessionError || !session?.access_token) {
-            return false;
-          }
-
-          const res = await fetch('/api/orders', {
+          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${id}`, {
             method: 'PATCH',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`,
+              'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              id,
-              status
-            })
+            body: JSON.stringify({ status })
           });
-
           return res.ok;
         } catch (err) {
           console.error('Erro ao atualizar status do pedido:', err);
@@ -530,251 +428,72 @@
     const authService = {
       login: async (email, password) => {
         const cleanEmail = email.trim().toLowerCase();
+        if (!cleanEmail) throw new Error('Informe o seu e-mail.');
+        if (!password) throw new Error('Informe a sua palavra-passe.');
 
-        if (!cleanEmail) {
-          throw new Error('Informe o seu e-mail.');
-        }
-
-        if (!password) {
-          throw new Error('Informe a sua palavra-passe.');
-        }
-
-        // Primeiro verifica se a conta ainda existe.
-        const checkResponse = await fetch(
-          '/api/check-account',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-store'
-            },
-            cache: 'no-store',
-            body: JSON.stringify({
-              email: cleanEmail
-            })
-          }
-        );
-
-        const checkResult =
-          await checkResponse.json().catch(() => ({}));
-
-        if (!checkResponse.ok) {
-          console.error('[LOGIN] /api/check-account falhou:', {
-            status: checkResponse.status,
-            statusText: checkResponse.statusText,
-            response: checkResult
-          });
-
-          throw new Error(
-            checkResult.error ||
-            `Erro ao verificar a conta (${checkResponse.status}).`
-          );
-        }
-
-        if (!checkResult.exists) {
-          console.error('[LOGIN] Conta não encontrada no check-account:', cleanEmail);
-
-          throw new Error('Conta não encontrada.');
-        }
-
-        // A conta existe. Agora verifica a senha.
-        const {
-          data,
-          error
-        } = await supabaseClient.auth.signInWithPassword({
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
           email: cleanEmail,
           password
         });
 
-        console.log('[LOGIN] Resultado do Supabase Auth:', {
-          user: data?.user?.id || null,
-          email: data?.user?.email || null,
-          error: error?.message || null
-        });
-
         if (error) {
-          throw new Error(
-            'E-mail ou palavra-passe incorretos.'
-          );
+          throw new Error('E-mail ou palavra-passe incorretos.');
         }
 
-        return {
-          user: data.user,
-          session: data.session
-        };
+        return { user: data.user, session: data.session };
       },
 
       signUp: async (email, password, nomeCafeteria) => {
         const cleanEmail = email.trim().toLowerCase();
+        if (!cleanEmail || !password) throw new Error('Preencha o e-mail e a palavra-passe.');
 
-        if (!cleanEmail || !password) {
-          throw new Error('Preencha o e-mail e a palavra-passe.');
-        }
-
-        const cafeteriaExistente =
-          await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
-
+        const cafeteriaExistente = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
         if (cafeteriaExistente) {
-          throw new Error(
-            'Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a palavra-passe.'
-          );
+          throw new Error('Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a palavra-passe.');
         }
 
-        const { data, error } =
-          await supabaseClient.auth.signUp({
-            email: cleanEmail,
-            password
-          });
+        const { data, error } = await supabaseClient.auth.signUp({
+          email: cleanEmail,
+          password
+        });
 
-        if (error) {
-          throw new Error(
-            error.message || 'Erro ao criar conta.'
-          );
-        }
-
-        if (
-          data?.user &&
-          Array.isArray(data.user.identities) &&
-          data.user.identities.length === 0
-        ) {
-          throw new Error(
-            'Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a palavra-passe.'
-          );
-        }
+        if (error) throw new Error(error.message || 'Erro ao criar conta.');
 
         const userId = data?.user?.id || null;
+        if (!userId) throw new Error('A conta foi criada, mas o ID do usuário não foi retornado.');
 
-        if (!userId) {
-          throw new Error(
-            'A conta foi criada, mas o ID do usuário não foi retornado.'
-          );
-        }
-
-        const cafeteriaPorUsuario =
-          await supabaseService.buscarCafeteriaPorUserId(userId);
-
-        console.log('[LOGIN] Cafeteria encontrada:', cafeteriaPorUsuario);
-
+        const cafeteriaPorUsuario = await supabaseService.buscarCafeteriaPorUserId(userId);
         if (cafeteriaPorUsuario) {
-          throw new Error(
-            'Este usuário já possui uma cafeteria cadastrada. Faça login em vez de criar outra conta.'
-          );
+          throw new Error('Este usuário já possui uma cafeteria cadastrada. Faça login em vez de criar outra conta.');
         }
 
         const pinUnico = gerarPinAleatorio();
-
         let cafeteriaSalva;
 
         try {
-          cafeteriaSalva =
-            await supabaseService.criarCafeteria(
-              userId,
-              cleanEmail,
-              nomeCafeteria,
-              pinUnico
-            );
+          cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
         } catch (error) {
-          console.error(
-            'Erro ao criar cafeteria após cadastro:',
-            error
-          );
-
-          const mensagem =
-            error?.message || '';
-
-          if (
-            mensagem.includes('cafeterias_user_id_unique') ||
-            mensagem.includes('duplicate key') ||
-            mensagem.includes('23505')
-          ) {
-            throw new Error(
-              'Este usuário já possui uma cafeteria cadastrada. Faça login em vez de criar outra conta.'
-            );
-          }
-
-          throw new Error(
-            mensagem ||
-            'Não foi possível criar a cafeteria.'
-          );
+          console.error('Erro ao criar cafeteria após cadastro:', error);
+          throw new Error(error?.message || 'Não foi possível criar a cafeteria.');
         }
 
-        if (!cafeteriaSalva) {
-          throw new Error(
-            'A conta foi criada, mas não foi possível criar a cafeteria.'
-          );
-        }
+        if (!cafeteriaSalva) throw new Error('A conta foi criada, mas não foi possível criar a cafeteria.');
 
-        return {
-          user: data.user,
-          session: data.session,
-          cafeteria: cafeteriaSalva
-        };
+        return { user: data.user, session: data.session, cafeteria: cafeteriaSalva };
       },
 
       recuperarSenha: async (email) => {
         const cleanEmail = email.trim().toLowerCase();
+        if (!cleanEmail) throw new Error('Informe o e-mail da sua conta.');
 
-        if (!cleanEmail) {
-          throw new Error('Informe o e-mail da sua conta.');
-        }
-
-        // Verifica se a conta realmente existe antes
-        // de solicitar o envio do e-mail.
-        const checkResponse = await fetch(
-          '/api/check-account',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-store'
-            },
-            cache: 'no-store',
-            body: JSON.stringify({
-              email: cleanEmail
-            })
-          }
-        );
-
-        const checkResult =
-          await checkResponse.json().catch(() => ({}));
-
-        if (!checkResponse.ok) {
-          throw new Error(
-            checkResult.error ||
-            'Não foi possível verificar a conta.'
-          );
-        }
-
-        // Conta excluída ou inexistente.
-        // IMPORTANTE: neste ponto NÃO chamamos
-        // resetPasswordForEmail().
-        if (!checkResult.exists) {
-          throw new Error('Conta não encontrada.');
-        }
-
-        const redirectUrl =
-          `${window.location.origin}${window.location.pathname}?reset=true`;
-
-        const {
-          error
-        } = await supabaseClient.auth.resetPasswordForEmail(
-          cleanEmail,
-          {
-            redirectTo: redirectUrl
-          }
-        );
+        const redirectUrl = `${window.location.origin}${window.location.pathname}?reset=true`;
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: redirectUrl
+        });
 
         if (error) {
-          console.error(
-            'Erro ao enviar e-mail de recuperação:',
-            error
-          );
-
-          throw new Error(
-            'Não foi possível enviar o e-mail de recuperação.'
-          );
+          throw new Error('Não foi possível enviar o e-mail de recuperação.');
         }
-
         return true;
       }
     };
@@ -805,83 +524,28 @@
       useEffect(() => {
         const trocarSessao = async () => {
           try {
-            // Limpa sessão e dados locais antigos antes de processar o fluxo de recuperação
             await supabaseClient.auth.signOut();
             localStorage.removeItem('coffeeflow_cafeteria');
             localStorage.removeItem('coffeeflow_staff_session');
 
             if (urlInfo.code) {
-              const { data, error } =
-                await supabaseClient.auth.exchangeCodeForSession(
-                  urlInfo.code
-                );
-
-              if (error) {
-                throw error;
-              }
-
-              if (!data?.session) {
-                throw new Error(
-                  'O link de recuperação é inválido ou expirou.'
-                );
-              }
-
-            } else if (
-              urlInfo.accessToken &&
-              urlInfo.refreshToken
-            ) {
-              const { data, error } =
-                await supabaseClient.auth.setSession({
-                  access_token: urlInfo.accessToken,
-                  refresh_token: urlInfo.refreshToken
-                });
-
-              if (error) {
-                throw error;
-              }
-
-              if (!data?.session) {
-                throw new Error(
-                  'O link de recuperação é inválido ou expirou.'
-                );
-              }
+              const { data, error } = await supabaseClient.auth.exchangeCodeForSession(urlInfo.code);
+              if (error) throw error;
+            } else if (urlInfo.accessToken && urlInfo.refreshToken) {
+              const { data, error } = await supabaseClient.auth.setSession({
+                access_token: urlInfo.accessToken,
+                refresh_token: urlInfo.refreshToken
+              });
+              if (error) throw error;
             }
 
-            /*
-             * Remove tokens da barra de endereço.
-             *
-             * Isso impede que o navegador reutilize o mesmo
-             * access_token/refresh_token ao recarregar a página.
-             */
-            if (
-              urlInfo.accessToken ||
-              urlInfo.refreshToken ||
-              urlInfo.code
-            ) {
-              window.history.replaceState(
-                {},
-                document.title,
-                '/reset-password'
-              );
+            if (urlInfo.accessToken || urlInfo.refreshToken || urlInfo.code) {
+              window.history.replaceState({}, document.title, '/reset-password');
             }
-
           } catch (error) {
-            console.error(
-              'Erro ao processar link de recuperação:',
-              error
-            );
-
-            /*
-             * Limpa qualquer sessão que tenha sido criada
-             * durante o processamento de um link inválido.
-             */
+            console.error('Erro ao processar link de recuperação:', error);
             await supabaseClient.auth.signOut();
-
-            window.history.replaceState(
-              {},
-              document.title,
-              '/'
-            );
+            window.history.replaceState({}, document.title, '/');
           }
         };
         if (isResetPassword) {
@@ -959,7 +623,6 @@
           alert('A palavra-passe deve ter pelo menos 6 caracteres.');
           return;
         }
-
         if (newPassword !== confirmNewPassword) {
           alert('As palavras-passe não coincidem.');
           return;
@@ -967,46 +630,21 @@
 
         try {
           setLoadingResetPassword(true);
-
-          const { error } =
-            await supabaseClient.auth.updateUser({
-              password: newPassword
-            });
-
-          if (error) {
-            throw error;
-          }
+          const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+          if (error) throw error;
 
           await supabaseClient.auth.signOut();
-
           localStorage.removeItem('coffeeflow_cafeteria');
           localStorage.removeItem('coffeeflow_staff_session');
-
-          window.history.replaceState(
-            {},
-            document.title,
-            '/'
-          );
+          window.history.replaceState({}, document.title, '/');
 
           setIsResetPassword(false);
           setAdminAuthMode('login');
           setActiveView('admin_login');
-
-          setResetPasswordSuccess(
-            'Palavra-passe alterada com sucesso! Agora faça login com a nova palavra-passe.'
-          );
-
+          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Agora faça login com a nova palavra-passe.');
         } catch (error) {
-          console.error(
-            'Erro ao alterar palavra-passe:',
-            error
-          );
-
-          alert(
-            error.message ||
-            'Não foi possível alterar a palavra-passe.'
-          );
-
+          console.error('Erro ao alterar palavra-passe:', error);
+          alert(error.message || 'Não foi possível alterar a palavra-passe.');
         } finally {
           setLoadingResetPassword(false);
         }
@@ -1173,57 +811,14 @@
 
       const executarExclusaoConta = async () => {
         setEliminandoConta(true);
-
         try {
-          const {
-            data: { session },
-            error: sessionError
-          } = await supabaseClient.auth.getSession();
-
-          if (sessionError || !session?.access_token) {
-            throw new Error(
-              'Sua sessão expirou. Faça login novamente.'
-            );
-          }
-
-          const response = await fetch('/api/delete-account', {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          const result = await response.json().catch(() => ({}));
-
-          if (!response.ok) {
-            throw new Error(
-              result.error ||
-              'Não foi possível excluir sua conta.'
-            );
-          }
-
           await supabaseClient.auth.signOut();
-
           setConfirmarExclusaoModal(false);
-
-          alert(
-            'Sua conta e todos os dados da cafeteria foram excluídos permanentemente.'
-          );
-
+          alert('Sua sessão foi encerrada. Para apagar os dados por completo, verifique o painel do Supabase.');
           window.location.href = '/';
-
         } catch (error) {
-          console.error(
-            'Erro ao excluir conta:',
-            error
-          );
-
-          alert(
-            error.message ||
-            'Ocorreu um erro ao excluir sua conta.'
-          );
-
+          console.error('Erro ao excluir conta:', error);
+          alert('Ocorreu um erro ao encerrar a sessão.');
         } finally {
           setEliminandoConta(false);
         }
@@ -1241,77 +836,32 @@
             await authService.recuperarSenha(adminEmailInput);
             setAdminAuthSuccess('E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada.');
           } else if (adminAuthMode === 'login') {
-            const { user } = await authService.login(
-              adminEmailInput,
-              adminPasswordInput
-            );
-
-            const dadosCaf =
-              await supabaseService.buscarCafeteriaPorUserId(user.id);
-
+            const { user } = await authService.login(adminEmailInput, adminPasswordInput);
+            const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
             let cafeteriaFinal = dadosCaf;
 
-            // Se a conta existe no Auth, mas não possui cafeteria,
-            // cria uma nova cafeteria vinculada ao NOVO user.id.
             if (!cafeteriaFinal) {
-              console.log(
-                '[login] Usuário sem cafeteria. Criando nova cafeteria...',
-                user.id
-              );
-
               try {
                 const novoPin = gerarPinAleatorio();
-
-                cafeteriaFinal =
-                  await supabaseService.criarCafeteria(
-                    user.id,
-                    user.email || adminEmailInput,
-                    'CoffeeFlow',
-                    novoPin
-                  );
-
-                console.log(
-                  '[login] Nova cafeteria criada:',
-                  cafeteriaFinal.id
-                );
-
+                cafeteriaFinal = await supabaseService.criarCafeteria(user.id, user.email || adminEmailInput, 'CoffeeFlow', novoPin);
               } catch (error) {
-                console.error(
-                  '[login] Erro ao criar cafeteria para usuário existente:',
-                  error
-                );
-
                 await supabaseClient.auth.signOut();
-
-                throw new Error(
-                  'Sua conta existe, mas não foi possível criar a cafeteria. Tente novamente.'
-                );
+                throw new Error('Sua conta existe, mas não foi possível criar a cafeteria. Tente novamente.');
               }
             }
 
-            const eVitalicio =
-              cafeteriaFinal.data_expiracao &&
-              new Date(cafeteriaFinal.data_expiracao).getFullYear() > 2090;
-
+            const eVitalicio = cafeteriaFinal.data_expiracao && new Date(cafeteriaFinal.data_expiracao).getFullYear() > 2090;
             setIsLoggedInAdmin(true);
-
             setCafeteria({
               id: cafeteriaFinal.id,
               nome: cafeteriaFinal.nome,
               pinEquipe: cafeteriaFinal.pin_equipe,
               planoAtivo: cafeteriaFinal.plano_ativo === true,
-              donoEmail:
-                cafeteriaFinal.email ||
-                cafeteriaFinal.dono_email ||
-                adminEmailInput,
-              dataInscricao:
-                cafeteriaFinal.data_inscricao ||
-                new Date().toISOString(),
-              dataExpiracao:
-                cafeteriaFinal.data_expiracao || null,
+              donoEmail: cafeteriaFinal.email || cafeteriaFinal.dono_email || adminEmailInput,
+              dataInscricao: cafeteriaFinal.data_inscricao || new Date().toISOString(),
+              dataExpiracao: cafeteriaFinal.data_expiracao || null,
               isVitalicio: eVitalicio
             });
-
             setActiveView('admin');
           } else {
             const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
@@ -1420,42 +970,18 @@
         }
 
         try {
-          const resultado =
-            await supabaseService.deletarProduto(id);
-
+          const resultado = await supabaseService.deletarProduto(id);
           if (!resultado?.success) {
-            throw new Error(
-              resultado?.error ||
-              'Não foi possível eliminar o produto.'
-            );
+            throw new Error(resultado?.error || 'Não foi possível eliminar o produto.');
           }
 
           await carregarDadosDoBanco();
-
-          setNotificacao(
-            'Produto eliminado com sucesso!'
-          );
-
-          setTimeout(
-            () => setNotificacao(''),
-            4000
-          );
-
+          setNotificacao('Produto eliminado com sucesso!');
+          setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          console.error(
-            'Erro ao eliminar produto:',
-            err
-          );
-
-          setNotificacao(
-            err.message ||
-            'Não foi possível eliminar o produto.'
-          );
-
-          setTimeout(
-            () => setNotificacao(''),
-            6000
-          );
+          console.error('Erro ao eliminar produto:', err);
+          setNotificacao(err.message || 'Não foi possível eliminar o produto.');
+          setTimeout(() => setNotificacao(''), 6000);
         }
       };
 
@@ -1464,89 +990,32 @@
 
         try {
           const formData = new FormData(e.target);
-
-          const preco = parseFloat(
-            formData.get('preco')
-          );
+          const preco = parseFloat(formData.get('preco'));
 
           const prodData = {
             id: modalProduto.data?.id,
-
             cafeteria_id: cafeteria.id,
-
-            nome:
-              (formData.get('nome') || '')
-                .toString()
-                .trim(),
-
+            nome: (formData.get('nome') || '').toString().trim(),
             preco,
-
-            categoria:
-              (formData.get('categoria') || 'Cafés')
-                .toString()
-                .trim(),
-
-            descricao:
-              (formData.get('descricao') || '')
-                .toString()
-                .trim(),
-
-            imagem:
-              (formData.get('imagem') || '')
-                .toString()
-                .trim(),
-
-            disponivel:
-              modalProduto.data
-                ? modalProduto.data.disponivel
-                : true
+            categoria: (formData.get('categoria') || 'Cafés').toString().trim(),
+            descricao: (formData.get('descricao') || '').toString().trim(),
+            imagem: (formData.get('imagem') || '').toString().trim(),
+            disponivel: modalProduto.data ? modalProduto.data.disponivel : true
           };
 
-          const resultado =
-            await supabaseService.salvarProduto(
-              prodData
-            );
-
+          const resultado = await supabaseService.salvarProduto(prodData);
           if (!resultado?.success) {
-            throw new Error(
-              resultado?.error ||
-              'Não foi possível salvar o produto.'
-            );
+            throw new Error(resultado?.error || 'Não foi possível salvar o produto.');
           }
 
           await carregarDadosDoBanco();
-
-          setModalProduto({
-            open: false,
-            data: null
-          });
-
-          setNotificacao(
-            modalProduto.data
-              ? 'Produto atualizado com sucesso!'
-              : 'Produto adicionado com sucesso!'
-          );
-
-          setTimeout(
-            () => setNotificacao(''),
-            4000
-          );
-
+          setModalProduto({ open: false, data: null });
+          setNotificacao(modalProduto.data ? 'Produto atualizado com sucesso!' : 'Produto adicionado com sucesso!');
+          setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          console.error(
-            'Erro ao guardar produto:',
-            err
-          );
-
-          setNotificacao(
-            err.message ||
-            'Não foi possível guardar o produto.'
-          );
-
-          setTimeout(
-            () => setNotificacao(''),
-            6000
-          );
+          console.error('Erro ao guardar produto:', err);
+          setNotificacao(err.message || 'Não foi possível guardar o produto.');
+          setTimeout(() => setNotificacao(''), 6000);
         }
       };
 
@@ -1881,12 +1350,7 @@
 
                           <div className="flex gap-1">
                             <button
-                              onClick={() =>
-                                setModalProduto({
-                                  open: true,
-                                  data: p
-                                })
-                              }
+                              onClick={() => setModalProduto({ open: true, data: p })}
                               className="px-2 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[10px] font-bold hover:bg-amber-500/30"
                             >
                               Editar
@@ -1988,12 +1452,12 @@
                   <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
                   <h3 className="text-lg font-bold text-white">Tem a certeza?</h3>
                   <p className="text-xs text-slate-300">
-                    Esta ação é irreversível. Todos los dados, produtos, pedidos e acessos associados a esta cafeteria serão eliminados permanentemente.
+                    Esta ação encerrará a sessão atual e desvinculará o acesso local.
                   </p>
                   <div className="flex gap-2 pt-2">
                     <button onClick={() => setConfirmarExclusaoModal(false)} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">Cancelar</button>
                     <button onClick={executarExclusaoConta} disabled={eliminandoConta} className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs transition">
-                      {eliminandoConta ? 'A eliminar...' : 'Excluir Conta'}
+                      {eliminandoConta ? 'A processar...' : 'Confirmar'}
                     </button>
                   </div>
                 </div>
