@@ -1,125 +1,67 @@
-// /api/admin-vitalicio.js
+import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_MASTER_PIN = process.env.ADMIN_MASTER_PIN;
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      error: 'Método não permitido'
-    });
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
   try {
-    const { pin } = req.body || {};
+    const authorization = req.headers.authorization || '';
+    const token = authorization.startsWith('Bearer ')
+      ? authorization.slice(7).trim()
+      : '';
+    const pin = String(req.body?.pin || '').trim();
 
-    if (!pin) {
-      return res.status(400).json({
-        error: 'PIN não informado'
-      });
+    if (!token) return res.status(401).json({ error: 'Sessão não autenticada.' });
+    if (!pin) return res.status(400).json({ error: 'PIN administrativo obrigatório.' });
+    if (!process.env.ADMIN_MASTER_PIN) {
+      return res.status(500).json({ error: 'ADMIN_MASTER_PIN não configurado no servidor.' });
+    }
+    if (pin !== process.env.ADMIN_MASTER_PIN) {
+      return res.status(403).json({ error: 'PIN Secreto inválido.' });
     }
 
-    // Obtém o token da sessão do usuário
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'Usuário não autenticado'
-      });
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !authData?.user) {
+      return res.status(401).json({ error: 'Sessão inválida ou expirada.' });
     }
 
-    const accessToken = authHeader.replace('Bearer ', '');
+    const userId = authData.user.id;
+    const { data: cafeteria, error: cafeteriaError } = await supabaseAdmin
+      .from('cafeterias')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    // Verifica o usuário diretamente no Supabase Auth
-    const userResponse = await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-          'Authorization': `Bearer ${accessToken}`
-        }
-      }
-    );
-
-    if (!userResponse.ok) {
-      return res.status(401).json({
-        error: 'Sessão inválida ou expirada'
-      });
+    if (cafeteriaError) {
+      console.error('Erro ao localizar cafeteria:', cafeteriaError);
+      return res.status(500).json({ error: 'Não foi possível localizar sua cafeteria.' });
+    }
+    if (!cafeteria) {
+      return res.status(404).json({ error: 'Nenhuma cafeteria vinculada a esta conta.' });
     }
 
-    const user = await userResponse.json();
+    const dataVitalicia = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString();
+    const { error: updateError } = await supabaseAdmin
+      .from('cafeterias')
+      .update({ plano_ativo: true, data_expiracao: dataVitalicia })
+      .eq('id', cafeteria.id)
+      .eq('user_id', userId);
 
-    if (!user?.email) {
-      return res.status(401).json({
-        error: 'Usuário não identificado'
-      });
+    if (updateError) {
+      console.error('Erro ao atualizar plano vitalício:', updateError);
+      return res.status(500).json({ error: 'Não foi possível atualizar a licença.' });
     }
 
-    // Valida o PIN SOMENTE no servidor
-    if (pin.trim() !== ADMIN_MASTER_PIN) {
-      return res.status(403).json({
-        error: 'PIN Secreto inválido.'
-      });
-    }
-
-    const email = user.email.trim().toLowerCase();
-
-    // Data muito distante para representar acesso vitalício
-    const dataVitalicia = '2099-12-31T23:59:59.000Z';
-
-    // Atualiza somente a cafeteria pertencente ao usuário autenticado
-    const updateResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/cafeterias?email=eq.${encodeURIComponent(email)}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
-          plano_ativo: true,
-          data_expiracao: dataVitalicia
-        })
-      }
-    );
-
-    const texto = await updateResponse.text();
-
-    if (!updateResponse.ok) {
-      console.error('Erro Supabase:', updateResponse.status, texto);
-
-      return res.status(500).json({
-        error: 'Erro ao ativar acesso vitalício'
-      });
-    }
-
-    let cafeterias;
-
-    try {
-      cafeterias = JSON.parse(texto);
-    } catch {
-      cafeterias = [];
-    }
-
-    if (!Array.isArray(cafeterias) || cafeterias.length === 0) {
-      return res.status(404).json({
-        error: 'Nenhuma cafeteria encontrada para esta conta'
-      });
-    }
-
-    return res.status(200).json({
-      ok: true,
-      dataExpiracao: dataVitalicia
-    });
-
+    return res.status(200).json({ ok: true, data_expiracao: dataVitalicia });
   } catch (error) {
-    console.error('Erro no acesso vitalício:', error);
-
-    return res.status(500).json({
-      error: 'Erro interno do servidor'
-    });
+    console.error('Erro interno em admin-vitalicio:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor.' });
   }
-};
+}
