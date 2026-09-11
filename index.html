@@ -93,9 +93,33 @@
     };
 
     const getAccessToken = async () => {
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
-      if (error) throw error;
-      if (!session?.access_token) throw new Error('Sessão não autenticada. Faça login novamente.');
+      let { data: { session }, error } = await supabaseClient.auth.getSession();
+
+      if (error) {
+        console.error('Erro ao recuperar sessão:', error);
+        throw error;
+      }
+
+      // Sessão normal encontrada
+      if (session?.access_token) {
+        return session.access_token;
+      }
+
+      // Tenta renovar automaticamente a sessão
+      const { data: refreshData, error: refreshError } =
+        await supabaseClient.auth.refreshSession();
+
+      if (refreshError) {
+        console.error('Erro ao renovar sessão:', refreshError);
+        throw new Error('Sua sessão expirou. Faça login novamente.');
+      }
+
+      session = refreshData?.session;
+
+      if (!session?.access_token) {
+        throw new Error('Sua sessão expirou. Faça login novamente.');
+      }
+
       return session.access_token;
     };
 
@@ -799,7 +823,14 @@
             await authService.recuperarSenha(adminEmailInput);
             setAdminAuthSuccess('E-mail de redefinição enviado com sucesso!');
           } else if (adminAuthMode === 'login') {
-            const { user } = await authService.login(adminEmailInput, adminPasswordInput);
+            const { user, session } = await authService.login(
+              adminEmailInput,
+              adminPasswordInput
+            );
+
+            if (!session?.access_token) {
+              throw new Error('Não foi possível iniciar a sessão. Tente fazer login novamente.');
+            }
             const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
             let cafeteriaFinal = dadosCaf;
 
