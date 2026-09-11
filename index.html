@@ -100,12 +100,10 @@
         throw error;
       }
 
-      // Sessão normal encontrada
       if (session?.access_token) {
         return session.access_token;
       }
 
-      // Tenta renovar automaticamente a sessão
       const { data: refreshData, error: refreshError } =
         await supabaseClient.auth.refreshSession();
 
@@ -327,13 +325,12 @@
             preco: Number(produto.preco),
             categoria: produto.categoria?.trim() || 'Cafés',
             descricao: produto.descricao?.trim() || '',
-            imagem: produto.imagem?.trim() || '',
-            disponivel: produto.disponivel !== false
+            imagem: produto.imagem?.trim() || ''
           };
 
           const url = isEdit 
-            ? `${API_URL}/rest/v1/produtos?id=eq.${encodeURIComponent(produto.id)}`
-            : `${API_URL}/rest/v1/produtos`;
+            ? `${API_URL}/api/products?id=eq.${encodeURIComponent(produto.id)}`
+            : `${API_URL}/api/products`;
 
           const res = await fetch(url, {
             method: isEdit ? 'PATCH' : 'POST',
@@ -352,7 +349,7 @@
           }
 
           const data = JSON.parse(responseText);
-          return { success: true, produto: data?.[0] || null };
+          return { success: true, produto: data?.[0] || data || null };
         } catch (err) {
           console.error('Erro em salvarProduto:', err);
           return { success: false, error: err.message || 'Erro desconhecido ao salvar o produto.' };
@@ -363,7 +360,7 @@
         try {
           if (!id) throw new Error('ID do produto não informado.');
           const accessToken = await getAccessToken();
-          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${encodeURIComponent(id)}`, {
+          const res = await fetch(`${API_URL}/api/products?id=eq.${encodeURIComponent(id)}`, {
             method: 'DELETE',
             headers: {
               'apikey': API_KEY,
@@ -959,14 +956,6 @@
         }
       };
 
-      const toggleDisponibilidadeProduto = async (id, dispAtual) => {
-        const item = produtos.find(p => p.id === id);
-        if (item) {
-          await supabaseService.salvarProduto({ ...item, disponivel: !dispAtual });
-          carregarDadosDoBanco();
-        }
-      };
-
       const handleRemoverProduto = async (id) => {
         if (!id) return;
         if (!confirm('Deseja eliminar este item da ementa?')) return;
@@ -998,8 +987,7 @@
             preco,
             categoria: (formData.get('categoria') || 'Cafés').toString().trim(),
             descricao: (formData.get('descricao') || '').toString().trim(),
-            imagem: (formData.get('imagem') || '').toString().trim(),
-            disponivel: modalProduto.data ? modalProduto.data.disponivel : true
+            imagem: (formData.get('imagem') || '').toString().trim()
           };
 
           const resultado = await supabaseService.salvarProduto(prodData);
@@ -1030,7 +1018,6 @@
           return;
         }
 
-        // Atualiza imediatamente a tela
         setPedidos(prevPedidos =>
           prevPedidos.map(p =>
             p.id === id
@@ -1361,13 +1348,6 @@
                           <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
                         </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => toggleDisponibilidadeProduto(p.id, p.disponivel)}
-                            className={`px-2 py-1 rounded text-[10px] font-bold ${p.disponivel ? 'bg-slate-700 text-slate-300' : 'bg-amber-500/20 text-amber-400'}`}
-                          >
-                            {p.disponivel ? 'Pausar' : 'Ativar'}
-                          </button>
-
                           <div className="flex gap-1">
                             <button
                               onClick={() => setModalProduto({ open: true, data: p })}
@@ -1439,7 +1419,7 @@
                 )}
 
                 <div className="space-y-3">
-                  {produtosFiltrados.filter(p => p.disponivel).map(prod => (
+                  {produtosFiltrados.map(prod => (
                     <div key={prod.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-3">
                       <img src={prod.imagem} alt={prod.nome} className="w-16 h-16 rounded-lg object-cover bg-slate-800 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -1596,3 +1576,4 @@
   </script>
 </body>
 </html>
+
