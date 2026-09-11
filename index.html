@@ -102,27 +102,15 @@
 
       buscarCafeteriaPorUserId: async (userId) => {
         if (!userId) return null;
-
         try {
-          const res = await fetch(
-            `${API_URL}/rest/v1/cafeterias?user_id=eq.${encodeURIComponent(userId)}&limit=1`,
-            {
-              headers: {
-                'apikey': API_KEY,
-                'Authorization': `Bearer ${API_KEY}`
-              }
-            }
-          );
-
-          if (!res.ok) {
-            throw new Error('Erro ao buscar cafeteria pelo usuário.');
-          }
-
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?user_id=eq.${encodeURIComponent(userId)}`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+          if (!res.ok) return null;
           const data = await res.json();
           return data?.[0] || null;
-
         } catch (err) {
-          console.error('Erro ao buscar cafeteria por user_id:', err);
+          console.error('Erro ao buscar cafeteria do usuário:', err);
           return null;
         }
       },
@@ -136,8 +124,9 @@
           });
           if (!res.ok) return null;
           const data = await res.json();
-          return data?.[0] || null;
+          return data?.[0] ? { exists: true } : null;
         } catch (err) {
+          console.error('Erro ao verificar cafeteria por e-mail:', err);
           return null;
         }
       },
@@ -157,80 +146,39 @@
       },
 
       criarCafeteria: async (userId, email, nome, pin) => {
-  try {
-    const cleanEmail = (email || '').trim().toLowerCase();
-    if (!cleanEmail) throw new Error('E-mail obrigatório para criar a cafeteria.');
+        try {
+          const cleanEmail = (email || '').trim().toLowerCase();
+          if (!cleanEmail) throw new Error('E-mail obrigatório para criar a cafeteria.');
 
-    const agora = new Date();
-    const dataExpiracao = new Date(
-      agora.getTime() + 15 * 24 * 60 * 60 * 1000
-    );
+          const agora = new Date();
+          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
 
-    const payload = {
-      nome: nome || 'CoffeeFlow',
-      pin_equipe: pin || gerarPinAleatorio(),
-      email: cleanEmail,
-      dono_email: cleanEmail,
-      plano_ativo: true,
-      data_inscricao: agora.toISOString(),
-      data_expiracao: dataExpiracao.toISOString()
-    };
+          const payload = {
+            nome: nome || 'CoffeeFlow',
+            pin_equipe: pin || gerarPinAleatorio(),
+            email: cleanEmail,
+            dono_email: cleanEmail,
+            plano_ativo: true,
+            data_inscricao: agora.toISOString(),
+            data_expiracao: dataExpiracao.toISOString()
+          };
 
-    // PEGAR O TOKEN DO USUÁRIO LOGADO
-    const { data: { session }, error: sessionError } =
-      await supabaseClient.auth.getSession();
+          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+          if (sessionError) throw sessionError;
 
-    if (sessionError) throw sessionError;
+          if (!session?.access_token) {
+            throw new Error('Sessão de usuário não encontrada.');
+          }
 
-    if (!session?.access_token) {
-      throw new Error('Sessão de usuário não encontrada.');
-    }
-
-    if (userId) {
-      payload.user_id = userId;
-    }
-
-    const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
-      method: 'POST',
-      headers: {
-        'apikey': API_KEY,
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const responseText = await res.text();
-
-    if (!res.ok) {
-      console.error('Erro ao criar cafeteria:', responseText);
-      throw new Error(
-        `Não foi possível criar a cafeteria. ${responseText}`
-      );
-    }
-
-    const data = JSON.parse(responseText);
-
-    if (!Array.isArray(data) || !data[0]) {
-      throw new Error('O Supabase não retornou a cafeteria criada.');
-    }
-
-    return data[0];
-
-  } catch (err) {
-    console.error('Erro em criarCafeteria:', err);
-    throw err;
-  }
-},
-
-          if (userId) payload.user_id = userId;
+          if (userId) {
+            payload.user_id = userId;
+          }
 
           const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
             method: 'POST',
             headers: {
               'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
+              'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json',
               'Prefer': 'return=representation'
             },
@@ -238,12 +186,18 @@
           });
 
           const responseText = await res.text();
-          if (!res.ok) throw new Error(`Não foi possível criar a cafeteria. ${responseText}`);
+          if (!res.ok) {
+            console.error('Erro ao criar cafeteria:', responseText);
+            throw new Error(`Não foi possível criar a cafeteria. ${responseText}`);
+          }
 
           const data = JSON.parse(responseText);
-          if (!Array.isArray(data) || !data[0]) throw new Error('O Supabase não retornou a cafeteria criada.');
+          if (!Array.isArray(data) || !data[0]) {
+            throw new Error('O Supabase não retornou a cafeteria criada.');
+          }
           return data[0];
         } catch (err) {
+          console.error('Erro em criarCafeteria:', err);
           throw err;
         }
       },
@@ -275,19 +229,10 @@
           if (sessionError) throw sessionError;
           if (!session?.access_token) throw new Error('Sua sessão expirou. Faça login novamente.');
 
-          const response = await fetch('/api/account-email', {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({ email })
-          });
+          const { error: updateError } = await supabaseClient.auth.updateUser({ email });
+          if (updateError) throw updateError;
 
-          const result = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(result.error || 'Não foi possível alterar o e-mail.');
-
-          return { success: true, email: result.email };
+          return { success: true, email };
         } catch (error) {
           console.error('Erro ao alterar e-mail:', error);
           return { success: false, error: error.message || 'Erro ao alterar o e-mail.' };
@@ -338,7 +283,6 @@
           const isEdit = Boolean(produto.id && !String(produto.id).startsWith('p_'));
           
           if (isEdit) {
-            // Atualização via REST Direta ao Supabase (evita problemas de endpoint serverless inexistente)
             const payload = {
               nome: produto.nome.trim(),
               preco: Number(produto.preco),
@@ -365,7 +309,6 @@
             const data = JSON.parse(textRes);
             return { success: true, produto: data?.[0] || null };
           } else {
-            // Criação via REST Direta ao Supabase
             const payload = {
               cafeteria_id: produto.cafeteria_id,
               nome: produto.nome.trim(),
