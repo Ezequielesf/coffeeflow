@@ -100,36 +100,19 @@
         }
       },
 
-buscarCafeteriaPorUserId: async (userId) => {
-  if (!userId) return null;
+      buscarCafeteriaPorUserId: async (userId) => {
+        if (!userId) return null;
 
-  try {
-    const session = await supabaseClient.auth.getSession();
-    const accessToken = session?.data?.session?.access_token;
-
-    if (!accessToken) {
-      return null;
-    }
-
-    const res = await fetch('/api/cafeteria', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-
-    const result = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      return null;
-    }
-
-    return result.cafeteria || null;
-
-  } catch (err) {
-    console.error('Erro ao buscar cafeteria do usuário:', err);
-    return null;
-  }
-},
+        try {
+          const res = await fetch(
+            `${API_URL}/rest/v1/cafeterias?user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+            {
+              headers: {
+                'apikey': API_KEY,
+                'Authorization': `Bearer ${API_KEY}`
+              }
+            }
+          );
 
           if (!res.ok) {
             throw new Error('Erro ao buscar cafeteria pelo usuário.');
@@ -144,41 +127,20 @@ buscarCafeteriaPorUserId: async (userId) => {
         }
       },
 
-buscarCafeteriaPorEmail: async (email) => {
-  try {
-    if (!email) return null;
-
-    const cleanEmail = email.trim().toLowerCase();
-
-    const res = await fetch('/api/check-cafeteria-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+      buscarCafeteriaPorEmail: async (email) => {
+        try {
+          if (!email) return null;
+          const cleanEmail = email.trim().toLowerCase();
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?email=eq.${encodeURIComponent(cleanEmail)}`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          return data?.[0] || null;
+        } catch (err) {
+          return null;
+        }
       },
-      body: JSON.stringify({
-        email: cleanEmail
-      })
-    });
-
-    const result = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      return null;
-    }
-
-    return result.exists
-      ? { exists: true }
-      : null;
-
-  } catch (err) {
-    console.error(
-      'Erro ao verificar cafeteria por e-mail:',
-      err
-    );
-
-    return null;
-  }
-},
 
       buscarCafeteriaPorPin: async (pin) => {
         try {
@@ -1613,4 +1575,4 @@ buscarCafeteriaPorEmail: async (email) => {
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
-  </html>
+</html>
