@@ -144,20 +144,41 @@ buscarCafeteriaPorUserId: async (userId) => {
         }
       },
 
-      buscarCafeteriaPorEmail: async (email) => {
-        try {
-          if (!email) return null;
-          const cleanEmail = email.trim().toLowerCase();
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?email=eq.${encodeURIComponent(cleanEmail)}`, {
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
+buscarCafeteriaPorEmail: async (email) => {
+  try {
+    if (!email) return null;
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    const res = await fetch('/api/check-cafeteria-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
+      body: JSON.stringify({
+        email: cleanEmail
+      })
+    });
+
+    const result = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return null;
+    }
+
+    return result.exists
+      ? { exists: true }
+      : null;
+
+  } catch (err) {
+    console.error(
+      'Erro ao verificar cafeteria por e-mail:',
+      err
+    );
+
+    return null;
+  }
+},
 
       buscarCafeteriaPorPin: async (pin) => {
         try {
