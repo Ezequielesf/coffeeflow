@@ -407,16 +407,17 @@
               'x-cafeteria-id': cafeteriaId
             },
             body: JSON.stringify({
-              id,
-              status
+              id: id,
+              status: status
             })
           });
 
           const data = await res.json().catch(() => ({}));
 
           if (!res.ok) {
+            console.error('Erro da API:', data);
             throw new Error(
-              data?.error || 'Não foi possível atualizar o pedido.'
+              data?.error || `Erro ao atualizar pedido (${res.status})`
             );
           }
 
@@ -1009,12 +1010,6 @@
         }
       };
 
-      const atualizarStatusPedido = async (id, statusAtual) => {
-        const novoStatus = statusAtual === 'pendente' ? 'em_preparo' : 'entregue';
-        await supabaseService.atualizarStatusPedido(id, novoStatus);
-        carregarDadosDoBanco();
-      };
-
       const abrirPagamento = () => window.open(PAYMENT_LINK, '_blank');
 
       const produtosFiltrados = produtos.filter(p => {
@@ -1287,7 +1282,20 @@
                               </div>
                             ))}
                           </div>
-                          <button onClick={() => atualizarStatusPedido(p.id, p.status)} className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">
+                          <button
+                            onClick={async () => {
+                              const proximoStatus = p.status === 'pendente' ? 'em_preparo' : 'entregue';
+                              const sucesso = await supabaseService.atualizarStatusPedido(
+                                p.id,
+                                proximoStatus
+                              );
+
+                              if (sucesso) {
+                                carregarDadosDoBanco();
+                              }
+                            }}
+                            className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition"
+                          >
                             {p.status === 'pendente' ? 'Iniciar Preparação' : '✓ Concluir / Marcar Entregue'}
                           </button>
                         </div>
