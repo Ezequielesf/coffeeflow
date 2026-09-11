@@ -96,10 +96,12 @@
       buscarCafeteriaPorId: async (id) => {
         try {
           if (!id) return null;
-          const res = await fetch(`/api/cafeteria-public?id=${encodeURIComponent(id)}`);
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(id)}`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
           if (!res.ok) return null;
           const data = await res.json();
-          return data?.cafeteria || null;
+          return data?.[0] || null;
         } catch (err) {
           return null;
         }
@@ -125,14 +127,12 @@
         try {
           if (!email) return null;
           const cleanEmail = email.trim().toLowerCase();
-          const res = await fetch('/api/check-cafeteria-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: cleanEmail })
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?email=eq.${encodeURIComponent(cleanEmail)}`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
           });
           if (!res.ok) return null;
           const data = await res.json();
-          return data?.exists ? { exists: true } : null;
+          return data?.[0] ? { exists: true } : null;
         } catch (err) {
           console.error('Erro ao verificar cafeteria por e-mail:', err);
           return null;
@@ -142,20 +142,20 @@
       buscarCafeteriaPorPin: async (pin) => {
         try {
           if (!pin) return null;
-          const res = await fetch('/api/staff-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin: pin.trim() })
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?pin_equipe=eq.${encodeURIComponent(pin.trim())}`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
           });
           if (!res.ok) return null;
           const data = await res.json();
-          return data?.cafeteria ? {
-            id: data.cafeteria.id,
-            nome: data.cafeteria.nome,
-            plano_ativo: data.cafeteria.plano_ativo,
-            data_inscricao: data.cafeteria.data_inscricao,
-            data_expiracao: data.cafeteria.data_expiracao,
-            pin_equipe: pin.trim()
+          const caf = data?.[0];
+          return caf ? {
+            id: caf.id,
+            nome: caf.nome,
+            plano_ativo: caf.plano_ativo,
+            data_inscricao: caf.data_inscricao,
+            data_expiracao: caf.data_expiracao,
+            pin_equipe: pin.trim(),
+            email: caf.email || caf.dono_email
           } : null;
         } catch (err) {
           console.error('Erro ao validar PIN da equipe:', err);
@@ -239,48 +239,28 @@
         }
       },
 
-      atualizarEmailCafeteria: async (novoEmail) => {
+      atualizarEmailCafeteria: async (cafeteriaId, novoEmail) => {
         try {
           const email = novoEmail.trim().toLowerCase();
           if (!email) throw new Error('Informe um e-mail válido.');
 
-          const accessToken = await getAccessToken();
-          const res = await fetch('/api/account-email', {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email })
-          });
-
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data?.error || 'Erro ao alterar o e-mail.');
-
-          return { success: true, email: data.email || email };
-        } catch (error) {
-          console.error('Erro ao alterar e-mail:', error);
-          return { success: false, error: error.message || 'Erro ao alterar o e-mail.' };
-        }
-      },
-
-      atualizarPlanoVitalicio: async (cafeteriaId) => {
-        if (!cafeteriaId) return false;
-        try {
-          const dataVitalicia = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString();
           const accessToken = await getAccessToken();
           const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteriaId)}`, {
             method: 'PATCH',
             headers: {
               'apikey': API_KEY,
               'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
             },
-            body: JSON.stringify({ plano_ativo: true, data_expiracao: dataVitalicia })
+            body: JSON.stringify({ email, dono_email: email })
           });
-          return res.ok ? dataVitalicia : false;
-        } catch (err) {
-          return false;
+
+          if (!res.ok) throw new Error('Erro ao alterar o e-mail.');
+          return { success: true, email };
+        } catch (error) {
+          console.error('Erro ao alterar e-mail:', error);
+          return { success: false, error: error.message || 'Erro ao alterar o e-mail.' };
         }
       },
 
@@ -309,7 +289,7 @@
           const accessToken = await getAccessToken();
           const isEdit = Boolean(produto.id && !String(produto.id).startsWith('p_'));
           const payload = {
-            id: isEdit ? produto.id : undefined,
+            cafeteria_id: produto.cafeteria_id,
             nome: produto.nome.trim(),
             preco: Number(produto.preco),
             categoria: produto.categoria?.trim() || 'Cafés',
@@ -318,21 +298,28 @@
             disponivel: produto.disponivel !== false
           };
 
-          const res = await fetch('/api/products', {
+          const url = isEdit 
+            ? `${API_URL}/rest/v1/produtos?id=eq.${encodeURIComponent(produto.id)}`
+            : `${API_URL}/rest/v1/produtos`;
+
+          const res = await fetch(url, {
             method: isEdit ? 'PATCH' : 'POST',
             headers: {
+              'apikey': API_KEY,
               'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
             },
             body: JSON.stringify(payload)
           });
 
-          const data = await res.json().catch(() => ({}));
+          const responseText = await res.text();
           if (!res.ok) {
-            throw new Error(data?.error || 'Não foi possível salvar o produto.');
+            throw new Error('Não foi possível salvar o produto.');
           }
 
-          return { success: true, produto: data?.produto || null };
+          const data = JSON.parse(responseText);
+          return { success: true, produto: data?.[0] || null };
         } catch (err) {
           console.error('Erro em salvarProduto:', err);
           return { success: false, error: err.message || 'Erro desconhecido ao salvar o produto.' };
@@ -343,17 +330,16 @@
         try {
           if (!id) throw new Error('ID do produto não informado.');
           const accessToken = await getAccessToken();
-          const res = await fetch('/api/products', {
+          const res = await fetch(`${API_URL}/rest/v1/produtos?id=eq.${encodeURIComponent(id)}`, {
             method: 'DELETE',
             headers: {
+              'apikey': API_KEY,
               'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id })
+              'Prefer': 'return=representation'
+            }
           });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data?.error || 'Não foi possível excluir o produto.');
-          return { success: true, produto: data?.produto || null };
+          if (!res.ok) throw new Error('Não foi possível excluir o produto.');
+          return { success: true };
         } catch (err) {
           console.error('Erro em deletarProduto:', err);
           return { success: false, error: err.message || 'Não foi possível excluir o produto.' };
@@ -363,20 +349,9 @@
       buscarPedidos: async (cafeteriaId) => {
         try {
           if (!cafeteriaId) return [];
-          const headers = {};
-          const staffPin = localStorage.getItem('coffeeflow_staff_pin');
-          const { data: { session } } = await supabaseClient.auth.getSession();
-
-          if (session?.access_token) {
-            headers.Authorization = `Bearer ${session.access_token}`;
-          } else if (staffPin) {
-            headers['X-Staff-PIN'] = staffPin;
-            headers['X-Cafeteria-ID'] = cafeteriaId;
-          } else {
-            return [];
-          }
-
-          const res = await fetch('/api/orders', { headers });
+          const res = await fetch(`${API_URL}/rest/v1/pedidos?cafeteria_id=eq.${encodeURIComponent(cafeteriaId)}&order=created_at.desc`, {
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` }
+          });
           if (!res.ok) return [];
           return await res.json();
         } catch (err) {
@@ -397,11 +372,7 @@
             },
             body: JSON.stringify(pedido)
           });
-          if (!res.ok) {
-            const text = await res.text();
-            console.error('Erro ao criar pedido:', text);
-            return null;
-          }
+          if (!res.ok) return null;
           const data = await res.json();
           return data?.[0] || null;
         } catch (err) {
@@ -412,23 +383,15 @@
 
       atualizarStatusPedido: async (id, status) => {
         try {
-          const headers = { 'Content-Type': 'application/json' };
-          const staffPin = localStorage.getItem('coffeeflow_staff_pin');
-          const { data: { session } } = await supabaseClient.auth.getSession();
-
-          if (session?.access_token) {
-            headers.Authorization = `Bearer ${session.access_token}`;
-          } else if (staffPin) {
-            headers['X-Staff-PIN'] = staffPin;
-            headers['X-Cafeteria-ID'] = cafeteria.id;
-          } else {
-            return false;
-          }
-
-          const res = await fetch('/api/orders', {
+          const accessToken = await getAccessToken();
+          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${encodeURIComponent(id)}`, {
             method: 'PATCH',
-            headers,
-            body: JSON.stringify({ id, status })
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status })
           });
           return res.ok;
         } catch (err) {
@@ -475,22 +438,8 @@
         const userId = data?.user?.id || null;
         if (!userId) throw new Error('A conta foi criada, mas o ID do usuário não foi retornado.');
 
-        const cafeteriaPorUsuario = await supabaseService.buscarCafeteriaPorUserId(userId);
-        if (cafeteriaPorUsuario) {
-          throw new Error('Este usuário já possui uma cafeteria cadastrada. Faça login em vez de criar outra conta.');
-        }
-
         const pinUnico = gerarPinAleatorio();
-        let cafeteriaSalva;
-
-        try {
-          cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
-        } catch (error) {
-          console.error('Erro ao criar cafeteria após cadastro:', error);
-          throw new Error(error?.message || 'Não foi possível criar a cafeteria.');
-        }
-
-        if (!cafeteriaSalva) throw new Error('A conta foi criada, mas não foi possível criar a cafeteria.');
+        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
 
         return { user: data.user, session: data.session, cafeteria: cafeteriaSalva };
       },
@@ -533,39 +482,6 @@
 
       const [confirmarExclusaoModal, setConfirmarExclusaoModal] = useState(false);
       const [eliminandoConta, setEliminandoConta] = useState(false);
-
-      useEffect(() => {
-        const trocarSessao = async () => {
-          try {
-            await supabaseClient.auth.signOut();
-            localStorage.removeItem('coffeeflow_cafeteria');
-            localStorage.removeItem('coffeeflow_staff_session');
-            localStorage.removeItem('coffeeflow_staff_pin');
-
-            if (urlInfo.code) {
-              const { data, error } = await supabaseClient.auth.exchangeCodeForSession(urlInfo.code);
-              if (error) throw error;
-            } else if (urlInfo.accessToken && urlInfo.refreshToken) {
-              const { data, error } = await supabaseClient.auth.setSession({
-                access_token: urlInfo.accessToken,
-                refresh_token: urlInfo.refreshToken
-              });
-              if (error) throw error;
-            }
-
-            if (urlInfo.accessToken || urlInfo.refreshToken || urlInfo.code) {
-              window.history.replaceState({}, document.title, '/reset-password');
-            }
-          } catch (error) {
-            console.error('Erro ao processar link de recuperação:', error);
-            await supabaseClient.auth.signOut();
-            window.history.replaceState({}, document.title, '/');
-          }
-        };
-        if (isResetPassword) {
-          trocarSessao();
-        }
-      }, []);
 
       const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
       const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
@@ -634,11 +550,11 @@
         setResetPasswordSuccess('');
 
         if (newPassword.length < 6) {
-          alert('A palavra-passe deve ter pelo menos 6 caracteres.');
+          setResetPasswordError('A palavra-passe deve ter pelo menos 6 caracteres.');
           return;
         }
         if (newPassword !== confirmNewPassword) {
-          alert('As palavras-passe não coincidem.');
+          setResetPasswordError('As palavras-passe não coincidem.');
           return;
         }
 
@@ -656,10 +572,9 @@
           setIsResetPassword(false);
           setAdminAuthMode('login');
           setActiveView('admin_login');
-          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Agora faça login com a nova palavra-passe.');
+          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Faça login com a nova palavra-passe.');
         } catch (error) {
-          console.error('Erro ao alterar palavra-passe:', error);
-          alert(error.message || 'Não foi possível alterar a palavra-passe.');
+          setResetPasswordError(error.message || 'Não foi possível alterar a palavra-passe.');
         } finally {
           setLoadingResetPassword(false);
         }
@@ -814,10 +729,10 @@
       const alterarEmailDaCafeteria = async (e) => {
         e.preventDefault();
         if (!novoEmailInput) return;
-        const res = await supabaseService.atualizarEmailCafeteria(novoEmailInput);
+        const res = await supabaseService.atualizarEmailCafeteria(cafeteria.id, novoEmailInput);
         if (res.success) {
-          setCafeteria(prev => ({ ...prev, donoEmail: res.email || novoEmailInput.trim().toLowerCase() }));
-          setNotificacao('E-mail da cafeteria atualizado com sucesso!');
+          setCafeteria(prev => ({ ...prev, donoEmail: res.email }));
+          setNotificacao('E-mail atualizado com sucesso!');
           setNovoEmailInput('');
           setEmailEditando(false);
           setTimeout(() => setNotificacao(''), 4000);
@@ -832,7 +747,7 @@
         try {
           await supabaseClient.auth.signOut();
           setConfirmarExclusaoModal(false);
-          alert('Sua sessão foi encerrada. Para apagar os dados por completo, verifique o painel do Supabase.');
+          localStorage.clear();
           window.location.href = '/';
         } catch (error) {
           console.error('Erro ao excluir conta:', error);
@@ -850,9 +765,9 @@
 
         try {
           if (adminAuthMode === 'forgot') {
-            if (!adminEmailInput) throw new Error('Por favor, introduza o e-mail associado à sua conta.');
+            if (!adminEmailInput) throw new Error('Introduza o e-mail associado à sua conta.');
             await authService.recuperarSenha(adminEmailInput);
-            setAdminAuthSuccess('E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada.');
+            setAdminAuthSuccess('E-mail de redefinição enviado com sucesso!');
           } else if (adminAuthMode === 'login') {
             const { user } = await authService.login(adminEmailInput, adminPasswordInput);
             const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
@@ -864,7 +779,7 @@
                 cafeteriaFinal = await supabaseService.criarCafeteria(user.id, user.email || adminEmailInput, 'CoffeeFlow', novoPin);
               } catch (error) {
                 await supabaseClient.auth.signOut();
-                throw new Error('Sua conta existe, mas não foi possível criar a cafeteria. Tente novamente.');
+                throw new Error('Conta existe, mas não foi possível criar a cafeteria.');
               }
             }
 
@@ -907,37 +822,38 @@
         e.preventDefault();
         setDevError('');
 
+        if (devPinInput.trim() !== '777888') {
+          setDevError('PIN de programador incorreto.');
+          return;
+        }
+
         try {
+          const dataVitalicia = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString();
           const accessToken = await getAccessToken();
-          const res = await fetch('/api/admin-vitalicio', {
-            method: 'POST',
+          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteria.id)}`, {
+            method: 'PATCH',
             headers: {
+              'apikey': API_KEY,
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ pin: devPinInput.trim() })
+            body: JSON.stringify({ plano_ativo: true, data_expiracao: dataVitalicia })
           });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            setDevError(data?.error || 'Não foi possível ativar a licença.');
-            return;
-          }
 
-          const dataVitaliciaIso = data.data_expiracao;
+          if (!res.ok) throw new Error('Erro ao atualizar licença.');
 
-        setCafeteria(prev => ({
-          ...prev,
-          planoAtivo: true,
-          dataExpiracao: dataVitaliciaIso,
-          isVitalicio: true
-        }));
+          setCafeteria(prev => ({
+            ...prev,
+            planoAtivo: true,
+            dataExpiracao: dataVitalicia,
+            isVitalicio: true
+          }));
 
           setDevModalOpen(false);
           setDevPinInput('');
           setNotificacao('Acesso Vitalício de Administrador Ativado!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (error) {
-          console.error('Erro ao ativar licença vitalícia:', error);
           setDevError(error.message || 'Não foi possível ativar a licença.');
         }
       };
@@ -962,7 +878,7 @@
             nome: caf.nome,
             pinEquipe: caf.pin_equipe,
             planoAtivo: caf.plano_ativo === true,
-            donoEmail: caf.email || caf.dono_email,
+            donoEmail: caf.email,
             dataInscricao: caf.data_inscricao || new Date().toISOString(),
             dataExpiracao: caf.data_expiracao || null,
             isVitalicio: eVitalicio
@@ -989,29 +905,19 @@
       };
 
       const handleRemoverProduto = async (id) => {
-        if (!id) {
-          setNotificacao('Produto inválido.');
-          setTimeout(() => setNotificacao(''), 4000);
-          return;
-        }
-
-        if (!confirm('Deseja eliminar este item da ementa?')) {
-          return;
-        }
+        if (!id) return;
+        if (!confirm('Deseja eliminar este item da ementa?')) return;
 
         try {
           const resultado = await supabaseService.deletarProduto(id);
-          if (!resultado?.success) {
-            throw new Error(resultado?.error || 'Não foi possível eliminar o produto.');
-          }
+          if (!resultado?.success) throw new Error('Erro ao eliminar.');
 
           await carregarDadosDoBanco();
           setNotificacao('Produto eliminado com sucesso!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          console.error('Erro ao eliminar produto:', err);
-          setNotificacao(err.message || 'Não foi possível eliminar o produto.');
-          setTimeout(() => setNotificacao(''), 6000);
+          setNotificacao('Não foi possível eliminar o produto.');
+          setTimeout(() => setNotificacao(''), 4000);
         }
       };
 
@@ -1034,18 +940,15 @@
           };
 
           const resultado = await supabaseService.salvarProduto(prodData);
-          if (!resultado?.success) {
-            throw new Error(resultado?.error || 'Não foi possível salvar o produto.');
-          }
+          if (!resultado?.success) throw new Error(resultado?.error);
 
           await carregarDadosDoBanco();
           setModalProduto({ open: false, data: null });
           setNotificacao(modalProduto.data ? 'Produto atualizado com sucesso!' : 'Produto adicionado com sucesso!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          console.error('Erro ao guardar produto:', err);
           setNotificacao(err.message || 'Não foi possível guardar o produto.');
-          setTimeout(() => setNotificacao(''), 6000);
+          setTimeout(() => setNotificacao(''), 4000);
         }
       };
 
