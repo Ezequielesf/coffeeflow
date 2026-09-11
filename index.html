@@ -157,22 +157,72 @@
       },
 
       criarCafeteria: async (userId, email, nome, pin) => {
-        try {
-          const cleanEmail = (email || '').trim().toLowerCase();
-          if (!cleanEmail) throw new Error('E-mail obrigatório para criar a cafeteria.');
+  try {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) throw new Error('E-mail obrigatório para criar a cafeteria.');
 
-          const agora = new Date();
-          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
+    const agora = new Date();
+    const dataExpiracao = new Date(
+      agora.getTime() + 15 * 24 * 60 * 60 * 1000
+    );
 
-          const payload = {
-            nome: nome || 'CoffeeFlow',
-            pin_equipe: pin || gerarPinAleatorio(),
-            email: cleanEmail,
-            dono_email: cleanEmail,
-            plano_ativo: true,
-            data_inscricao: agora.toISOString(),
-            data_expiracao: dataExpiracao.toISOString()
-          };
+    const payload = {
+      nome: nome || 'CoffeeFlow',
+      pin_equipe: pin || gerarPinAleatorio(),
+      email: cleanEmail,
+      dono_email: cleanEmail,
+      plano_ativo: true,
+      data_inscricao: agora.toISOString(),
+      data_expiracao: dataExpiracao.toISOString()
+    };
+
+    // PEGAR O TOKEN DO USUÁRIO LOGADO
+    const { data: { session }, error: sessionError } =
+      await supabaseClient.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    if (!session?.access_token) {
+      throw new Error('Sessão de usuário não encontrada.');
+    }
+
+    if (userId) {
+      payload.user_id = userId;
+    }
+
+    const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
+      method: 'POST',
+      headers: {
+        'apikey': API_KEY,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const responseText = await res.text();
+
+    if (!res.ok) {
+      console.error('Erro ao criar cafeteria:', responseText);
+      throw new Error(
+        `Não foi possível criar a cafeteria. ${responseText}`
+      );
+    }
+
+    const data = JSON.parse(responseText);
+
+    if (!Array.isArray(data) || !data[0]) {
+      throw new Error('O Supabase não retornou a cafeteria criada.');
+    }
+
+    return data[0];
+
+  } catch (err) {
+    console.error('Erro em criarCafeteria:', err);
+    throw err;
+  }
+},
 
           if (userId) payload.user_id = userId;
 
