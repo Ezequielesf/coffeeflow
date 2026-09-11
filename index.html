@@ -43,6 +43,13 @@
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
+    const formatarPreco = (valor) => {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(Number(valor) || 0);
+    };
+
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY, {
       auth: {
         persistSession: true,
@@ -385,17 +392,36 @@
 
       atualizarStatusPedido: async (id, status) => {
         try {
-          const accessToken = await getAccessToken();
-          const res = await fetch(`${API_URL}/rest/v1/pedidos?id=eq.${encodeURIComponent(id)}`, {
+          const staffPin = localStorage.getItem('coffeeflow_staff_pin');
+          const cafeteriaId = localStorage.getItem('coffeeflow_staff_cafeteria_id');
+
+          if (!staffPin || !cafeteriaId) {
+            throw new Error('Sessão da equipe não encontrada.');
+          }
+
+          const res = await fetch('/api/orders', {
             method: 'PATCH',
             headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'x-staff-pin': staffPin,
+              'x-cafeteria-id': cafeteriaId
             },
-            body: JSON.stringify({ status })
+            body: JSON.stringify({
+              id,
+              status
+            })
           });
-          return res.ok;
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            throw new Error(
+              data?.error || 'Não foi possível atualizar o pedido.'
+            );
+          }
+
+          return data?.success === true;
+
         } catch (err) {
           console.error('Erro ao atualizar status do pedido:', err);
           return false;
@@ -569,6 +595,7 @@
           localStorage.removeItem('coffeeflow_cafeteria');
           localStorage.removeItem('coffeeflow_staff_session');
           localStorage.removeItem('coffeeflow_staff_pin');
+          localStorage.removeItem('coffeeflow_staff_cafeteria_id');
           window.history.replaceState({}, document.title, '/');
 
           setIsResetPassword(false);
@@ -888,6 +915,7 @@
 
           localStorage.setItem('coffeeflow_staff_session', 'true');
           localStorage.setItem('coffeeflow_staff_pin', pinInput.trim());
+          localStorage.setItem('coffeeflow_staff_cafeteria_id', caf.id);
           setIsStaffLogged(true);
           setPinInput('');
           setActiveView('staff_panel');
@@ -1132,7 +1160,7 @@
                     <h2 className="text-2xl font-bold">{cafeteria.nome}</h2>
                     <p className="text-xs text-slate-400">ID da Cafetaria: <span className="font-mono text-amber-400">{cafeteria.id}</span></p>
                   </div>
-                  <button onClick={async () => { await supabaseClient.auth.signOut(); localStorage.removeItem('coffeeflow_staff_pin'); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300">
+                  <button onClick={async () => { await supabaseClient.auth.signOut(); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300">
                     Sair da Conta
                   </button>
                 </div>
@@ -1234,7 +1262,7 @@
                   <div className="flex gap-2">
                     <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">📱 QR Code Mesas</button>
                     <button onClick={() => setModalProduto({ open: true, data: null })} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg">+ Adicionar Item</button>
-                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); localStorage.removeItem('coffeeflow_staff_pin'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">Sair do Balcão</button>
+                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">Sair do Balcão</button>
                   </div>
                 </div>
 
@@ -1249,13 +1277,13 @@
                           <div className="flex justify-between font-bold text-xs border-b border-slate-700 pb-2">
                             <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Mesa {p.mesa}</span>
                             <span className="text-slate-400 font-mono">{p.hora}</span>
-                            <span className="text-amber-400 font-mono text-sm">{parseFloat(p.total).toFixed(2)}€</span>
+                            <span className="text-amber-400 font-mono text-sm">{formatarPreco(p.total)}</span>
                           </div>
                           <div className="text-xs text-slate-300 space-y-1">
                             {p.itens.map((it, idx) => (
                               <div key={idx} className="flex justify-between">
                                 <span>{it.qtd}x {it.nome}</span>
-                                <span className="text-slate-400">{(it.preco * it.qtd).toFixed(2)}€</span>
+                                <span className="text-slate-400">{formatarPreco(it.preco * it.qtd)}</span>
                               </div>
                             ))}
                           </div>
@@ -1274,7 +1302,7 @@
                         <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-900 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-white truncate">{p.nome}</p>
-                          <p className="text-amber-400 font-bold font-mono">{parseFloat(p.preco).toFixed(2)}€</p>
+                          <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -1361,7 +1389,7 @@
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-sm text-white truncate">{prod.nome}</h4>
                         <p className="text-xs text-slate-400 line-clamp-1">{prod.descricao}</p>
-                        <p className="text-xs font-bold text-amber-400 mt-1 font-mono">{parseFloat(prod.preco).toFixed(2)}€</p>
+                        <p className="text-xs font-bold text-amber-400 mt-1 font-mono">{formatarPreco(prod.preco)}</p>
                       </div>
                       <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">+ Pedir</button>
                     </div>
@@ -1372,7 +1400,7 @@
                   <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-slate-900/95 border-t border-slate-800 flex justify-between items-center z-40">
                     <div>
                       <p className="text-[10px] text-slate-400 font-bold uppercase">Total</p>
-                      <p className="text-amber-400 font-bold font-mono text-base">{carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0).toFixed(2)}€</p>
+                      <p className="text-amber-400 font-bold font-mono text-base">{formatarPreco(carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0))}</p>
                     </div>
                     <button onClick={enviarPedidoCliente} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs transition">
                       Enviar Pedido (Mesa {selectedMesaCliente})
