@@ -41,6 +41,7 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
+    const APP_API_URL = '/api';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
     const formatarPreco = (valor) => {
@@ -311,68 +312,105 @@
       salvarProduto: async (produto) => {
         try {
           if (!produto?.nome || !produto.nome.trim()) {
-            throw new Error('Informe o nome do produto.');
+            throw new Error('Informe o nome du produto.');
           }
-          if (!Number.isFinite(Number(produto.preco)) || Number(produto.preco) < 0) {
+
+          if (
+            !Number.isFinite(Number(produto.preco)) ||
+            Number(produto.preco) < 0
+          ) {
             throw new Error('Informe um preço válido.');
           }
 
           const accessToken = await getAccessToken();
-          const isEdit = Boolean(produto.id && !String(produto.id).startsWith('p_'));
+
+          const isEdit = Boolean(produto.id);
+
           const payload = {
-            cafeteria_id: produto.cafeteria_id,
+            id: isEdit ? produto.id : undefined,
             nome: produto.nome.trim(),
             preco: Number(produto.preco),
             categoria: produto.categoria?.trim() || 'Cafés',
             descricao: produto.descricao?.trim() || '',
-            imagem: produto.imagem?.trim() || ''
+            imagem: produto.imagem?.trim() || '',
+            disponivel: produto.disponivel !== false
           };
 
-          const url = isEdit 
-            ? `${API_URL}/api/products?id=eq.${encodeURIComponent(produto.id)}`
-            : `${API_URL}/api/products`;
-
-          const res = await fetch(url, {
+          const res = await fetch(`${APP_API_URL}/products`, {
             method: isEdit ? 'PATCH' : 'POST',
             headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
+              'Authorization': `Bearer ${accessToken}`
             },
             body: JSON.stringify(payload)
           });
 
-          const responseText = await res.text();
+          const data = await res.json().catch(() => ({}));
+
           if (!res.ok) {
-            throw new Error('Não foi possível salvar o produto.');
+            console.error('Erro da API de produtos:', res.status, data);
+
+            throw new Error(
+              data?.error ||
+              `Não foi possível ${isEdit ? 'atualizar' : 'salvar'} o produto.`
+            );
           }
 
-          const data = JSON.parse(responseText);
-          return { success: true, produto: data?.[0] || data || null };
+          return {
+            success: true,
+            produto: data?.produto || null
+          };
+
         } catch (err) {
           console.error('Erro em salvarProduto:', err);
-          return { success: false, error: err.message || 'Erro desconhecido ao salvar o produto.' };
+
+          return {
+            success: false,
+            error: err.message || 'Erro desconhecido ao salvar o produto.'
+          };
         }
       },
 
       deletarProduto: async (id) => {
         try {
-          if (!id) throw new Error('ID do produto não informado.');
+          if (!id) {
+            throw new Error('ID do produto não informado.');
+          }
+
           const accessToken = await getAccessToken();
-          const res = await fetch(`${API_URL}/api/products?id=eq.${encodeURIComponent(id)}`, {
+
+          const res = await fetch(`${APP_API_URL}/products`, {
             method: 'DELETE',
             headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${accessToken}`,
-              'Prefer': 'return=representation'
-            }
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ id })
           });
-          if (!res.ok) throw new Error('Não foi possível excluir o produto.');
-          return { success: true };
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            console.error('Erro da API de produtos:', res.status, data);
+
+            throw new Error(
+              data?.error ||
+              'Não foi possível excluir o produto.'
+            );
+          }
+
+          return {
+            success: true
+          };
+
         } catch (err) {
           console.error('Erro em deletarProduto:', err);
-          return { success: false, error: err.message || 'Não foi possível excluir o produto.' };
+
+          return {
+            success: false,
+            error: err.message ||
+              'Não foi possível excluir o produto.'
+          };
         }
       },
 
