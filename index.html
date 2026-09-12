@@ -96,12 +96,10 @@
     };
 
     const getAccessToken = async () => {
-      // 1. Usa imediatamente o token obtido no login
       if (currentAccessToken) {
         return currentAccessToken;
       }
 
-      // 2. Tenta recuperar a sessão persistida
       const { data, error } = await supabaseClient.auth.getSession();
 
       if (error) {
@@ -113,7 +111,6 @@
         return currentAccessToken;
       }
 
-      // 3. Última tentativa: renovar a sessão
       const { data: refreshData, error: refreshError } =
         await supabaseClient.auth.refreshSession();
 
@@ -1362,7 +1359,6 @@
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">📱 QR Code Mesas</button>
-                    <button onClick={() => setModalProduto({ open: true, data: null })} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg">+ Adicionar Item</button>
                     <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">Sair do Balcão</button>
                   </div>
                 </div>
@@ -1411,20 +1407,8 @@
                           <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
                         </div>
                         <div className="flex gap-2">
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => setModalProduto({ open: true, data: p })}
-                              className="px-2 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[10px] font-bold hover:bg-amber-500/30"
-                            >
-                              Editar
-                            </button>
-
-                            <button
-                              onClick={() => handleRemoverProduto(p.id)}
-                              className="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold hover:bg-rose-500/30"
-                            >
-                              Eliminar
-                            </button>
+                          <div className="text-[10px] text-slate-500 font-semibold">
+                            Apenas visualização
                           </div>
                         </div>
                       </div>
@@ -1639,4 +1623,3 @@
   </script>
 </body>
 </html>
-
