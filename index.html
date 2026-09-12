@@ -131,6 +131,42 @@
       );
     };
 
+    const uploadImagemProduto = async (arquivo, cafeteriaId) => {
+      if (!arquivo) return '';
+
+      if (!arquivo.type.startsWith('image/')) {
+        throw new Error('Selecione uma imagem válida.');
+      }
+
+      if (arquivo.size > 5 * 1024 * 1024) {
+        throw new Error('A imagem deve ter no máximo 5 MB.');
+      }
+
+      const extensao = arquivo.name.split('.').pop().toLowerCase();
+
+      const nomeArquivo =
+        `${cafeteriaId}/${crypto.randomUUID()}.${extensao}`;
+
+      const { error } = await supabaseClient.storage
+        .from('produtos')
+        .upload(nomeArquivo, arquivo, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: arquivo.type
+        });
+
+      if (error) {
+        console.error('Erro no upload:', error);
+        throw new Error('Não foi possível enviar a imagem.');
+      }
+
+      const { data } = supabaseClient.storage
+        .from('produtos')
+        .getPublicUrl(nomeArquivo);
+
+      return data.publicUrl;
+    };
+
     const supabaseService = {
       buscarCafeteriaPorId: async (id) => {
         try {
@@ -321,7 +357,7 @@
       salvarProduto: async (produto) => {
         try {
           if (!produto?.nome || !produto.nome.trim()) {
-            throw new Error('Informe o nome du produto.');
+            throw new Error('Informe o nome do produto.');
           }
 
           if (
@@ -329,6 +365,15 @@
             Number(produto.preco) < 0
           ) {
             throw new Error('Informe um preço válido.');
+          }
+
+          let imagemUrl = produto.imagem || '';
+
+          if (produto.arquivoImagem) {
+            imagemUrl = await uploadImagemProduto(
+              produto.arquivoImagem,
+              produto.cafeteria_id
+            );
           }
 
           let accessToken = await getAccessToken();
@@ -340,7 +385,7 @@
             preco: Number(produto.preco),
             categoria: produto.categoria?.trim() || 'Cafés',
             descricao: produto.descricao?.trim() || '',
-            imagem: produto.imagem?.trim() || '',
+            imagem: imagemUrl.trim(),
             disponivel: produto.disponivel !== false
           };
 
@@ -653,6 +698,7 @@
       const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
       const [termoPesquisa, setTermoPesquisa] = useState('');
       const [modalProduto, setModalProduto] = useState({ open: false, data: null });
+      const [produtoAtual, setProdutoAtual] = useState(null);
 
       const [mesaQr, setMesaQr] = useState('01');
       const [linkCopiado, setLinkCopiado] = useState(false);
@@ -1071,7 +1117,8 @@
             preco,
             categoria: (formData.get('categoria') || 'Cafés').toString().trim(),
             descricao: (formData.get('descricao') || '').toString().trim(),
-            imagem: (formData.get('imagem') || '').toString().trim()
+            imagem: produtoAtual?.imagem || modalProduto.data?.imagem || '',
+            arquivoImagem: produtoAtual?.arquivoImagem || null
           };
 
           const resultado = await supabaseService.salvarProduto(prodData);
@@ -1079,6 +1126,7 @@
 
           await carregarDadosDoBanco();
           setModalProduto({ open: false, data: null });
+          setProdutoAtual(null);
           setNotificacao(modalProduto.data ? 'Produto atualizado com sucesso!' : 'Produto adicionado com sucesso!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
@@ -1344,7 +1392,7 @@
                     <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
                       <div className="flex justify-between items-center">
                         <h3 className="font-bold text-lg">Gestão da Ementa</h3>
-                        <button onClick={() => setModalProduto({ open: true, data: null })} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">
+                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">
                           + Adicionar Item
                         </button>
                       </div>
@@ -1357,7 +1405,7 @@
                               <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => setModalProduto({ open: true, data: p })} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-600 font-bold">Editar</button>
+                              <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-600 font-bold">Editar</button>
                               <button onClick={() => handleRemoverProduto(p.id)} className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg border border-rose-500/30 font-bold">Eliminar</button>
                             </div>
                           </div>
@@ -1522,7 +1570,14 @@
                 <div className="space-y-3">
                   {produtosFiltrados.map(prod => (
                     <div key={prod.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-3">
-                      <img src={prod.imagem} alt={prod.nome} className="w-16 h-16 rounded-lg object-cover bg-slate-800 shrink-0" />
+                      {prod.imagem && (
+                        <img
+                          src={prod.imagem}
+                          alt={prod.nome}
+                          className="w-full h-48 object-cover rounded-xl"
+                          loading="lazy"
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-sm text-white truncate">{prod.nome}</h4>
                         <p className="text-xs text-slate-400 line-clamp-1">{prod.descricao}</p>
@@ -1656,12 +1711,41 @@
                       <label className="text-[11px] text-slate-400 font-bold block uname mb-1">Descrição</label>
                       <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">URL da Imagem</label>
-                      <input type="url" name="imagem" defaultValue={modalProduto.data?.imagem || ''} placeholder="https://..." className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-300">
+                        Imagem do produto
+                      </label>
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const arquivo = e.target.files?.[0] || null;
+                          setProdutoAtual({
+                            ...(produtoAtual || modalProduto.data || {}),
+                            arquivoImagem: arquivo,
+                            imagem: arquivo ? URL.createObjectURL(arquivo) : (modalProduto.data?.imagem || '')
+                          });
+                        }}
+                        className="block w-full text-sm text-slate-300
+                          file:mr-4 file:rounded-lg file:border-0
+                          file:bg-amber-500 file:px-4 file:py-2
+                          file:text-sm file:font-semibold
+                          file:text-white hover:file:bg-amber-600"
+                      />
+
+                      {(produtoAtual?.imagem || modalProduto.data?.imagem) && (
+                        <img
+                          src={produtoAtual?.imagem || modalProduto.data?.imagem}
+                          alt={produtoAtual?.nome || modalProduto.data?.nome || 'Produto'}
+                          className="mt-3 h-32 w-32 rounded-xl object-cover border border-slate-700"
+                        />
+                      )}
                     </div>
+
                     <div className="flex justify-end gap-2 pt-2 border-t border-slate-700">
-                      <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
+                      <button type="button" onClick={() => { setModalProduto({ open: false, data: null }); setProdutoAtual(null); }} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
                       <button type="submit" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg">Guardar</button>
                     </div>
                   </form>
@@ -1677,3 +1761,4 @@
   </script>
 </body>
 </html>
+
