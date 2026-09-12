@@ -94,32 +94,45 @@
     };
 
     const getAccessToken = async () => {
-      let { data: { session }, error } = await supabaseClient.auth.getSession();
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
 
-      if (error) {
-        console.error('Erro ao recuperar sessão:', error);
-        throw error;
+        if (error) {
+          console.error('Erro ao recuperar sessão:', error);
+          throw new Error('Não foi possível recuperar sua sessão.');
+        }
+
+        const session = data?.session;
+
+        if (session?.access_token) {
+          return session.access_token;
+        }
+
+        // Tenta renovar somente se realmente não houver token.
+        const { data: refreshData, error: refreshError } =
+          await supabaseClient.auth.refreshSession();
+
+        if (refreshError) {
+          console.error('Erro ao renovar sessão:', refreshError);
+          throw new Error(
+            'Sua sessão expirou. Faça logout e entre novamente na sua conta.'
+          );
+        }
+
+        const newSession = refreshData?.session;
+
+        if (!newSession?.access_token) {
+          throw new Error(
+            'Nenhuma sessão autenticada foi encontrada. Faça login novamente.'
+          );
+        }
+
+        return newSession.access_token;
+
+      } catch (err) {
+        console.error('getAccessToken:', err);
+        throw err;
       }
-
-      if (session?.access_token) {
-        return session.access_token;
-      }
-
-      const { data: refreshData, error: refreshError } =
-        await supabaseClient.auth.refreshSession();
-
-      if (refreshError) {
-        console.error('Erro ao renovar sessão:', refreshError);
-        throw new Error('Sua sessão expirou. Faça login novamente.');
-      }
-
-      session = refreshData?.session;
-
-      if (!session?.access_token) {
-        throw new Error('Sua sessão expirou. Faça login novamente.');
-      }
-
-      return session.access_token;
     };
 
     const supabaseService = {
@@ -864,7 +877,9 @@
             );
 
             if (!session?.access_token) {
-              throw new Error('Não foi possível iniciar a sessão. Tente fazer login novamente.');
+              throw new Error(
+                'O login foi realizado, mas o Supabase não forneceu uma sessão válida.'
+              );
             }
             const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
             let cafeteriaFinal = dadosCaf;
