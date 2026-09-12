@@ -59,6 +59,8 @@
       }
     });
 
+    let currentAccessToken = null;
+
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
 
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -94,45 +96,42 @@
     };
 
     const getAccessToken = async () => {
-      try {
-        const { data, error } = await supabaseClient.auth.getSession();
-
-        if (error) {
-          console.error('Erro ao recuperar sessão:', error);
-          throw new Error('Não foi possível recuperar sua sessão.');
-        }
-
-        const session = data?.session;
-
-        if (session?.access_token) {
-          return session.access_token;
-        }
-
-        // Tenta renovar somente se realmente não houver token.
-        const { data: refreshData, error: refreshError } =
-          await supabaseClient.auth.refreshSession();
-
-        if (refreshError) {
-          console.error('Erro ao renovar sessão:', refreshError);
-          throw new Error(
-            'Sua sessão expirou. Faça logout e entre novamente na sua conta.'
-          );
-        }
-
-        const newSession = refreshData?.session;
-
-        if (!newSession?.access_token) {
-          throw new Error(
-            'Nenhuma sessão autenticada foi encontrada. Faça login novamente.'
-          );
-        }
-
-        return newSession.access_token;
-
-      } catch (err) {
-        console.error('getAccessToken:', err);
-        throw err;
+      // 1. Usa imediatamente o token obtido no login
+      if (currentAccessToken) {
+        return currentAccessToken;
       }
+
+      // 2. Tenta recuperar a sessão persistida
+      const { data, error } = await supabaseClient.auth.getSession();
+
+      if (error) {
+        console.error('Erro ao recuperar sessão:', error);
+      }
+
+      if (data?.session?.access_token) {
+        currentAccessToken = data.session.access_token;
+        return currentAccessToken;
+      }
+
+      // 3. Última tentativa: renovar a sessão
+      const { data: refreshData, error: refreshError } =
+        await supabaseClient.auth.refreshSession();
+
+      if (refreshError) {
+        console.error('Erro ao renovar sessão:', refreshError);
+        throw new Error(
+          'Sua sessão expirou. Faça login novamente na sua conta.'
+        );
+      }
+
+      if (refreshData?.session?.access_token) {
+        currentAccessToken = refreshData.session.access_token;
+        return currentAccessToken;
+      }
+
+      throw new Error(
+        'Nenhuma sessão autenticada foi encontrada. Faça login novamente.'
+      );
     };
 
     const supabaseService = {
@@ -755,13 +754,18 @@
           if (session) processarSessaoAtiva(session);
         });
 
-        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
-          if (session) {
-            processarSessaoAtiva(session);
-          } else if (event === 'SIGNED_OUT') {
-            setIsLoggedInAdmin(false);
-          }
-        });
+        const { data: { subscription } } =
+          supabaseClient.auth.onAuthStateChange((event, session) => {
+
+            currentAccessToken = session?.access_token || null;
+
+            if (session) {
+              processarSessaoAtiva(session);
+            } else if (event === 'SIGNED_OUT') {
+              currentAccessToken = null;
+              setIsLoggedInAdmin(false);
+            }
+          });
 
         return () => subscription?.unsubscribe();
       }, []);
@@ -881,6 +885,9 @@
                 'O login foi realizado, mas o Supabase não forneceu uma sessão válida.'
               );
             }
+
+            currentAccessToken = session.access_token;
+
             const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
             let cafeteriaFinal = dadosCaf;
 
@@ -908,7 +915,10 @@
             });
             setActiveView('admin');
           } else {
-            const { cafeteria: novaCaf } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
+            const { cafeteria: novaCaf, session } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
+            if (session?.access_token) {
+              currentAccessToken = session.access_token;
+            }
             setIsLoggedInAdmin(true);
             setCafeteria({
               id: novaCaf.id,
