@@ -95,8 +95,8 @@
       return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
     };
 
-    const getAccessToken = async () => {
-      if (currentAccessToken) {
+    const getAccessToken = async (forceRefresh = false) => {
+      if (!forceRefresh && currentAccessToken) {
         return currentAccessToken;
       }
 
@@ -106,7 +106,7 @@
         console.error('Erro ao recuperar sessão:', error);
       }
 
-      if (data?.session?.access_token) {
+      if (!forceRefresh && data?.session?.access_token) {
         currentAccessToken = data.session.access_token;
         return currentAccessToken;
       }
@@ -331,8 +331,7 @@
             throw new Error('Informe um preço válido.');
           }
 
-          const accessToken = await getAccessToken();
-
+          let accessToken = await getAccessToken();
           const isEdit = Boolean(produto.id);
 
           const payload = {
@@ -345,7 +344,7 @@
             disponivel: produto.disponivel !== false
           };
 
-          const res = await fetch(`${APP_API_URL}/products`, {
+          let res = await fetch(`${APP_API_URL}/products`, {
             method: isEdit ? 'PATCH' : 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -353,6 +352,18 @@
             },
             body: JSON.stringify(payload)
           });
+
+          if (res.status === 401) {
+            accessToken = await getAccessToken(true);
+            res = await fetch(`${APP_API_URL}/products`, {
+              method: isEdit ? 'PATCH' : 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+              },
+              body: JSON.stringify(payload)
+            });
+          }
 
           const data = await res.json().catch(() => ({}));
 
@@ -386,9 +397,9 @@
             throw new Error('ID do produto não informado.');
           }
 
-          const accessToken = await getAccessToken();
+          let accessToken = await getAccessToken();
 
-          const res = await fetch(`${APP_API_URL}/products`, {
+          let res = await fetch(`${APP_API_URL}/products`, {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
@@ -396,6 +407,18 @@
             },
             body: JSON.stringify({ id })
           });
+
+          if (res.status === 401) {
+            accessToken = await getAccessToken(true);
+            res = await fetch(`${APP_API_URL}/products`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+              },
+              body: JSON.stringify({ id })
+            });
+          }
 
           const data = await res.json().catch(() => ({}));
 
@@ -728,6 +751,7 @@
 
         const processarSessaoAtiva = async (session) => {
           if (session?.user?.id) {
+            currentAccessToken = session.access_token || null;
             const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(session.user.id);
             if (dadosCaf) {
               const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
@@ -1022,13 +1046,13 @@
 
         try {
           const resultado = await supabaseService.deletarProduto(id);
-          if (!resultado?.success) throw new Error('Erro ao eliminar.');
+          if (!resultado?.success) throw new Error(resultado?.error || 'Erro ao eliminar.');
 
           await carregarDadosDoBanco();
           setNotificacao('Produto eliminado com sucesso!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          setNotificacao('Não foi possível eliminar o produto.');
+          setNotificacao(err.message || 'Não foi possível eliminar o produto.');
           setTimeout(() => setNotificacao(''), 4000);
         }
       };
@@ -1313,6 +1337,30 @@
                     </div>
 
                     <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-lg">Gestão da Ementa</h3>
+                        <button onClick={() => setModalProduto({ open: true, data: null })} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">
+                          + Adicionar Item
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {produtos.map(p => (
+                          <div key={p.id} className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
+                            <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-800 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-white truncate">{p.nome}</p>
+                              <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => setModalProduto({ open: true, data: p })} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-600 font-bold">Editar</button>
+                              <button onClick={() => handleRemoverProduto(p.id)} className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg border border-rose-500/30 font-bold">Eliminar</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
                       <h3 className="font-bold text-lg">Definições da Conta e Acesso</h3>
                       <p className="text-xs text-slate-400">Altere o e-mail de acesso exclusivo para esta cafeteria ou elimine a conta permanentemente.</p>
                       
@@ -1399,6 +1447,7 @@
 
                   <div className="space-y-3">
                     <h3 className="font-bold text-amber-400 text-sm">Ementa Ativa ({produtos.length} itens)</h3>
+                    <p className="text-[11px] text-slate-400">Ementa — somente visualização. A edição da ementa está disponível no painel do proprietário.</p>
                     {produtos.map(p => (
                       <div key={p.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
                         <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-900 shrink-0" />
@@ -1599,7 +1648,7 @@
                       </select>
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Descrição</label>
+                      <label className="text-[11px] text-slate-400 font-bold block uname mb-1">Descrição</label>
                       <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
                     <div>
@@ -1623,3 +1672,4 @@
   </script>
 </body>
 </html>
+
