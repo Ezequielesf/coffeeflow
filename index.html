@@ -1329,8 +1329,13 @@
                         </div>
                         <div className="flex gap-2">
                           <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">📱 QR Code Mesas</button>
-                          {!cafeteria.isVitalicio && (
-                            <button onClick={abrirPagamento} className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition">💳 Renovar</button>
+                          {!cafeteria.isVitalicio && calcularDiasRestantes(cafeteria.dataExpiracao) <= 15 && (
+                            <button
+                              onClick={abrirPagamento}
+                              className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition"
+                            >
+                              💳 Renovar
+                            </button>
                           )}
                         </div>
                       </div>
@@ -1672,4 +1677,3 @@
   </script>
 </body>
 </html>
-
