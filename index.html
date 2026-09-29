@@ -14,30 +14,21 @@
   <!-- Compilador Babel para JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    .scrollbar-none::-webkit-scrollbar { display: none; }
-    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    body { background-color: #0b0c10; color: #c5c6c7; font-family: system-ui, -apple-system, sans-serif; }
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #print-qr-section, #print-qr-section * {
-        visibility: visible;
-      }
-      #print-qr-section {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 40px 20px;
-      }
+      body * { visibility: hidden; }
+      #print-qr-section, #print-qr-section * { visibility: visible; }
+      #print-qr-section { position: absolute; left: 0; top: 0; width: 100%; display: flex; justify-content: center; align-items: center; padding: 40px; }
     }
   </style>
 </head>
-<body class="bg-[#0b0c10] text-[#c5c6c7] font-sans antialiased selection:bg-[#d4a373] selection:text-[#0b0c10]">
-  <div id="root"></div>
+<body class="bg-[#0b0c10] text-[#c5c6c7] antialiased selection:bg-[#d4a373] selection:text-[#0b0c10]">
+  <div id="root">
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #d4a373; font-family: monospace;">
+      A carregar CoffeeFlow...
+    </div>
+  </div>
+
   <script type="text/babel">
     const { useState, useEffect } = React;
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
@@ -45,57 +36,38 @@
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1ZWN1aHptc3lhdXprZGNscmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzU2NDMsImV4cCI6MjEwMTA1MTY0M30.YvC4MJi9Jv0r2O-9OhfNEh0Tfki8tghRyMuXpdRIZm0';
 
     const formatarPreco = (valor) => {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      }).format(Number(valor) || 0);
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor) || 0);
     };
 
     const supabaseClient = window.supabase.createClient(API_URL, API_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false
-      }
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
     });
 
     let currentAccessToken = null;
-    const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
     const getUrlParams = () => {
       const pathSegments = window.location.pathname.split('/').filter(Boolean);
       const menuIndex = pathSegments.indexOf('menu');
-      let cafeteriaIdFromPath = null;
-      let mesaNumFromPath = null;
-
-      if (menuIndex !== -1 && pathSegments[menuIndex + 1]) {
-        cafeteriaIdFromPath = pathSegments[menuIndex + 1];
-      }
-
+      let cafeteriaIdFromPath = menuIndex !== -1 ? pathSegments[menuIndex + 1] : null;
       const searchParams = new URLSearchParams(window.location.search);
-      const hashString = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
-      const hashParams = new URLSearchParams(hashString);
+      const hashParams = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash);
 
       return {
         cafeteriaId: cafeteriaIdFromPath || searchParams.get('cafeteria'),
-        mesaNum: mesaNumFromPath || searchParams.get('mesa') || '1',
+        mesaNum: searchParams.get('mesa') || '1',
         resetQuery: searchParams.get('reset') === 'true',
         accessToken: hashParams.get('access_token') || searchParams.get('access_token'),
-        refreshToken: hashParams.get('refresh_token') || searchParams.get('refresh_token'),
-        code: searchParams.get('code'),
         type: hashParams.get('type') || searchParams.get('type'),
         isResetRoute: window.location.pathname.includes('reset-password')
       };
     };
 
-    const getQrCodeUrl = (text, size = 280) => {
-      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
-    };
+    const getQrCodeUrl = (text, size = 280) => `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
 
     const getAccessToken = async (forceRefresh = false) => {
       if (!forceRefresh && currentAccessToken) return currentAccessToken;
-      const { data, error } = await supabaseClient.auth.getSession();
+      const { data } = await supabaseClient.auth.getSession();
       if (!forceRefresh && data?.session?.access_token) {
         currentAccessToken = data.session.access_token;
         return currentAccessToken;
@@ -107,18 +79,6 @@
         return currentAccessToken;
       }
       throw new Error('Nenhuma sessão autenticada.');
-    };
-
-    const uploadImagemProduto = async (arquivo, cafeteriaId) => {
-      if (!arquivo) return '';
-      if (!arquivo.type.startsWith('image/')) throw new Error('Selecione uma imagem válida.');
-      if (arquivo.size > 5 * 1024 * 1024) throw new Error('A imagem deve ter no máximo 5 MB.');
-      const extensao = arquivo.name.split('.').pop().toLowerCase();
-      const nomeArquivo = `${cafeteriaId}/${crypto.randomUUID()}.${extensao}`;
-      const { error } = await supabaseClient.storage.from('produtos').upload(nomeArquivo, arquivo, { cacheControl: '3600', upsert: false, contentType: arquivo.type });
-      if (error) throw new Error('Não foi possível enviar a imagem.');
-      const { data } = supabaseClient.storage.from('produtos').getPublicUrl(nomeArquivo);
-      return data.publicUrl;
     };
 
     const supabaseService = {
@@ -141,16 +101,6 @@
           return data?.[0] || null;
         } catch (err) { return null; }
       },
-      buscarCafeteriaPorEmail: async (email) => {
-        try {
-          if (!email) return null;
-          const cleanEmail = email.trim().toLowerCase();
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?email=eq.${encodeURIComponent(cleanEmail)}`, { headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}` } });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] ? { exists: true } : null;
-        } catch (err) { return null; }
-      },
       buscarCafeteriaPorPin: async (pin) => {
         const res = await fetch('/api/staff-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
         const data = await res.json().catch(() => ({}));
@@ -163,41 +113,15 @@
         const agora = new Date();
         const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
         const payload = { nome: nome || 'CoffeeFlow', pin_equipe: pin || gerarPinAleatorio(), email: cleanEmail, dono_email: cleanEmail, plano_ativo: true, data_inscricao: agora.toISOString(), data_expiracao: dataExpiracao.toISOString() };
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-        if (sessionError) throw sessionError;
-        if (userId) payload.user_id = userId;
+        const { data: { session } } = await supabaseClient.auth.getSession();
         const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
           method: 'POST',
-          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${session?.access_token || API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
           body: JSON.stringify(payload)
         });
         const responseText = await res.text();
-        if (!res.ok) throw new Error(`Não foi possível criar a cafeteria.`);
+        if (!res.ok) throw new Error('Não foi possível criar a cafeteria.');
         return JSON.parse(responseText)[0];
-      },
-      atualizarPin: async (cafeteriaId, novoPin) => {
-        try {
-          const accessToken = await getAccessToken();
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteriaId)}`, {
-            method: 'PATCH',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin_equipe: novoPin })
-          });
-          return res.ok;
-        } catch (err) { return false; }
-      },
-      atualizarEmailCafeteria: async (cafeteriaId, novoEmail) => {
-        try {
-          const email = novoEmail.trim().toLowerCase();
-          const accessToken = await getAccessToken();
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteriaId)}`, {
-            method: 'PATCH',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-            body: JSON.stringify({ email, dono_email: email })
-          });
-          if (!res.ok) throw new Error('Erro ao alterar o e-mail.');
-          return { success: true, email };
-        } catch (error) { return { success: false, error: error.message }; }
       },
       buscarProdutos: async (cafeteriaId) => {
         try {
@@ -206,31 +130,6 @@
           if (!res.ok) return [];
           return await res.json();
         } catch (err) { return []; }
-      },
-      salvarProduto: async (produto) => {
-        try {
-          let imagemUrl = produto.imagem || '';
-          if (produto.arquivoImagem) imagemUrl = await uploadImagemProduto(produto.arquivoImagem, produto.cafeteria_id);
-          let accessToken = await getAccessToken();
-          const isEdit = Boolean(produto.id);
-          const payload = { id: isEdit ? produto.id : undefined, nome: produto.nome.trim(), preco: Number(produto.preco), categoria: produto.categoria?.trim() || 'Cafés', descricao: produto.descricao?.trim() || '', imagem: imagemUrl.trim(), disponivel: produto.disponivel !== false };
-          let res = await fetch(`${APP_API_URL}/products`, { method: isEdit ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` }, body: JSON.stringify(payload) });
-          if (res.status === 401) {
-            accessToken = await getAccessToken(true);
-            res = await fetch(`${APP_API_URL}/products`, { method: isEdit ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` }, body: JSON.stringify(payload) });
-          }
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data?.error || 'Erro ao salvar produto.');
-          return { success: true, produto: data?.produto || null };
-        } catch (err) { return { success: false, error: err.message }; }
-      },
-      deletarProduto: async (id) => {
-        try {
-          let accessToken = await getAccessToken();
-          let res = await fetch(`${APP_API_URL}/products`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` }, body: JSON.stringify({ id }) });
-          if (!res.ok) throw new Error('Erro ao eliminar produto.');
-          return { success: true };
-        } catch (err) { return { success: false, error: err.message }; }
       },
       buscarPedidos: async (cafeteriaId) => {
         try {
@@ -247,37 +146,6 @@
           const data = await res.json();
           return data?.[0] || null;
         } catch (err) { return null; }
-      },
-      atualizarStatusPedido: async (id, status) => {
-        try {
-          const staffPin = localStorage.getItem('coffeeflow_staff_pin');
-          const cafeteriaId = localStorage.getItem('coffeeflow_staff_cafeteria_id');
-          const res = await fetch('/api/orders', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-staff-pin': staffPin, 'x-cafeteria-id': cafeteriaId }, body: JSON.stringify({ id, status }) });
-          return res.ok;
-        } catch (err) { return false; }
-      }
-    };
-
-    const authService = {
-      login: async (email, password) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) throw new Error('E-mail ou palavra-passe incorretos.');
-        return { user: data.user, session: data.session };
-      },
-      signUp: async (email, password, nomeCafeteria) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) throw new Error(error.message);
-        const userId = data?.user?.id;
-        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, gerarPinAleatorio());
-        return { user: data.user, session: data.session, cafeteria: cafeteriaSalva };
-      },
-      recuperarSenha: async (email) => {
-        const redirectUrl = `${window.location.origin}${window.location.pathname}?reset=true`;
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: redirectUrl });
-        if (error) throw new Error('Erro ao enviar e-mail de recuperação.');
-        return true;
       }
     };
 
@@ -286,704 +154,189 @@
     function App() {
       const urlInfo = getUrlParams();
       const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
-      const [isResetPassword, setIsResetPassword] = useState(() => urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery' || Boolean(urlInfo.accessToken) || Boolean(urlInfo.code));
-      const [newPassword, setNewPassword] = useState('');
-      const [confirmNewPassword, setConfirmNewPassword] = useState('');
-      const [resetPasswordError, setResetPasswordError] = useState('');
-      const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
-      const [loadingResetPassword, setLoadingResetPassword] = useState(false);
-      const [novoEmailInput, setNovoEmailInput] = useState('');
-      const [emailEditando, setEmailEditando] = useState(false);
-      const [confirmarExclusaoModal, setConfirmarExclusaoModal] = useState(false);
-      const [eliminandoConta, setEliminandoConta] = useState(false);
-      const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
       const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
-      const [cafeteria, setCafeteria] = useState(() => {
-        const salva = localStorage.getItem('coffeeflow_cafeteria');
-        if (salva) { try { return JSON.parse(salva); } catch (err) {} }
-        return { id: urlInfo.cafeteriaId || 'caf_demo_01', nome: 'CoffeeFlow', pinEquipe: '123456', planoAtivo: true, donoEmail: '', dataInscricao: new Date().toISOString(), dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), isVitalicio: false };
-      });
+      const [cafeteria, setCafeteria] = useState({ id: urlInfo.cafeteriaId || 'caf_demo_01', nome: 'CoffeeFlow', pinEquipe: '123456', planoAtivo: true, dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString() });
       const [produtos, setProdutos] = useState([]);
       const [pedidos, setPedidos] = useState([]);
       const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
       const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
+      const [isStaffLogged, setIsStaffLogged] = useState(localStorage.getItem('coffeeflow_staff_session') === 'true');
       const [adminEmailInput, setAdminEmailInput] = useState('');
       const [adminPasswordInput, setAdminPasswordInput] = useState('');
-      const [nomeCafeteriaInput, setNomeCafeteriaInput] = useState('');
-      const [adminAuthMode, setAdminAuthMode] = useState('login');
       const [adminAuthError, setAdminAuthError] = useState('');
-      const [adminAuthSuccess, setAdminAuthSuccess] = useState('');
-      const [loadingAuth, setLoadingAuth] = useState(false);
-      const [pinInput, setPinInput] = useState('');
-      const [pinError, setPinError] = useState('');
-      const [loadingPin, setLoadingPin] = useState(false);
-      const [devModalOpen, setDevModalOpen] = useState(false);
-      const [devPinInput, setDevPinInput] = useState('');
-      const [devError, setDevError] = useState('');
-      const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
-      const [gerandoPin, setGerandoPin] = useState(false);
       const [carrinho, setCarrinho] = useState([]);
       const [pedidoEnviado, setPedidoEnviado] = useState(false);
-      const [notificacao, setNotificacao] = useState('');
       const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-      const [termoPesquisa, setTermoPesquisa] = useState('');
-      const [modalProduto, setModalProduto] = useState({ open: false, data: null });
-      const [produtoAtual, setProdutoAtual] = useState(null);
-      const [mesaQr, setMesaQr] = useState('01');
-      const [linkCopiado, setLinkCopiado] = useState(false);
       const [modalQrOpen, setModalQrOpen] = useState(false);
-
-      const mudarModoAuth = (modo) => { setAdminAuthMode(modo); setAdminAuthError(''); setAdminAuthSuccess(''); };
-
-      const handleResetPassword = async (e) => {
-        e.preventDefault();
-        setResetPasswordError('');
-        setResetPasswordSuccess('');
-        if (newPassword.length < 6) { setResetPasswordError('A palavra-passe deve ter pelo menos 6 caracteres.'); return; }
-        if (newPassword !== confirmNewPassword) { setResetPasswordError('As palavras-passe não coincidem.'); return; }
-        try {
-          setLoadingResetPassword(true);
-          const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-          if (error) throw error;
-          await supabaseClient.auth.signOut();
-          localStorage.clear();
-          window.history.replaceState({}, document.title, '/');
-          setIsResetPassword(false);
-          setAdminAuthMode('login');
-          setActiveView('admin_login');
-          setResetPasswordSuccess('Palavra-passe alterada com sucesso!');
-        } catch (error) { setResetPasswordError(error.message); } finally { setLoadingResetPassword(false); }
-      };
-
-      const planoEstaValido = (caf) => {
-        if (!caf) return false;
-        if (caf.isVitalicio) return true;
-        if (!caf.planoAtivo || !caf.dataExpiracao) return false;
-        return new Date(caf.dataExpiracao) > new Date();
-      };
-
-      const calcularDiasRestantes = (dataExpiracao, isVitalicio = false) => {
-        if (isVitalicio) return 9999;
-        if (!dataExpiracao) return 0;
-        const diff = new Date(dataExpiracao).getTime() - Date.now();
-        return diff <= 0 ? 0 : Math.ceil(diff / (1000 * 60 * 60 * 24));
-      };
-
-      const planoAindaValido = planoEstaValido(cafeteria);
+      const [mesaQr, setMesaQr] = useState('01');
 
       useEffect(() => {
-        const idParaBuscar = urlInfo.cafeteriaId || cafeteria.id;
-        if (idParaBuscar && isClientAccessFromQr) {
-          supabaseService.buscarCafeteriaPorId(idParaBuscar).then(dados => {
-            if (dados) {
-              const eVitalicio = dados.data_expiracao && new Date(dados.data_expiracao).getFullYear() > 2090;
-              setCafeteria({ id: dados.id, nome: dados.nome, pinEquipe: dados.pin_equipe, planoAtivo: dados.pin_ativo === true, donoEmail: dados.email || dados.dono_email, dataInscricao: dados.data_inscricao, dataExpiracao: dados.data_expiracao, isVitalicio: eVitalicio });
-            }
+        if (urlInfo.cafeteriaId) {
+          supabaseService.buscarCafeteriaPorId(urlInfo.cafeteriaId).then(dados => {
+            if (dados) setCafeteria({ id: dados.id, nome: dados.nome, pinEquipe: dados.pin_equipe, planoAtivo: dados.plano_ativo, dataExpiracao: dados.data_expiracao });
           });
         }
       }, [urlInfo.cafeteriaId]);
 
-      useEffect(() => { if (cafeteria?.id) localStorage.setItem('coffeeflow_cafeteria', JSON.stringify(cafeteria)); }, [cafeteria]);
-
       useEffect(() => {
-        if (isClientAccessFromQr || isResetPassword) return;
-        const processarSessaoAtiva = async (session) => {
-          if (session?.user?.id) {
-            currentAccessToken = session.access_token;
-            const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(session.user.id);
-            if (dadosCaf) {
-              const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-              setCafeteria({ id: dadosCaf.id, nome: dadosCaf.nome, pinEquipe: dadosCaf.pin_equipe, planoAtivo: dadosCaf.plano_ativo, donoEmail: dadosCaf.email || dadosCaf.dono_email, dataInscricao: dadosCaf.data_inscricao, dataExpiracao: dadosCaf.data_expiracao, isVitalicio: eVitalicio });
-              setIsLoggedInAdmin(true);
-              setActiveView(prev => prev === 'landing' || prev === 'admin_login' ? 'admin' : prev);
-            }
-          }
-        };
-        supabaseClient.auth.getSession().then(({ data: { session } }) => { if (session) processarSessaoAtiva(session); });
-        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
-          currentAccessToken = session?.access_token || null;
-          if (session) processarSessaoAtiva(session);
-          else if (event === 'SIGNED_OUT') setIsLoggedInAdmin(false);
-        });
-        return () => subscription?.unsubscribe();
-      }, []);
-
-      const carregarDadosDoBanco = async () => {
-        if (cafeteria.id) {
-          const prods = await supabaseService.buscarProdutos(cafeteria.id);
-          if (prods) setProdutos(prods);
+        if (cafeteria?.id) {
+          supabaseService.buscarProdutos(cafeteria.id).then(setProdutos);
           if (isLoggedInAdmin || isStaffLogged) {
-            const peds = await supabaseService.buscarPedidos(cafeteria.id);
-            if (peds) setPedidos(peds);
+            supabaseService.buscarPedidos(cafeteria.id).then(setPedidos);
           }
         }
+      }, [cafeteria.id, isLoggedInAdmin, isStaffLogged]);
+
+      const handleAdminLogin = async (e) => {
+        e.preventDefault();
+        setAdminAuthError('');
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email: adminEmailInput.trim().toLowerCase(), password: adminPasswordInput });
+          if (error) throw error;
+          currentAccessToken = data.session.access_token;
+          let dadosCaf = await supabaseService.buscarCafeteriaPorUserId(data.user.id);
+          if (!dadosCaf) dadosCaf = await supabaseService.criarCafeteria(data.user.id, data.user.email, 'CoffeeFlow', gerarPinAleatorio());
+          setCafeteria({ id: dadosCaf.id, nome: dadosCaf.nome, pinEquipe: dadosCaf.pin_equipe, planoAtivo: dadosCaf.plano_ativo, dataExpiracao: dadosCaf.data_expiracao });
+          setIsLoggedInAdmin(true);
+          setActiveView('admin');
+        } catch (err) { setAdminAuthError(err.message); }
       };
-
-      useEffect(() => { carregarDadosDoBanco(); }, [cafeteria.id]);
-
-      useEffect(() => {
-        let interval;
-        if (isStaffLogged && cafeteria.id) {
-          interval = setInterval(() => {
-            supabaseService.buscarPedidos(cafeteria.id).then(peds => { if (peds) setPedidos(peds); });
-          }, 4000);
-        }
-        return () => clearInterval(interval);
-      }, [isStaffLogged, cafeteria.id]);
 
       const linkAtualCardapio = `${window.location.origin}/menu/${encodeURIComponent(cafeteria.id)}?mesa=${encodeURIComponent(mesaQr)}`;
 
-      const copiarLinkCardapio = () => {
-        navigator.clipboard.writeText(linkAtualCardapio);
-        setLinkCopiado(true);
-        setTimeout(() => setLinkCopiado(false), 3000);
-      };
-
-      const handleAdminAuth = async (e) => {
-        e.preventDefault();
-        setAdminAuthError(''); setAdminAuthSuccess(''); setLoadingAuth(true);
-        try {
-          if (adminAuthMode === 'forgot') {
-            await authService.recuperarSenha(adminEmailInput);
-            setAdminAuthSuccess('E-mail de redefinição enviado!');
-          } else if (adminAuthMode === 'login') {
-            const { user, session } = await authService.login(adminEmailInput, adminPasswordInput);
-            currentAccessToken = session.access_token;
-            let dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
-            if (!dadosCaf) dadosCaf = await supabaseService.criarCafeteria(user.id, user.email, 'CoffeeFlow', gerarPinAleatorio());
-            const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-            setIsLoggedInAdmin(true);
-            setCafeteria({ id: dadosCaf.id, nome: dadosCaf.nome, pinEquipe: dadosCaf.pin_equipe, planoAtivo: dadosCaf.plano_ativo, donoEmail: dadosCaf.email || adminEmailInput, dataInscricao: dadosCaf.data_inscricao, dataExpiracao: dadosCaf.data_expiracao, isVitalicio: eVitalicio });
-            setActiveView('admin');
-          } else {
-            const { cafeteria: novaCaf, session } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
-            currentAccessToken = session?.access_token;
-            setIsLoggedInAdmin(true);
-            setCafeteria({ id: novaCaf.id, nome: novaCaf.nome, pinEquipe: novaCaf.pin_equipe, planoAtivo: true, donoEmail: adminEmailInput, dataInscricao: novaCaf.data_inscricao, dataExpiracao: novaCaf.data_expiracao, isVitalicio: false });
-            setActiveView('admin');
-          }
-        } catch (err) { setAdminAuthError(err.message); } finally { setLoadingAuth(false); }
-      };
-
-      const handleDevBypass = async (e) => {
-        e.preventDefault();
-        if (devPinInput.trim() !== '777888') { setDevError('PIN incorreto.'); return; }
-        try {
-          const dataVitalicia = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString();
-          const accessToken = await getAccessToken();
-          await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteria.id)}`, {
-            method: 'PATCH',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plano_ativo: true, data_expiracao: dataVitalicia })
-          });
-          setCafeteria(prev => ({ ...prev, planoAtivo: true, dataExpiracao: dataVitalicia, isVitalicio: true }));
-          setDevModalOpen(false);
-          setNotificacao('Acesso Vitalício Ativado!');
-          setTimeout(() => setNotificacao(''), 4000);
-        } catch (error) { setDevError(error.message); }
-      };
-
-      const handleLoginStaff = async (e) => {
-        e.preventDefault(); setPinError(''); setLoadingPin(true);
-        try {
-          const caf = await supabaseService.buscarCafeteriaPorPin(pinInput);
-          if (!caf) { setPinError('PIN incorreto.'); setLoadingPin(false); return; }
-          const eVitalicio = caf.data_expiracao && new Date(caf.data_expiracao).getFullYear() > 2090;
-          setCafeteria({ id: caf.id, nome: caf.nome, pinEquipe: caf.pin_equipe, planoAtivo: caf.plano_ativo, donoEmail: caf.email, dataInscricao: caf.data_inscricao, dataExpiracao: caf.data_expiracao, isVitalicio: eVitalicio });
-          localStorage.setItem('coffeeflow_staff_session', 'true');
-          localStorage.setItem('coffeeflow_staff_pin', pinInput.trim());
-          localStorage.setItem('coffeeflow_staff_cafeteria_id', caf.id);
-          setIsStaffLogged(true);
-          setActiveView('staff_panel');
-        } catch (err) { setPinError(err.message); } finally { setLoadingPin(false); }
-      };
-
-      const handleRemoverProduto = async (id) => {
-        if (!confirm('Deseja eliminar este item?')) return;
-        const res = await supabaseService.deletarProduto(id);
-        if (res.success) { await carregarDadosDoBanco(); setNotificacao('Produto eliminado.'); setTimeout(() => setNotificacao(''), 3000); }
-      };
-
-      const handleSalvarProduto = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const prodData = {
-          id: modalProduto.data?.id,
-          cafeteria_id: cafeteria.id,
-          nome: formData.get('nome'),
-          preco: parseFloat(formData.get('preco')),
-          categoria: formData.get('categoria'),
-          descricao: formData.get('descricao'),
-          imagem: produtoAtual?.imagem || modalProduto.data?.imagem || '',
-          arquivoImagem: produtoAtual?.arquivoImagem || null
-        };
-        const res = await supabaseService.salvarProduto(prodData);
-        if (res.success) {
-          await carregarDadosDoBanco();
-          setModalProduto({ open: false, data: null });
-          setProdutoAtual(null);
-          setNotificacao('Produto guardado com sucesso!');
-          setTimeout(() => setNotificacao(''), 3000);
-        }
-      };
-
-      const atualizarStatusPedido = async (id, statusAtual) => {
-        const novoStatus = statusAtual === 'pendente' ? 'em_preparo' : 'entregue';
-        if (await supabaseService.atualizarStatusPedido(id, novoStatus)) {
-          setPedidos(prev => prev.map(p => p.id === id ? { ...p, status: novoStatus } : p));
-        }
-      };
-
-      const enviarPedidoCliente = async () => {
-        if (carrinho.length === 0) return;
-        const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-        const pedidoData = {
-          cafeteria_id: cafeteria.id,
-          codigo_pedido: `CF-${Math.floor(100 + Math.random() * 900)}`,
-          mesa: selectedMesaCliente,
-          itens: carrinho.map(c => ({ nome: c.nome, qtd: c.qtd, preco: c.preco })),
-          total,
-          status: 'pendente',
-          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        if (await supabaseService.criarPedido(pedidoData)) {
-          setCarrinho([]); setPedidoEnviado(true);
-          setNotificacao('Pedido enviado com sucesso!');
-          setTimeout(() => setNotificacao(''), 4000);
-        }
-      };
-
-      const produtosFiltrados = produtos.filter(p => {
-        const bateCat = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
-        const bateNome = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
-        return bateCat && bateNome;
-      });
-
-      if (isResetPassword) {
-        return (
-          <div className="min-h-screen bg-[#0b0c10] text-[#c5c6c7] font-sans flex items-center justify-center p-4">
-            <div className="max-w-md w-full p-8 bg-[#1f2833] border border-[#2c353d] rounded-3xl space-y-6 shadow-2xl">
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-serif font-bold text-white tracking-wide">Nova Palavra-passe</h2>
-                <p className="text-xs text-[#c5c6c7]">Escolha a sua nova credencial de acesso.</p>
-              </div>
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Nova palavra-passe" minLength={6} required className="w-full p-3.5 bg-[#0b0c10] border border-[#2c353d] rounded-2xl text-sm text-white focus:outline-none focus:border-[#d4a373]" />
-                <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Confirmar palavra-passe" minLength={6} required className="w-full p-3.5 bg-[#0b0c10] border border-[#2c353d] rounded-2xl text-sm text-white focus:outline-none focus:border-[#d4a373]" />
-                {resetPasswordError && <div className="text-rose-400 text-xs font-semibold">{resetPasswordError}</div>}
-                {resetPasswordSuccess && <div className="text-emerald-400 text-xs font-semibold">{resetPasswordSuccess}</div>}
-                <button type="submit" disabled={loadingResetPassword} className="w-full py-3.5 bg-[#d4a373] text-[#0b0c10] font-bold rounded-2xl text-sm hover:bg-[#e9edc9] transition">Atualizar Palavra-passe</button>
-              </form>
-            </div>
-          </div>
-        );
-      }
-
       return (
-        <div className="min-h-screen bg-[#0b0c10] text-[#c5c6c7] font-sans flex flex-col justify-between selection:bg-[#d4a373] selection:text-[#0b0c10]">
+        <div className="min-h-screen bg-[#0b0c10] text-[#c5c6c7] font-sans flex flex-col justify-between">
           <div>
-            {/* Header com Estilo Premium */}
-            <header className="bg-[#121212]/90 backdrop-blur-md border-b border-[#222222] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+            <header className="bg-[#121212] border-b border-[#222222] px-6 py-4 flex justify-between items-center sticky top-0 z-50">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveView('landing')}>
-                <div className="w-9 h-9 bg-[#d4a373] text-[#0b0c10] rounded-xl flex items-center justify-center font-black text-lg shadow-md shadow-[#d4a373]/10">☕</div>
-                <span className="font-serif font-bold text-white text-base tracking-wider">{cafeteria.nome}</span>
+                <div className="w-9 h-9 bg-[#d4a373] text-[#0b0c10] rounded-xl flex items-center justify-center font-bold text-lg">☕</div>
+                <span className="font-serif font-bold text-white text-base">{cafeteria.nome}</span>
               </div>
-
-              {notificacao && (
-                <div className="hidden sm:block bg-[#d4a373] text-[#0b0c10] font-bold px-4 py-1.5 rounded-full text-xs animate-pulse shadow-lg">
-                  {notificacao}
-                </div>
-              )}
-
-              {!isClientAccessFromQr && (
-                <div className="flex items-center gap-3">
-                  {!isLoggedInAdmin && (
-                    <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="px-4 py-2 bg-[#d4a373] text-[#0b0c10] rounded-xl font-bold text-xs hover:bg-[#e9edc9] transition shadow-sm">
-                      Login Proprietário
-                    </button>
-                  )}
-                  {isLoggedInAdmin && (
-                    <button onClick={() => setActiveView('admin')} className="px-4 py-2 bg-[#d4a373] text-[#0b0c10] rounded-xl font-bold text-xs hover:bg-[#e9edc9] transition">
-                      Painel Gestão
-                    </button>
-                  )}
-                  <button onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} className={`px-4 py-2 rounded-xl font-bold text-xs transition border ${activeView.includes('staff') ? 'bg-[#d4a373] text-[#0b0c10] border-[#d4a373]' : 'bg-[#1f2833] border-[#2c353d] text-[#c5c6c7] hover:border-[#d4a373]'}`}>
-                    Equipe (PIN)
+              <div className="flex items-center gap-3">
+                {!isLoggedInAdmin && !isClientAccessFromQr && (
+                  <button onClick={() => setActiveView('admin_login')} className="px-4 py-2 bg-[#d4a373] text-[#0b0c10] rounded-xl font-bold text-xs">
+                    Login Proprietário
                   </button>
-                </div>
-              )}
-            </header>
-
-            {/* Landing Page Estilizada com base na referência visual */}
-            {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
-              <div className="space-y-20 pb-20">
-                {/* Hero Section */}
-                <div className="relative overflow-hidden bg-gradient-to-b from-[#121212] to-[#0b0c10] py-24 px-6 border-b border-[#222222]">
-                  <div className="max-w-4xl mx-auto text-center space-y-6">
-                    <p className="text-xs font-semibold tracking-widest text-[#d4a373] uppercase">Rich. Smooth. Perfect.</p>
-                    <h1 className="text-4xl sm:text-7xl font-serif font-normal text-white tracking-tight leading-tight">
-                      Experience Coffee Like <span className="italic text-[#d4a373]">Never Before</span>
-                    </h1>
-                    <p className="text-[#c5c6c7] text-sm sm:text-base max-w-xl mx-auto font-light leading-relaxed">
-                      Handcrafted coffee made from the finest beans, brewed to perfection for you. Sistema digital moderno para cafetarias.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                      <button onClick={abrirPagamento} className="px-8 py-4 bg-[#d4a373] hover:bg-[#e9edc9] text-[#0b0c10] font-bold rounded-2xl text-sm transition shadow-xl shadow-[#d4a373]/10">
-                        Assinar Licença Mensal →
-                      </button>
-                      <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-[#1f2833] hover:bg-[#2c353d] text-white font-semibold rounded-2xl text-sm border border-[#2c353d] transition">
-                        Criar Conta Gratuita
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Popular Picks Showcase */}
-                <div className="max-w-6xl mx-auto px-6 space-y-8">
-                  <div className="text-center space-y-2">
-                    <p className="text-xs font-semibold tracking-widest text-[#d4a373] uppercase">Our Signature</p>
-                    <h2 className="text-3xl font-serif text-white">Popular Picks</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[
-                      { nome: 'Iced Caramel Latte', desc: 'Smooth espresso with caramel and chilled milk.', preco: 'R$ 19,90', img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=500&q=80' },
-                      { nome: 'Cappuccino', desc: 'Classic cappuccino with rich foam and bold flavor.', preco: 'R$ 16,90', img: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=500&q=80' },
-                      { nome: 'Mocha', desc: 'Espresso with chocolate and steamed milk.', preco: 'R$ 18,90', img: 'https://images.unsplash.com/photo-1578314675249-a6919f3cb5e8?auto=format&fit=crop&w=500&q=80' },
-                      { nome: 'Espresso', desc: 'Strong, bold and pure espresso shot.', preco: 'R$ 13,90', img: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=500&q=80' }
-                    ].map((item, idx) => (
-                      <div key={idx} className="bg-[#121212] border border-[#222222] rounded-3xl p-4 space-y-4 hover:border-[#d4a373]/50 transition group">
-                        <div className="h-48 rounded-2xl overflow-hidden bg-[#1f2833]">
-                          <img src={item.img} alt={item.nome} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                        </div>
-                        <div className="space-y-1">
-                          <h3 className="font-serif font-bold text-white text-base">{item.nome}</h3>
-                          <p className="text-xs text-[#c5c6c7]/80 line-clamp-2 font-light">{item.desc}</p>
-                        </div>
-                        <div className="flex justify-between items-center pt-2 border-t border-[#222222]">
-                          <span className="font-bold text-[#d4a373] text-sm">{item.preco}</span>
-                          <button onClick={() => setActiveView('admin_login')} className="px-3 py-1.5 bg-[#1f2833] hover:bg-[#d4a373] hover:text-[#0b0c10] text-white rounded-xl text-xs font-bold transition">Pedir</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Admin Login & Register */}
-            {activeView === 'admin_login' && !isLoggedInAdmin && (
-              <div className="max-w-md mx-auto my-16 p-8 bg-[#121212] border border-[#222222] rounded-3xl space-y-6 shadow-2xl">
-                <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-serif font-bold text-white">
-                    {adminAuthMode === 'login' && 'Entrar na Gestão'}
-                    {adminAuthMode === 'register' && 'Registar Cafetaria'}
-                    {adminAuthMode === 'forgot' && 'Recuperar Acesso'}
-                  </h2>
-                  <p className="text-xs text-[#c5c6c7]">Painel exclusivo para proprietários CoffeeFlow.</p>
-                </div>
-                    
-                <div className="flex bg-[#0b0c10] p-1 rounded-2xl text-xs font-bold gap-1 border border-[#222222]">
-                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'login' ? 'bg-[#d4a373] text-[#0b0c10]' : 'text-[#c5c6c7] hover:text-white'}`}>Login</button>
-                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'register' ? 'bg-[#d4a373] text-[#0b0c10]' : 'text-[#c5c6c7] hover:text-white'}`}>Registar</button>
-                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'forgot' ? 'bg-[#d4a373] text-[#0b0c10]' : 'text-[#c5c6c7] hover:text-white'}`}>Recuperar</button>
-                </div>
-
-                <form onSubmit={handleAdminAuth} className="space-y-4">
-                  {adminAuthMode === 'register' && (
-                    <div>
-                      <label className="text-[11px] text-[#c5c6c7] font-bold block mb-1">Nome da Cafetaria</label>
-                      <input type="text" placeholder="Ex: Brew Haven" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-3.5 bg-[#0b0c10] border border-[#222222] rounded-2xl text-sm text-white focus:outline-none focus:border-[#d4a373]" />
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-[11px] text-[#c5c6c7] font-bold block mb-1">E-mail</label>
-                    <input type="email" placeholder="exemplo@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-3.5 bg-[#0b0c10] border border-[#222222] rounded-2xl text-sm text-white focus:outline-none focus:border-[#d4a373]" />
-                  </div>
-                  {adminAuthMode !== 'forgot' && (
-                    <div>
-                      <label className="text-[11px] text-[#c5c6c7] font-bold block mb-1">Palavra-passe</label>
-                      <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-3.5 bg-[#0b0c10] border border-[#222222] rounded-2xl text-sm text-white focus:outline-none focus:border-[#d4a373]" />
-                    </div>
-                  )}
-                  {adminAuthError && <div className="text-rose-400 text-xs font-semibold">{adminAuthError}</div>}
-                  {adminAuthSuccess && <div className="text-emerald-400 text-xs font-semibold">{adminAuthSuccess}</div>}
-                  <button type="submit" disabled={loadingAuth} className="w-full py-3.5 bg-[#d4a373] text-[#0b0c10] font-bold rounded-2xl text-sm hover:bg-[#e9edc9] transition shadow-lg">
-                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : adminAuthMode === 'register' ? 'Criar Conta' : 'Enviar Link')}
+                )}
+                {isLoggedInAdmin && (
+                  <button onClick={() => setActiveView('admin')} className="px-4 py-2 bg-[#d4a373] text-[#0b0c10] rounded-xl font-bold text-xs">
+                    Painel
                   </button>
-                </form>
-              </div>
-            )}
-
-            {/* Painel de Gestão Admin */}
-            {activeView === 'admin' && isLoggedInAdmin && (
-              <div className="max-w-5xl mx-auto p-6 space-y-8">
-                <div className="flex justify-between items-center border-b border-[#222222] pb-6">
-                  <div>
-                    <h2 className="text-3xl font-serif font-bold text-white">{cafeteria.nome}</h2>
-                    <p className="text-xs text-[#c5c6c7] mt-1">ID da Cafetaria: <span className="font-mono text-[#d4a373]">{cafeteria.id}</span></p>
-                  </div>
-                  <button onClick={async () => { await supabaseClient.auth.signOut(); localStorage.clear(); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-4 py-2 bg-[#1f2833] hover:bg-rose-500/20 hover:text-rose-400 rounded-xl text-xs font-bold transition">
-                    Sair da Conta
-                  </button>
-                </div>
-
-                {!planoAindaValido ? (
-                  <div className="bg-[#121212] border border-[#d4a373]/30 p-10 rounded-3xl text-center space-y-6">
-                    <div className="w-16 h-16 bg-[#d4a373]/10 text-[#d4a373] rounded-full flex items-center justify-center mx-auto text-3xl">🔒</div>
-                    <h3 className="text-2xl font-serif font-bold text-white">Assinatura Pendente ou Expirada</h3>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                      <button onClick={abrirPagamento} className="px-8 py-4 bg-[#d4a373] hover:bg-[#e9edc9] text-[#0b0c10] font-extrabold rounded-2xl text-sm transition shadow-lg">
-                        Renovar 30 Dias (R$ 49,90)
-                      </button>
-                      <button onClick={() => setDevModalOpen(true)} className="text-[#c5c6c7] hover:text-white text-xs underline">Acesso Programador</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-8">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="bg-[#121212] p-6 rounded-3xl border border-[#222222] space-y-4">
-                        <h3 className="font-serif font-bold text-lg text-white">PIN de Acesso da Equipe</h3>
-                        <p className="text-xs text-[#c5c6c7]">Código de 6 dígitos para balcão e cozinha.</p>
-                        <div className="bg-[#0b0c10] p-4 rounded-2xl flex justify-between items-center border border-[#222222]">
-                          <span className="text-3xl font-mono font-bold text-[#d4a373] tracking-widest">{cafeteria.pinEquipe || '------'}</span>
-                          <button onClick={() => setConfirmarNovoPinOpen(true)} className="px-4 py-2 bg-[#1f2833] text-xs font-bold rounded-xl hover:bg-[#2c353d] transition">Gerar Novo</button>
-                        </div>
-                      </div>
-
-                      <div className="bg-[#121212] p-6 rounded-3xl border border-[#222222] space-y-4">
-                        <h3 className="font-serif font-bold text-lg text-white">Estado da Licença</h3>
-                        <div className="bg-[#0b0c10] p-4 rounded-2xl border border-[#222222] flex justify-between items-center text-xs">
-                          <span className="text-[#c5c6c7]">Plano:</span>
-                          <span className="text-emerald-400 font-bold">
-                            {cafeteria.isVitalicio ? '✓ Vitalício Ativo' : `✓ Ativo (${calcularDiasRestantes(cafeteria.dataExpiracao)} dias)`}
-                          </span>
-                        </div>
-                        <button onClick={() => setModalQrOpen(true)} className="w-full py-3.5 bg-[#d4a373] text-[#0b0c10] font-bold rounded-2xl text-xs hover:bg-[#e9edc9] transition">📱 Gerar QR Code das Mesas</button>
-                      </div>
-                    </div>
-
-                    <div className="bg-[#121212] p-6 rounded-3xl border border-[#222222] space-y-6">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-serif font-bold text-xl text-white">Gestão da Ementa</h3>
-                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} className="px-4 py-2.5 bg-[#d4a373] hover:bg-[#e9edc9] text-[#0b0c10] font-bold rounded-xl text-xs transition">
-                          + Adicionar Item
-                        </button>
-                      </div>
-                      <div className="space-y-3">
-                        {produtos.map(p => (
-                          <div key={p.id} className="bg-[#0b0c10] p-4 rounded-2xl border border-[#222222] flex justify-between items-center text-xs gap-4">
-                            <img src={p.imagem} alt={p.nome} className="w-12 h-12 rounded-xl object-cover bg-[#1f2833] shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-white text-sm truncate">{p.nome}</p>
-                              <p className="text-[#d4a373] font-bold font-mono">{formatarPreco(p.preco)}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} className="px-3 py-1.5 bg-[#1f2833] hover:bg-[#2c353d] text-white rounded-xl font-bold">Editar</button>
-                              <button onClick={() => handleRemoverProduto(p.id)} className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl font-bold">Eliminar</button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
                 )}
               </div>
-            )}
+            </header>
 
-            {/* Painel Operacional Balcão & Cozinha */}
-            {activeView === 'staff_panel' && isStaffLogged && (
-              <div className="max-w-6xl mx-auto p-6 space-y-8">
-                <div className="flex justify-between items-center border-b border-[#222222] pb-6 flex-wrap gap-4">
-                  <div>
-                    <h2 className="text-2xl font-serif font-bold text-white">Balcão & Cozinha - {cafeteria.nome}</h2>
-                    <p className="text-xs text-[#c5c6c7]">Modo operacional em tempo real</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <button onClick={() => setModalQrOpen(true)} className="px-4 py-2.5 bg-[#1f2833] hover:bg-[#2c353d] text-white font-bold text-xs rounded-xl border border-[#222222]">📱 QR Code</button>
-                    <button onClick={() => { localStorage.clear(); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-4 py-2.5 bg-rose-500/10 text-rose-400 rounded-xl text-xs font-bold">Sair</button>
-                  </div>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <h3 className="font-serif font-bold text-white text-base">Pedidos Pendentes ({pedidos.filter(p => p.status !== 'entregue').length})</h3>
-                    {pedidos.filter(p => p.status !== 'entregue').length === 0 ? (
-                      <div className="bg-[#121212] p-8 rounded-3xl text-center text-xs text-[#c5c6c7] border border-[#222222]">Sem pedidos no momento.</div>
-                    ) : (
-                      pedidos.filter(p => p.status !== 'entregue').map(p => (
-                        <div key={p.id} className="bg-[#121212] p-5 rounded-3xl border border-[#222222] space-y-4 shadow-lg">
-                          <div className="flex justify-between font-bold text-xs border-b border-[#222222] pb-3">
-                            <span className="bg-[#d4a373]/10 text-[#d4a373] px-3 py-1 rounded-xl">Mesa {p.mesa}</span>
-                            <span className="text-[#c5c6c7] font-mono">{p.hora}</span>
-                            <span className="text-[#d4a373] font-mono text-sm">{formatarPreco(p.total)}</span>
-                          </div>
-                          <div className="text-xs text-[#c5c6c7] space-y-2">
-                            {p.itens.map((it, idx) => (
-                              <div key={idx} className="flex justify-between font-medium">
-                                <span>{it.qtd}x {it.nome}</span>
-                                <span className="text-[#c5c6c7]/60">{formatarPreco(it.preco * it.qtd)}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <button onClick={() => atualizarStatusPedido(p.id, p.status)} className="w-full py-3 bg-[#d4a373] hover:bg-[#e9edc9] text-[#0b0c10] font-bold rounded-2xl text-xs transition shadow-md">
-                            {p.status === 'pendente' ? 'Iniciar Preparação' : '✓ Concluir / Entregue'}
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-serif font-bold text-white text-base">Ementa Ativa ({produtos.length} itens)</h3>
-                    {produtos.map(p => (
-                      <div key={p.id} className="bg-[#121212] p-4 rounded-2xl border border-[#222222] flex justify-between items-center text-xs gap-4">
-                        <img src={p.imagem} alt={p.nome} className="w-12 h-12 rounded-xl object-cover bg-[#0b0c10] shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white text-sm truncate">{p.nome}</p>
-                          <p className="text-[#d4a373] font-bold font-mono">{formatarPreco(p.preco)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {/* Landing */}
+            {activeView === 'landing' && !isLoggedInAdmin && !isClientAccessFromQr && (
+              <div className="py-20 px-6 text-center space-y-6 max-w-3xl mx-auto">
+                <p className="text-xs uppercase tracking-widest text-[#d4a373]">Rich. Smooth. Perfect.</p>
+                <h1 className="text-4xl sm:text-6xl font-serif text-white">Experience Coffee Like <span className="italic text-[#d4a373]">Never Before</span></h1>
+                <p className="text-sm text-[#c5c6c7]">Sistema digital elegante e moderno para cafetarias e pedidos por QR Code.</p>
+                <div className="flex justify-center gap-4 pt-4">
+                  <button onClick={() => setActiveView('admin_login')} className="px-8 py-3.5 bg-[#d4a373] text-[#0b0c10] font-bold rounded-2xl text-xs">Entrar / Gerir Cafetaria</button>
                 </div>
               </div>
             )}
 
-            {/* Login Staff por PIN */}
-            {activeView === 'staff_login' && !isStaffLogged && (
-              <div className="max-w-md mx-auto my-20 p-8 bg-[#121212] border border-[#222222] rounded-3xl text-center space-y-6 shadow-2xl">
-                <div className="w-14 h-14 bg-[#d4a373]/10 text-[#d4a373] rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">🔑</div>
-                <div className="space-y-1">
-                  <h3 className="text-2xl font-serif font-bold text-white">Acesso Operacional</h3>
-                  <p className="text-xs text-[#c5c6c7]">Introduza o PIN de 6 dígitos fornecido pela gerência.</p>
-                </div>
-                <form onSubmit={handleLoginStaff} className="space-y-4">
-                  <input type="password" maxLength={6} placeholder="••••••" value={pinInput} onChange={e => setPinInput(e.target.value)} className="w-full text-center text-3xl font-mono tracking-widest py-4 bg-[#0b0c10] border border-[#222222] rounded-2xl text-[#d4a373] focus:outline-none focus:border-[#d4a373]" autoFocus />
-                  {pinError && <div className="text-rose-400 text-xs font-semibold">{pinError}</div>}
-                  <button type="submit" disabled={loadingPin} className="w-full py-4 bg-[#d4a373] text-[#0b0c10] font-extrabold rounded-2xl text-sm hover:bg-[#e9edc9] transition shadow-lg">
-                    {loadingPin ? 'A validar...' : 'Entrar no Balcão'}
-                  </button>
+            {/* Login Admin */}
+            {activeView === 'admin_login' && (
+              <div className="max-w-md mx-auto my-16 p-8 bg-[#121212] border border-[#222222] rounded-3xl space-y-6">
+                <h2 className="text-2xl font-serif font-bold text-white text-center">Login Gestão</h2>
+                <form onSubmit={handleAdminLogin} className="space-y-4">
+                  <input type="email" placeholder="E-mail" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-3.5 bg-[#0b0c10] border border-[#222222] rounded-2xl text-sm text-white focus:outline-none focus:border-[#d4a373]" />
+                  <input type="password" placeholder="Palavra-passe" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-3.5 bg-[#0b0c10] border border-[#222222] rounded-2xl text-sm text-white focus:outline-none focus:border-[#d4a373]" />
+                  {adminAuthError && <p className="text-rose-400 text-xs">{adminAuthError}</p>}
+                  <button type="submit" className="w-full py-3.5 bg-[#d4a373] text-[#0b0c10] font-bold rounded-2xl text-xs">Entrar</button>
                 </form>
               </div>
             )}
 
-            {/* Visão Cliente (Menu Digital por Mesa) */}
+            {/* Admin Painel */}
+            {activeView === 'admin' && (
+              <div className="max-w-4xl mx-auto p-6 space-y-6">
+                <h2 className="text-2xl font-serif font-bold text-white">Painel de Controlo - {cafeteria.nome}</h2>
+                <div className="bg-[#121212] p-6 rounded-3xl border border-[#222222] space-y-4">
+                  <h3 className="font-bold text-white text-sm">QR Code da Mesa</h3>
+                  <button onClick={() => setModalQrOpen(true)} className="px-4 py-2.5 bg-[#d4a373] text-[#0b0c10] font-bold rounded-xl text-xs">📱 Gerar QR Code</button>
+                </div>
+              </div>
+            )}
+
+            {/* Cliente (Menu Digital) */}
             {activeView === 'customer' && (
               <div className="max-w-md mx-auto p-4 space-y-6 pb-28">
-                <div className="bg-[#121212] p-4 rounded-3xl border border-[#222222] text-xs flex justify-between items-center shadow-md">
+                <div className="bg-[#121212] p-4 rounded-3xl border border-[#222222] text-xs flex justify-between items-center">
                   <div>
                     <h3 className="font-serif font-bold text-white text-base">{cafeteria.nome}</h3>
-                    <p className="text-[#d4a373] font-bold mt-0.5">Mesa / Posição: {selectedMesaCliente}</p>
+                    <p className="text-[#d4a373] font-bold mt-0.5">Mesa: {selectedMesaCliente}</p>
                   </div>
                   <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-[#0b0c10] text-[#d4a373] font-bold rounded-xl px-3 py-2 text-xs border border-[#222222]">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
+                    {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
                   </select>
                 </div>
 
                 {pedidoEnviado && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-2xl text-center">
-                    <p className="font-bold text-sm">Pedido enviado com sucesso!</p>
-                    <p className="text-xs text-emerald-300/80 mt-1">Aguarde na Mesa {selectedMesaCliente}.</p>
+                  <div className="bg-emerald-500/10 text-emerald-400 p-4 rounded-2xl text-center text-xs font-bold">
+                    Pedido enviado com sucesso para a Mesa {selectedMesaCliente}!
                   </div>
                 )}
 
                 <div className="space-y-4">
-                  {produtosFiltrados.map(prod => (
-                    <div key={prod.id} className="bg-[#121212] border border-[#222222] p-4 rounded-3xl flex items-center justify-between gap-4 shadow-md">
-                      {prod.imagem && <img src={prod.imagem} alt={prod.nome} className="w-20 h-20 object-cover rounded-2xl bg-[#0b0c10] shrink-0" />}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-serif font-bold text-sm text-white truncate">{prod.nome}</h4>
-                        <p className="text-xs text-[#c5c6c7]/80 line-clamp-1 font-light">{prod.descricao}</p>
-                        <p className="text-xs font-bold text-[#d4a373] mt-1.5 font-mono">{formatarPreco(prod.preco)}</p>
+                  {produtos.length === 0 ? (
+                    <p className="text-center text-xs text-[#c5c6c7]">Nenhum produto cadastrado na ementa ainda.</p>
+                  ) : (
+                    produtos.map(prod => (
+                      <div key={prod.id} className="bg-[#121212] border border-[#222222] p-4 rounded-3xl flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-serif font-bold text-sm text-white truncate">{prod.nome}</h4>
+                          <p className="text-xs text-[#c5c6c7]/80 line-clamp-1">{prod.descricao}</p>
+                          <p className="text-xs font-bold text-[#d4a373] mt-1 font-mono">{formatarPreco(prod.preco)}</p>
+                        </div>
+                        <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-4 py-2.5 bg-[#d4a373] text-[#0b0c10] font-bold rounded-2xl text-xs">+ Pedir</button>
                       </div>
-                      <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-4 py-2.5 bg-[#d4a373] hover:bg-[#e9edc9] text-[#0b0c10] font-bold rounded-2xl text-xs transition shadow-sm">+ Pedir</button>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 {carrinho.length > 0 && (
-                  <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-[#121212]/95 backdrop-blur-md border-t border-[#222222] flex justify-between items-center z-40 rounded-t-3xl shadow-2xl">
+                  <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-[#121212] border-t border-[#222222] flex justify-between items-center z-40 rounded-t-3xl">
                     <div>
-                      <p className="text-[10px] text-[#c5c6c7] font-bold uppercase tracking-wider">Total do Pedido</p>
-                      <p className="text-[#d4a373] font-bold font-mono text-lg">{formatarPreco(carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0))}</p>
+                      <p className="text-[10px] text-[#c5c6c7] font-bold uppercase">Total</p>
+                      <p className="text-[#d4a373] font-bold font-mono text-base">{formatarPreco(carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0))}</p>
                     </div>
-                    <button onClick={enviarPedidoCliente} className="px-6 py-3.5 bg-[#d4a373] hover:bg-[#e9edc9] text-[#0b0c10] font-extrabold rounded-2xl text-xs transition shadow-lg">
-                      Enviar Pedido (Mesa {selectedMesaCliente})
-                    </button>
+                    <button onClick={async () => {
+                      const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
+                      const res = await supabaseService.criarPedido({ cafeteria_id: cafeteria.id, codigo_pedido: `CF-${Math.floor(100 + Math.random()*900)}`, mesa: selectedMesaCliente, itens: carrinho, total, status: 'pendente', hora: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+                      if (res) { setCarrinho([]); setPedidoEnviado(true); setTimeout(() => setPedidoEnviado(false), 4000); }
+                    }} className="px-6 py-3 bg-[#d4a373] text-[#0b0c10] font-bold rounded-2xl text-xs">Enviar Pedido</button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Modais auxiliares (QR Code, Produto, Dev Bypass, etc.) */}
+            {/* Modal QR */}
             {modalQrOpen && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-[#121212] border border-[#222222] rounded-3xl max-w-md w-full p-6 space-y-6 shadow-2xl">
+              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                <div className="bg-[#121212] border border-[#222222] rounded-3xl max-w-md w-full p-6 space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-serif font-bold text-lg text-white">📱 QR Code das Mesas</h3>
-                    <button onClick={() => setModalQrOpen(false)} className="text-[#c5c6c7] hover:text-white font-bold text-lg">✕</button>
+                    <h3 className="font-serif font-bold text-white">QR Code</h3>
+                    <button onClick={() => setModalQrOpen(false)} className="text-white font-bold">✕</button>
                   </div>
-                  <div className="space-y-4">
-                    <input type="text" value={mesaQr} onChange={(e) => setMesaQr(e.target.value)} placeholder="Número da Mesa" className="w-full bg-[#0b0c10] border border-[#222222] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#d4a373]" />
-                    <div id="print-qr-section" className="flex justify-center py-2">
-                      <div className="bg-white p-6 rounded-3xl border border-slate-200 text-center text-slate-900 space-y-3 max-w-xs w-full shadow-xl">
-                        <div className="font-serif text-xl font-bold tracking-wider">{cafeteria.nome}</div>
-                        <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR Code" className="w-48 h-48 rounded-2xl mx-auto" />
-                        <p className="text-xs font-bold text-[#d4a373] tracking-widest">MESA {mesaQr}</p>
-                        <p className="text-[10px] text-slate-500">Aponte a câmara para abrir a ementa digital.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-3">
-                      <button onClick={copiarLinkCardapio} className="flex-1 py-3 bg-[#1f2833] hover:bg-[#2c353d] text-white font-bold rounded-2xl text-xs transition">
-                        {linkCopiado ? '✓ Copiado' : 'Copiar Link'}
-                      </button>
-                      <button onClick={() => window.print()} className="flex-1 py-3 bg-[#d4a373] hover:bg-[#e9edc9] text-[#0b0c10] font-extrabold rounded-2xl text-xs transition shadow-md">🖨️ Imprimir Placa</button>
+                  <input type="text" value={mesaQr} onChange={e => setMesaQr(e.target.value)} placeholder="Mesa" className="w-full bg-[#0b0c10] border border-[#222222] rounded-xl p-3 text-xs text-white" />
+                  <div id="print-qr-section" className="flex justify-center">
+                    <div className="bg-white p-6 rounded-3xl text-center space-y-3">
+                      <div className="font-bold text-slate-900">{cafeteria.nome}</div>
+                      <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR" className="w-40 h-40 mx-auto" />
+                      <p className="text-xs font-bold text-[#d4a373]">MESA {mesaQr}</p>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {devModalOpen && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-[#121212] border border-[#222222] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="font-serif font-bold text-white text-center">🔐 Ativação Admin</h3>
-                  <form onSubmit={handleDevBypass} className="space-y-3">
-                    <input type="password" placeholder="PIN Secreto" value={devPinInput} onChange={e => setDevPinInput(e.target.value)} className="w-full bg-[#0b0c10] border border-[#222222] rounded-2xl p-3 text-center text-sm text-white focus:outline-none focus:border-[#d4a373]" autoFocus />
-                    {devError && <p className="text-xs text-rose-400 text-center">{devError}</p>}
-                    <button type="submit" className="w-full py-3 bg-[#d4a373] text-[#0b0c10] font-extrabold text-xs rounded-2xl">Ativar Licença</button>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {modalProduto.open && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-[#121212] border border-[#222222] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="font-serif font-bold text-white">{modalProduto.data ? 'Editar Item' : 'Novo Item'}</h3>
-                  <form onSubmit={handleSalvarProduto} className="space-y-3">
-                    <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Nome do Produto" required className="w-full bg-[#0b0c10] border border-[#222222] rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-[#d4a373]" />
-                    <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="Preço (R$)" required className="w-full bg-[#0b0c10] border border-[#222222] rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-[#d4a373]" />
-                    <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-[#0b0c10] border border-[#222222] rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-[#d4a373]">
-                      {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Descrição curta" className="w-full bg-[#0b0c10] border border-[#222222] rounded-2xl p-3 text-xs text-white focus:outline-none focus:border-[#d4a373]" />
-                    <input type="file" accept="image/*" onChange={e => { const arq = e.target.files?.[0]; setProdutoAtual({ ...(produtoAtual || modalProduto.data || {}), arquivoImagem: arq, imagem: arq ? URL.createObjectURL(arq) : modalProduto.data?.imagem }); }} className="w-full text-xs text-[#c5c6c7] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-[#d4a373] file:text-[#0b0c10] file:font-bold" />
-                    <div className="flex justify-end gap-2 pt-2">
-                      <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="px-4 py-2 bg-[#1f2833] text-xs rounded-xl text-white">Cancelar</button>
-                      <button type="submit" className="px-4 py-2 bg-[#d4a373] text-[#0b0c10] font-bold text-xs rounded-xl">Guardar</button>
-                    </div>
-                  </form>
+                  <button onClick={() => window.print()} className="w-full py-3 bg-[#d4a373] text-[#0b0c10] font-bold rounded-xl text-xs">Imprimir Placa</button>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Rodapé Estilizado */}
-          <footer className="bg-[#121212] border-t border-[#222222] py-8 px-6 text-center text-xs text-[#c5c6c7]/60 space-y-2">
-            <p className="font-serif text-white tracking-widest">CoffeeFlow Digital Experience</p>
-            <p>Sistema inteligente para gestão de cafetarias e pedidos por QR Code.</p>
+          <footer className="bg-[#121212] border-t border-[#222222] py-6 text-center text-xs text-[#c5c6c7]/60">
+            CoffeeFlow Digital Experience
           </footer>
         </div>
       );
