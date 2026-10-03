@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-PT" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CoffeeFlow - Ementa Digital & Gestão</title>
+  <title>CoffeeFlow - Ementa Digital & Gestão Inteligente para Cafetarias</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- React & ReactDOM CDN -->
@@ -36,7 +36,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect } = React;
@@ -143,9 +143,7 @@
       }
 
       const extensao = arquivo.name.split('.').pop().toLowerCase();
-
-      const nomeArquivo =
-        `${cafeteriaId}/${crypto.randomUUID()}.${extensao}`;
+      const nomeArquivo = `${cafeteriaId}/${crypto.randomUUID()}.${extensao}`;
 
       const { error } = await supabaseClient.storage
         .from('produtos')
@@ -414,7 +412,6 @@
 
           if (!res.ok) {
             console.error('Erro da API de produtos:', res.status, data);
-
             throw new Error(
               data?.error ||
               `Não foi possível ${isEdit ? 'atualizar' : 'salvar'} o produto.`
@@ -428,7 +425,6 @@
 
         } catch (err) {
           console.error('Erro em salvarProduto:', err);
-
           return {
             success: false,
             error: err.message || 'Erro desconhecido ao salvar o produto.'
@@ -469,7 +465,6 @@
 
           if (!res.ok) {
             console.error('Erro da API de produtos:', res.status, data);
-
             throw new Error(
               data?.error ||
               'Não foi possível excluir o produto.'
@@ -482,7 +477,6 @@
 
         } catch (err) {
           console.error('Erro em deletarProduto:', err);
-
           return {
             success: false,
             error: err.message ||
@@ -823,9 +817,7 @@
 
         const { data: { subscription } } =
           supabaseClient.auth.onAuthStateChange((event, session) => {
-
             currentAccessToken = session?.access_token || null;
-
             if (session) {
               processarSessaoAtiva(session);
             } else if (event === 'SIGNED_OUT') {
@@ -1195,26 +1187,27 @@
 
       if (isResetPassword) {
         return (
-          <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex items-center justify-center p-4">
-            <div className="max-w-md w-full p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-5 shadow-2xl">
+          <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex items-center justify-center p-4">
+            <div className="max-w-md w-full p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-300"></div>
               <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl text-2xl">🔐</div>
-                <h2 className="text-xl font-bold text-white">Criar nova palavra-passe</h2>
-                <p className="text-xs text-slate-400">Escolha uma nova palavra-passe para a sua conta CoffeeFlow.</p>
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-2xl text-amber-400">🔐</div>
+                <h2 className="text-2xl font-black text-white">Criar nova palavra-passe</h2>
+                <p className="text-xs text-slate-400">Escolha uma nova palavra-passe segura para a sua conta CoffeeFlow.</p>
               </div>
 
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">Nova palavra-passe</label>
-                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Digite a nova palavra-passe" minLength={6} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                  <label className="text-xs text-slate-400 font-bold block mb-1">Nova palavra-passe</label>
+                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" minLength={6} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">Confirmar palavra-passe</label>
-                  <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Digite novamente" minLength={6} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                  <label className="text-xs text-slate-400 font-bold block mb-1">Confirmar palavra-passe</label>
+                  <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="••••••••" minLength={6} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                 </div>
                 {resetPasswordError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordError}</div>}
                 {resetPasswordSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordSuccess}</div>}
-                <button type="submit" disabled={loadingResetPassword} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
+                <button type="submit" disabled={loadingResetPassword} className="w-full py-3.5 bg-amber-500 text-slate-950 font-black rounded-xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
                   {loadingResetPassword ? 'A alterar...' : 'Alterar palavra-passe'}
                 </button>
               </form>
@@ -1224,164 +1217,287 @@
       }
 
       return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col justify-between">
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
           <div>
-            <header className="bg-slate-950 border-b border-slate-800 px-4 py-2.5 text-xs flex justify-between items-center sticky top-0 z-50">
-              <div className="flex items-center gap-2">
-                <div className="p-1 bg-amber-500 text-slate-950 rounded-lg font-black">☕</div>
-                <span className="font-extrabold text-white text-sm">{cafeteria.nome}</span>
+            {/* Top Navigation Bar */}
+            <header className="bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-6 py-4 flex justify-between items-center sticky top-0 z-50 transition-all">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveView(isLoggedInAdmin ? 'admin' : (isStaffLogged ? 'staff_panel' : 'landing'))}>
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 rounded-xl flex items-center justify-center font-black text-lg shadow-md shadow-amber-500/20">☕</div>
+                <div>
+                  <span className="font-black text-white text-lg tracking-tight">Coffee<span className="text-amber-500">Flow</span></span>
+                  <span className="block text-[10px] text-slate-400 font-semibold tracking-wider uppercase">Ementa & Gestão SaaS</span>
+                </div>
               </div>
 
               {notificacao && (
-                <div className="bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded-full text-xs animate-bounce shadow-lg shadow-amber-500/20">
-                  {notificacao}
+                <div className="hidden md:flex bg-amber-500 text-slate-950 font-bold px-4 py-1.5 rounded-full text-xs animate-bounce shadow-lg shadow-amber-500/20 items-center gap-2">
+                  <span>⚡</span> {notificacao}
                 </div>
               )}
 
               {!isClientAccessFromQr && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  {!isLoggedInAdmin && activeView !== 'admin_login' && (
+                    <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="hidden sm:inline-flex text-xs font-bold text-slate-300 hover:text-white px-3 py-2 transition">
+                      Entrar
+                    </button>
+                  )}
                   {!isLoggedInAdmin && (
-                    <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
-                      Login Proprietário
+                    <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-4 py-2.5 bg-amber-500 text-slate-950 rounded-xl text-xs font-black hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
+                      Começar Grátis
                     </button>
                   )}
                   {isLoggedInAdmin && (
-                    <button onClick={() => setActiveView('admin')} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
+                    <button onClick={() => setActiveView('admin')} className="px-4 py-2.5 bg-amber-500 text-slate-950 rounded-xl text-xs font-black hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
                       Painel Gestão
                     </button>
                   )}
                   <button 
                     onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} 
-                    className={`px-3 py-1 border border-slate-700 rounded-lg font-bold transition ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+                    className={`px-4 py-2.5 border rounded-xl text-xs font-bold transition ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'}`}
                   >
-                    Acesso Equipe (PIN)
+                    🔑 Acesso Equipe
                   </button>
                 </div>
               )}
             </header>
 
+            {/* LANDING PAGE - SaaS Moderno e Comercial */}
             {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
-              <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
-                <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-                  Acelere o fluxo de pedidos da sua cafetaria por <span className="text-amber-500">Assinatura Mensal</span>
-                </h1>
-                <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                  Sistema leve para pedidos por mesa via QR Code isolado por estabelecimento e com acesso operacional rápido por PIN.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                  <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition">
-                    Assinar e Ativar Licença
-                  </button>
-                  <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition">
-                    Criar Conta de Proprietário
-                  </button>
-                </div>
+              <div className="space-y-24 pb-20 overflow-hidden">
+                {/* Hero Section */}
+                <section className="relative pt-20 pb-20 px-4 max-w-6xl mx-auto text-center space-y-8">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+                  
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 text-amber-400 text-xs font-bold shadow-inner">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Nova Versão 2.4 — Ementa Digital + Cozinha em Tempo Real
+                  </div>
+
+                  <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tight leading-[1.1] max-w-4xl mx-auto">
+                    Transforme a operação da sua cafetaria com <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">pedidos inteligentes por QR Code</span>
+                  </h1>
+
+                  <p className="text-slate-400 text-base sm:text-xl max-w-2xl mx-auto font-normal leading-relaxed">
+                    Elimine filas e erros de atendimento. Sistema completo de ementa digital por mesa, gestão de produtos e painel de pedidos instantâneo para a equipa.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+                    <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-amber-500/20 transition transform hover:-translate-y-0.5 text-sm sm:text-base flex items-center justify-center gap-3">
+                      <span>🚀 Ativar Assinatura Mensal</span>
+                    </button>
+                    <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl border border-slate-800 transition text-sm sm:text-base flex items-center justify-center gap-2">
+                      <span>Criar Conta de Proprietário</span>
+                    </button>
+                  </div>
+
+                  <div className="pt-6 flex flex-wrap items-center justify-center gap-8 text-xs text-slate-400 font-semibold">
+                    <div className="flex items-center gap-2">✓ Sem comissões por venda</div>
+                    <div className="flex items-center gap-2">✓ Configuração em 2 minutos</div>
+                    <div className="flex items-center gap-2">✓ Acesso imediato via PIN</div>
+                  </div>
+
+                  {/* Product Mockup Preview Card */}
+                  <div className="pt-10 max-w-4xl mx-auto">
+                    <div className="p-2 bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-xl">
+                      <div className="bg-slate-950 rounded-2xl p-6 border border-slate-800/60 text-left space-y-6">
+                        <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                          </div>
+                          <div className="text-xs text-slate-500 font-mono">coffeeflow.app/balcao</div>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">MESA 04</span>
+                            <h4 className="font-bold text-sm text-white">2x Espresso Duplo</h4>
+                            <p className="text-xs text-slate-400">Enviado há 1 min</p>
+                            <div className="text-xs font-mono font-bold text-emerald-400">R$ 16,00</div>
+                          </div>
+                          <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">MESA 01</span>
+                            <h4 className="font-bold text-sm text-white">1x Croissant de Mantega</h4>
+                            <p className="text-xs text-slate-400">Em preparação</p>
+                            <div className="text-xs font-mono font-bold text-amber-400">R$ 9,50</div>
+                          </div>
+                          <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">MESA 07</span>
+                            <h4 className="font-bold text-sm text-white">1x Cappuccino Cremoso</h4>
+                            <p className="text-xs text-slate-400">Pronto para entrega</p>
+                            <div className="text-xs font-mono font-bold text-emerald-400">R$ 12,00</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Features Grid */}
+                <section className="max-w-6xl mx-auto px-4 space-y-12">
+                  <div className="text-center space-y-3">
+                    <h2 className="text-xs uppercase tracking-widest text-amber-500 font-black">Funcionalidades Poderosas</h2>
+                    <h3 className="text-3xl sm:text-4xl font-extrabold text-white">Tudo o que sua cafetaria precisa para crescer</h3>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition group">
+                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black group-hover:scale-110 transition">📱</div>
+                      <h4 className="text-lg font-bold text-white">Ementa Digital por Mesa</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">Gere QR codes personalizados para cada mesa. Seus clientes acedem instantaneamente ao cardápio atualizado sem instalar nenhuma aplicação.</p>
+                    </div>
+
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition group">
+                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black group-hover:scale-110 transition">⚡</div>
+                      <h4 className="text-lg font-bold text-white">Painel de Cozinha em Tempo Real</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">Os pedidos realizados pelos clientes chegam instantaneamente ao balcão e à cozinha com alertas sonoros e atualização automática.</p>
+                    </div>
+
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition group">
+                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black group-hover:scale-110 transition">🔑</div>
+                      <h4 className="text-lg font-bold text-white">Acesso Operacional por PIN</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">Sua equipa acede ao painel de atendimento e cozinha com um PIN numérico seguro de 6 dígitos, sem necessidade de senhas complexas.</p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Pricing / CTA Section */}
+                <section className="max-w-4xl mx-auto px-4">
+                  <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 sm:p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[100px] pointer-events-none"></div>
+                    
+                    <div className="space-y-3">
+                      <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold rounded-full">Licença Profissional</span>
+                      <h3 className="text-3xl sm:text-5xl font-black text-white">Pronto para elevar o padrão do seu negócio?</h3>
+                      <p className="text-slate-400 text-sm max-w-xl mx-auto">Comece agora mesmo a gerir pedidos com agilidade e modernize a experiência dos seus clientes.</p>
+                    </div>
+
+                    <div className="pt-2">
+                      <button onClick={abrirPagamento} className="px-10 py-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-base shadow-xl shadow-amber-500/20 transition transform hover:-translate-y-0.5">
+                        Assinar CoffeeFlow — Acesso Imediato
+                      </button>
+                    </div>
+                  </div>
+                </section>
               </div>
             )}
 
+            {/* ADMIN LOGIN / REGISTER / FORGOT */}
             {activeView === 'admin_login' && !isLoggedInAdmin && (
-              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-4 shadow-2xl">
-                <h2 className="text-xl font-bold text-center">
-                  {adminAuthMode === 'login' && 'Entrar no CoffeeFlow'}
-                  {adminAuthMode === 'register' && 'Registar Cafetaria'}
-                  {adminAuthMode === 'forgot' && 'Recuperar Palavra-passe'}
-                </h2>
+              <div className="max-w-md mx-auto my-16 p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-300"></div>
+                <div className="text-center space-y-1">
+                  <h2 className="text-2xl font-black text-white">
+                    {adminAuthMode === 'login' && 'Entrar na Conta'}
+                    {adminAuthMode === 'register' && 'Registar Cafetaria'}
+                    {adminAuthMode === 'forgot' && 'Recuperar Palavra-passe'}
+                  </h2>
+                  <p className="text-xs text-slate-400">Painel administrativo exclusivo para proprietários</p>
+                </div>
                     
-                <div className="flex bg-slate-900 p-1 rounded-xl text-xs font-bold gap-1">
-                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Login</button>
-                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Registar</button>
-                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Recuperar</button>
+                <div className="flex bg-slate-950 p-1.5 rounded-2xl text-xs font-bold gap-1 border border-slate-800">
+                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}>Login</button>
+                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}>Registar</button>
+                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}>Recuperar</button>
                 </div>
 
-                <form onSubmit={handleAdminAuth} className="space-y-3">
+                <form onSubmit={handleAdminAuth} className="space-y-4">
                   {adminAuthMode === 'register' && (
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
-                      <input type="text" placeholder="Ex: CoffeeFlow" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                      <label className="text-xs text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
+                      <input type="text" placeholder="Ex: CoffeeFlow Central" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                     </div>
                   )}
 
                   <div>
-                    <label className="text-[11px] text-slate-400 font-bold block mb-1">E-mail</label>
-                    <input type="email" placeholder="seu-email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                    <label className="text-xs text-slate-400 font-bold block mb-1">E-mail</label>
+                    <input type="email" placeholder="seu-email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                   </div>
 
                   {adminAuthMode !== 'forgot' && (
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Palavra-passe</label>
-                      <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                      <label className="text-xs text-slate-400 font-bold block mb-1">Palavra-passe</label>
+                      <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                     </div>
                   )}
 
-                  {adminAuthError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{adminAuthError}</div>}
-                  {adminAuthSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">{adminAuthSuccess}</div>}
+                  {adminAuthError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3.5 rounded-xl text-xs font-semibold">{adminAuthError}</div>}
+                  {adminAuthSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3.5 rounded-xl text-xs font-semibold">{adminAuthSuccess}</div>}
 
-                  <button type="submit" disabled={loadingAuth} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
-                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : (adminAuthMode === 'register' ? 'Criar Conta' : 'Enviar Link de Recuperação'))}
+                  <button type="submit" disabled={loadingAuth} className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
+                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar no Sistema' : (adminAuthMode === 'register' ? 'Criar Conta e Cafetaria' : 'Enviar Link de Recuperação'))}
                   </button>
                 </form>
+
+                <div className="pt-2 text-center">
+                  <button onClick={() => setActiveView('landing')} className="text-xs text-slate-400 hover:text-white transition font-semibold">← Voltar à página principal</button>
+                </div>
               </div>
             )}
 
+            {/* ADMIN DASHBOARD */}
             {activeView === 'admin' && isLoggedInAdmin && (
-              <div className="max-w-4xl mx-auto p-6 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+              <div className="max-w-5xl mx-auto p-6 space-y-8 pb-20">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-6 gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold">{cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">ID da Cafetaria: <span className="font-mono text-amber-400">{cafeteria.id}</span></p>
+                    <span className="text-xs uppercase font-bold text-amber-500 tracking-wider">Painel do Proprietário</span>
+                    <h2 className="text-3xl font-black text-white mt-1">{cafeteria.nome}</h2>
+                    <p className="text-xs text-slate-400 mt-1">ID da Cafetaria: <span className="font-mono text-amber-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">{cafeteria.id}</span></p>
                   </div>
-                  <button onClick={async () => { await supabaseClient.auth.signOut(); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300">
+                  <button onClick={async () => { await supabaseClient.auth.signOut(); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 transition">
                     Sair da Conta
                   </button>
                 </div>
 
                 {!planoAindaValido ? (
-                  <div className="bg-amber-500/10 border border-amber-500/30 p-8 rounded-3xl text-center space-y-4">
-                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl font-black">🔒</div>
-                    <h3 className="text-xl font-bold text-white">Assinatura Pendente ou Expirada</h3>
-                    <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                      <button onClick={abrirPagamento} className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
-                        Pagar / Renovar 30 Dias
+                  <div className="bg-amber-500/10 border border-amber-500/30 p-10 rounded-3xl text-center space-y-6">
+                    <div className="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center mx-auto text-4xl font-black shadow-inner">🔒</div>
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-black text-white">Assinatura Pendente ou Expirada</h3>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">Para continuar a utilizar a ementa digital e o painel de pedidos, renove a sua assinatura mensal.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
+                      <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-sm transition shadow-xl shadow-amber-500/20">
+                        💳 Pagar / Renovar 30 Dias
                       </button>
-                      <button onClick={() => setDevModalOpen(true)} className="text-slate-500 hover:text-slate-400 text-[11px] underline">
+                      <button onClick={() => setDevModalOpen(true)} className="text-slate-500 hover:text-slate-400 text-xs underline font-medium">
                         Acesso Programador / VIP
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {!cafeteria.isVitalicio && (
-                      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-bold">Período de Teste / Assinatura</span>
-                        <span className="text-amber-400 font-bold">{calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes</span>
+                      <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center shadow-md">
+                        <div className="flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                          <span className="text-xs text-slate-300 font-bold">Estado da Assinatura: <span className="text-emerald-400">Ativa</span></span>
+                        </div>
+                        <span className="text-amber-400 font-bold text-xs bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">{calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes</span>
                       </div>
                     )}
 
                     <div className="grid md:grid-cols-2 gap-6">
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">PIN de Acesso da Equipe</h3>
-                        <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
-                        <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
-                          <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
-                          <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">Gerar Novo</button>
+                      <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-extrabold text-lg text-white">PIN de Acesso da Equipe</h3>
+                          <span className="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-lg font-mono">6 Dígitos</span>
+                        </div>
+                        <p className="text-xs text-slate-400">Utilizado por garçons e equipe da cozinha para aceder ao balcão.</p>
+                        <div className="bg-slate-950 p-4 rounded-2xl flex justify-between items-center border border-slate-800">
+                          <span className="text-3xl font-mono font-black text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
+                          <button onClick={solicitarNovoPin} className="px-4 py-2 bg-slate-900 text-xs font-bold rounded-xl border border-slate-700 hover:bg-slate-800 transition text-slate-200">Gerar Novo</button>
                         </div>
                       </div>
 
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">Estado da Licença</h3>
-                        <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
-                          <span className="text-slate-400">Estado:</span>
-                          <span className="text-emerald-400 font-bold">
-                            {cafeteria.isVitalicio ? '✓ Ativa (Vitalícia Admin)' : `✓ Ativa (${calcularDiasRestantes(cafeteria.dataExpiracao)} dias restantes)`}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">📱 QR Code Mesas</button>
+                      <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+                        <h3 className="font-extrabold text-lg text-white">Gestão de Mesas & QR Code</h3>
+                        <p className="text-xs text-slate-400">Gere e imprima os QR codes para as mesas do seu estabelecimento.</p>
+                        <div className="pt-2 flex gap-3">
+                          <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3.5 bg-amber-500 text-slate-950 font-black rounded-2xl text-xs hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">📱 Gerar QR Code Mesas</button>
                           {!cafeteria.isVitalicio && calcularDiasRestantes(cafeteria.dataExpiracao) <= 15 && (
-                            <button
-                              onClick={abrirPagamento}
-                              className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition"
-                            >
+                            <button onClick={abrirPagamento} className="px-5 py-3.5 bg-slate-800 text-slate-200 border border-slate-700 font-bold rounded-2xl text-xs hover:bg-slate-700 transition">
                               💳 Renovar
                             </button>
                           )}
@@ -1389,59 +1505,67 @@
                       </div>
                     </div>
 
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 space-y-6 shadow-xl">
                       <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-lg">Gestão da Ementa</h3>
-                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">
+                        <div>
+                          <h3 className="font-extrabold text-xl text-white">Gestão da Ementa</h3>
+                          <p className="text-xs text-slate-400 mt-0.5">Adicione, edite ou remova produtos do cardápio digital.</p>
+                        </div>
+                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-xs transition shadow-lg shadow-amber-500/20">
                           + Adicionar Item
                         </button>
                       </div>
-                      <div className="space-y-2">
-                        {produtos.map(p => (
-                          <div key={p.id} className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
-                            <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-800 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-white truncate">{p.nome}</p>
-                              <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
+
+                      <div className="space-y-3">
+                        {produtos.length === 0 ? (
+                          <div className="text-center py-10 text-slate-500 text-xs bg-slate-950 rounded-2xl border border-slate-800/80">Nenhum produto cadastrado na ementa.</div>
+                        ) : (
+                          produtos.map(p => (
+                            <div key={p.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-between items-center text-xs gap-4 shadow-sm">
+                              <img src={p.imagem || 'https://via.placeholder.com/80'} alt={p.nome} className="w-12 h-12 rounded-xl object-cover bg-slate-900 shrink-0 border border-slate-800" />
+                              <div className="flex-1 min-w-0">
+                                <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded font-bold">{p.categoria}</span>
+                                <p className="font-extrabold text-white text-sm truncate mt-1">{p.nome}</p>
+                                <p className="text-amber-400 font-bold font-mono text-xs">{formatarPreco(p.preco)}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-700 font-bold transition">Editar</button>
+                                <button onClick={() => handleRemoverProduto(p.id)} className="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 font-bold transition">Eliminar</button>
+                              </div>
                             </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-600 font-bold">Editar</button>
-                              <button onClick={() => handleRemoverProduto(p.id)} className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg border border-rose-500/30 font-bold">Eliminar</button>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </div>
 
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                      <h3 className="font-bold text-lg">Definições da Conta e Acesso</h3>
-                      <p className="text-xs text-slate-400">Altere o e-mail de acesso exclusivo para esta cafeteria ou elimine a conta permanentemente.</p>
+                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 space-y-6 shadow-xl">
+                      <h3 className="font-extrabold text-xl text-white">Definições da Conta & Acesso</h3>
                       
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
-                        <div className="flex justify-between items-center text-xs">
+                      <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-3">
                           <div>
-                            <span className="text-slate-400 block">E-mail atual da Cafetaria:</span>
-                            <span className="font-bold text-white text-sm">{cafeteria.donoEmail || 'Não definido'}</span>
+                            <span className="text-slate-400 block">E-mail de acesso da Cafetaria:</span>
+                            <span className="font-extrabold text-white text-sm mt-0.5 block">{cafeteria.donoEmail || 'Não definido'}</span>
                           </div>
-                          <button onClick={() => setEmailEditando(!emailEditando)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg font-bold text-amber-400">
+                          <button onClick={() => setEmailEditando(!emailEditando)} className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl font-bold text-amber-400 transition">
                             {emailEditando ? 'Cancelar' : 'Alterar E-mail'}
                           </button>
                         </div>
 
                         {emailEditando && (
-                          <form onSubmit={alterarEmailDaCafeteria} className="pt-2 border-t border-slate-800 flex gap-2">
-                            <input type="email" placeholder="Novo e-mail de acesso" value={novoEmailInput} onChange={e => setNovoEmailInput(e.target.value)} required className="flex-1 p-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
-                            <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs">Salvar</button>
+                          <form onSubmit={alterarEmailDaCafeteria} className="pt-4 border-t border-slate-800 flex gap-3">
+                            <input type="email" placeholder="Novo e-mail de acesso" value={novoEmailInput} onChange={e => setNovoEmailInput(e.target.value)} required className="flex-1 p-3 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
+                            <button type="submit" className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition">Salvar E-mail</button>
                           </form>
                         )}
                       </div>
 
-                      <div className="pt-2 flex justify-between items-center border-t border-slate-700/60">
+                      <div className="pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center border-t border-slate-800 gap-4">
                         <div>
-                          <p className="text-xs font-bold text-rose-400">Zona de Perigo</p>
-                          <p className="text-[11px] text-slate-400">Apagar permanentemente todos os dados e acesso desta cafeteria.</p>
+                          <p className="text-xs font-black text-rose-400 uppercase tracking-wider">Zona de Perigo</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Apagar permanentemente todos os dados e acesso desta cafetaria.</p>
                         </div>
-                        <button onClick={() => setConfirmarExclusaoModal(true)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/40 rounded-xl text-xs font-bold transition">
+                        <button onClick={() => setConfirmarExclusaoModal(true)} className="px-5 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-black transition">
                           Excluir Conta
                         </button>
                       </div>
@@ -1451,46 +1575,51 @@
               </div>
             )}
 
+            {/* STAFF PANEL (Balcão & Cozinha) */}
             {activeView === 'staff_panel' && isStaffLogged && (
-              <div className="max-w-6xl mx-auto p-4 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4 flex-wrap gap-2">
+              <div className="max-w-6xl mx-auto p-6 space-y-8 pb-20">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-6 flex-wrap gap-4">
                   <div>
-                    <h2 className="text-xl font-bold">Balcão & Cozinha - {cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">Modo operacional ativo</p>
+                    <span className="text-xs uppercase font-bold text-amber-500 tracking-wider">Painel Operacional</span>
+                    <h2 className="text-3xl font-black text-white mt-1">Balcão & Cozinha — {cafeteria.nome}</h2>
+                    <p className="text-xs text-slate-400 mt-1">Atualização em tempo real de novos pedidos</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">📱 QR Code Mesas</button>
-                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">Sair do Balcão</button>
+                  <div className="flex gap-3">
+                    <button onClick={() => setModalQrOpen(true)} className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-xs rounded-xl transition">📱 QR Code Mesas</button>
+                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-4 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-black transition">Sair do Balcão</button>
                   </div>
                 </div>
 
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Pedidos Pendentes ({pedidos.filter(p => p.status !== 'entregue').length})</h3>
+                <div className="grid lg:grid-cols-2 gap-8">
+                  {/* Pedidos Pendentes */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-extrabold text-amber-400 text-base">Pedidos Pendentes & Em Preparo ({pedidos.filter(p => p.status !== 'entregue').length})</h3>
+                    </div>
                     {pedidos.filter(p => p.status !== 'entregue').length === 0 ? (
-                      <div className="bg-slate-800/60 p-6 rounded-xl text-center text-xs text-slate-400 border border-slate-700/60">Sem pedidos pendentes de momento.</div>
+                      <div className="bg-slate-900 p-10 rounded-3xl text-center text-xs text-slate-500 border border-slate-800">Sem pedidos pendentes no momento.</div>
                     ) : (
                       pedidos.filter(p => p.status !== 'entregue').map(p => (
-                        <div key={p.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 shadow-md">
-                          <div className="flex justify-between font-bold text-xs border-b border-slate-700 pb-2">
-                            <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Mesa {p.mesa}</span>
+                        <div key={p.id} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+                          <div className="flex justify-between items-center font-bold text-xs border-b border-slate-800 pb-3">
+                            <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg font-black text-sm">Mesa {p.mesa}</span>
                             <span className="text-slate-400 font-mono">{p.hora}</span>
-                            <span className="text-amber-400 font-mono text-sm">{formatarPreco(p.total)}</span>
+                            <span className="text-amber-400 font-mono font-black text-base">{formatarPreco(p.total)}</span>
                           </div>
-                          <div className="text-xs text-slate-300 space-y-1">
+                          <div className="text-xs text-slate-200 space-y-2">
                             {p.itens.map((it, idx) => (
-                              <div key={idx} className="flex justify-between">
-                                <span>{it.qtd}x {it.nome}</span>
-                                <span className="text-slate-400">{formatarPreco(it.preco * it.qtd)}</span>
+                              <div key={idx} className="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800/60">
+                                <span className="font-bold text-white">{it.qtd}x {it.nome}</span>
+                                <span className="text-slate-400 font-mono">{formatarPreco(it.preco * it.qtd)}</span>
                               </div>
                             ))}
                           </div>
                           <button
                             onClick={() => atualizarStatusPedido(p.id, p.status)}
-                            className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition"
+                            className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20"
                           >
                             {p.status === 'pendente'
-                              ? 'Iniciar Preparação'
+                              ? '⚡ Iniciar Preparação'
                               : '✓ Concluir / Marcar Entregue'}
                           </button>
                         </div>
@@ -1498,103 +1627,121 @@
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Ementa Ativa ({produtos.length} itens)</h3>
-                    <p className="text-[11px] text-slate-400">Ementa — somente visualização. A edição da ementa está disponível no painel do proprietário.</p>
-                    {produtos.map(p => (
-                      <div key={p.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
-                        <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-900 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white truncate">{p.nome}</p>
-                          <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="text-[10px] text-slate-500 font-semibold">
-                            Apenas visualização
+                  {/* Ementa Visualização */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-extrabold text-amber-400 text-base">Ementa Ativa ({produtos.length} itens)</h3>
+                    </div>
+                    <p className="text-xs text-slate-400">Modo de visualização rápida para consulta da equipa.</p>
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                      {produtos.map(p => (
+                        <div key={p.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center text-xs gap-4 shadow-sm">
+                          <img src={p.imagem || 'https://via.placeholder.com/80'} alt={p.nome} className="w-12 h-12 rounded-xl object-cover bg-slate-950 shrink-0 border border-slate-800" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-extrabold text-white text-sm truncate">{p.nome}</p>
+                            <p className="text-amber-400 font-bold font-mono mt-0.5">{formatarPreco(p.preco)}</p>
                           </div>
+                          <span className="text-[10px] text-slate-500 font-bold bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">Ativo</span>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* STAFF LOGIN (PIN) */}
             {activeView === 'staff_login' && !isStaffLogged && (
-              <div className="max-w-md mx-auto my-12 p-6 sm:p-8 bg-slate-800 border border-slate-700 rounded-3xl text-center space-y-6 shadow-2xl">
-                <div className="inline-flex items-center justify-center p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl mb-1">
-                  <span className="text-2xl">🔑</span>
+              <div className="max-w-md mx-auto my-20 p-8 sm:p-10 bg-slate-900 border border-slate-800 rounded-3xl text-center space-y-8 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-300"></div>
+                <div className="inline-flex items-center justify-center p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-3xl mb-1 shadow-inner">
+                  <span className="text-3xl">🔑</span>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Acesso Operacional por PIN</h3>
-                  <p className="text-xs text-slate-400 mt-1">Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.</p>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-white">Acesso Operacional por PIN</h3>
+                  <p className="text-xs text-slate-400">Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.</p>
                 </div>
 
-                <form onSubmit={handleLoginStaff} className="space-y-4">
+                <form onSubmit={handleLoginStaff} className="space-y-6">
                   <div>
-                    <input type="password" maxLength={6} placeholder="••••••" value={pinInput} onChange={e => setPinInput(e.target.value)} className="w-full text-center text-3xl font-mono tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400 focus:outline-none focus:border-amber-500 shadow-inner" autoFocus />
-                    <p className="text-[11px] text-slate-500 mt-2">O PIN é gerado pelo proprietário no Painel de Gestão.</p>
+                    <input type="password" maxLength={6} placeholder="••••••" value={pinInput} onChange={e => setPinInput(e.target.value)} className="w-full text-center text-4xl font-mono tracking-[0.5em] py-4 bg-slate-950 border border-slate-800 rounded-2xl text-amber-400 focus:outline-none focus:border-amber-500 shadow-inner" autoFocus />
+                    <p className="text-[11px] text-slate-500 mt-2 font-medium">O PIN é gerado pelo proprietário no Painel de Gestão.</p>
                   </div>
-                  {pinError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{pinError}</div>}
-                  <button type="submit" disabled={loadingPin} className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/10">
+                  {pinError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3.5 rounded-xl text-xs font-semibold">{pinError}</div>}
+                  <button type="submit" disabled={loadingPin} className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-2xl text-sm hover:bg-amber-400 transition shadow-xl shadow-amber-500/20">
                     {loadingPin ? 'A validar PIN...' : 'Entrar no Balcão & Cozinha'}
                   </button>
                 </form>
 
-                <div className="pt-2 border-t border-slate-700/60 flex justify-between items-center text-xs">
-                  <button onClick={() => setActiveView('landing')} className="text-slate-400 hover:text-white transition">← Voltar</button>
-                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="text-amber-400 hover:underline font-semibold">É o proprietário? Faça login</button>
+                <div className="pt-4 border-t border-slate-800 flex justify-between items-center text-xs">
+                  <button onClick={() => setActiveView('landing')} className="text-slate-400 hover:text-white transition font-semibold">← Voltar</button>
+                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="text-amber-400 hover:underline font-bold">É o proprietário? Faça login</button>
                 </div>
               </div>
             )}
 
+            {/* CUSTOMER MENU (QR Code Access) */}
             {activeView === 'customer' && (
-              <div className="max-w-md mx-auto p-4 space-y-4 pb-28">
-                <div className="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 text-xs flex justify-between items-center">
+              <div className="max-w-md mx-auto p-4 space-y-6 pb-28">
+                <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 text-xs flex justify-between items-center shadow-lg">
                   <div>
-                    <h3 className="font-bold text-white text-sm">{cafeteria.nome}</h3>
+                    <h3 className="font-black text-white text-base">{cafeteria.nome}</h3>
                     <p className="text-amber-400 font-bold mt-0.5">Mesa / Posição: {selectedMesaCliente}</p>
                   </div>
-                  <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-slate-800 text-amber-400 font-bold rounded-lg px-2 py-1 text-xs border border-slate-700">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
+                  <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-slate-950 text-amber-400 font-bold rounded-xl px-3 py-2 text-xs border border-slate-800 focus:outline-none focus:border-amber-500">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
                   </select>
                 </div>
 
                 {pedidoEnviado && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl text-center">
-                    <p className="font-bold text-sm">Pedido enviado para a cozinha!</p>
-                    <p className="text-xs text-emerald-300/80 mt-1">Aguarde na Mesa {selectedMesaCliente}.</p>
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-5 rounded-2xl text-center space-y-1 shadow-lg">
+                    <p className="font-black text-sm">Pedido enviado com sucesso para a cozinha!</p>
+                    <p className="text-xs text-emerald-300/80">O seu pedido será servido na Mesa {selectedMesaCliente}.</p>
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  {produtosFiltrados.map(prod => (
-                    <div key={prod.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-3">
-                      {prod.imagem && (
-                        <img
-                          src={prod.imagem}
-                          alt={prod.nome}
-                          className="w-full h-48 object-cover rounded-xl"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-white truncate">{prod.nome}</h4>
-                        <p className="text-xs text-slate-400 line-clamp-1">{prod.descricao}</p>
-                        <p className="text-xs font-bold text-amber-400 mt-1 font-mono">{formatarPreco(prod.preco)}</p>
-                      </div>
-                      <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">+ Pedir</button>
-                    </div>
+                {/* Categorias */}
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                  {INITIAL_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoriaAtiva(cat)}
+                      className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition ${categoriaAtiva === cat ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'}`}
+                    >
+                      {cat}
+                    </button>
                   ))}
                 </div>
 
+                {/* Lista de Produtos */}
+                <div className="space-y-4">
+                  {produtosFiltrados.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500 text-xs bg-slate-900 rounded-3xl border border-slate-800">Nenhum produto disponível nesta categoria.</div>
+                  ) : (
+                    produtosFiltrados.map(prod => (
+                      <div key={prod.id} className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between gap-4 shadow-xl">
+                        {prod.imagem && (
+                          <img src={prod.imagem} alt={prod.nome} className="w-20 h-20 object-cover rounded-2xl bg-slate-950 border border-slate-800 shrink-0" loading="lazy" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-extrabold text-sm text-white truncate">{prod.nome}</h4>
+                          <p className="text-xs text-slate-400 line-clamp-2 mt-0.5">{prod.descricao}</p>
+                          <p className="text-xs font-black text-amber-400 mt-2 font-mono">{formatarPreco(prod.preco)}</p>
+                        </div>
+                        <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md shadow-amber-500/20 shrink-0">+ Pedir</button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Carrinho Flutuante */}
                 {carrinho.length > 0 && (
-                  <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-slate-900/95 border-t border-slate-800 flex justify-between items-center z-40">
+                  <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 flex justify-between items-center z-40 shadow-2xl">
                     <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Total</p>
-                      <p className="text-amber-400 font-bold font-mono text-base">{formatarPreco(carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0))}</p>
+                      <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Total do Pedido</p>
+                      <p className="text-amber-400 font-black font-mono text-lg">{formatarPreco(carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0))}</p>
                     </div>
-                    <button onClick={enviarPedidoCliente} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs transition">
+                    <button onClick={enviarPedidoCliente} className="px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-xs transition shadow-xl shadow-amber-500/20">
                       Enviar Pedido (Mesa {selectedMesaCliente})
                     </button>
                   </div>
@@ -1602,17 +1749,18 @@
               </div>
             )}
 
+            {/* MODAIS (Exclusão, Dev, PIN, QR Code, Produto) */}
             {confirmarExclusaoModal && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
-                  <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
-                  <h3 className="text-lg font-bold text-white">Tem a certeza?</h3>
-                  <p className="text-xs text-slate-300">
-                    Esta ação encerrará a sessão atual e desvinculará o acesso local.
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={() => setConfirmarExclusaoModal(false)} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">Cancelar</button>
-                    <button onClick={executarExclusaoConta} disabled={eliminandoConta} className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs transition">
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 space-y-6 shadow-2xl text-center">
+                  <div className="w-16 h-16 bg-rose-500/10 text-rose-400 rounded-3xl flex items-center justify-center mx-auto text-2xl font-black border border-rose-500/20">⚠️</div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black text-white">Tem a certeza?</h3>
+                    <p className="text-xs text-slate-300">Esta ação encerrará a sessão atual e desvinculará o acesso local permanentemente.</p>
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button onClick={() => setConfirmarExclusaoModal(false)} className="flex-1 py-3 bg-slate-800 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-700 transition">Cancelar</button>
+                    <button onClick={executarExclusaoConta} disabled={eliminandoConta} className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-rose-600/20">
                       {eliminandoConta ? 'A processar...' : 'Confirmar'}
                     </button>
                   </div>
@@ -1622,15 +1770,15 @@
 
             {devModalOpen && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white text-center">🔐 Ativação Vitalícia de Administrador</h3>
-                  <p className="text-xs text-slate-400 text-center">Introduza o PIN mestre para libertar o acesso ilimitado.</p>
-                  <form onSubmit={handleDevBypass} className="space-y-3">
-                    <input type="password" placeholder="PIN Secreto" value={devPinInput} onChange={e => setDevPinInput(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-amber-500" autoFocus />
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 space-y-6 shadow-2xl">
+                  <h3 className="text-xl font-black text-white text-center">🔐 Ativação VIP Admin</h3>
+                  <p className="text-xs text-slate-400 text-center">Introduza o PIN mestre para liberar o acesso ilimitado.</p>
+                  <form onSubmit={handleDevBypass} className="space-y-4">
+                    <input type="password" placeholder="PIN Secreto" value={devPinInput} onChange={e => setDevPinInput(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-center text-sm text-white focus:outline-none focus:border-amber-500 font-mono tracking-widest" autoFocus />
                     {devError && <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>}
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setDevModalOpen(false)} className="flex-1 py-2 bg-slate-700 text-xs rounded-xl font-bold">Cancelar</button>
-                      <button type="submit" className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl">Ativar Vitalício</button>
+                    <div className="flex gap-3">
+                      <button type="button" onClick={() => setDevModalOpen(false)} className="flex-1 py-3 bg-slate-800 text-xs rounded-xl font-bold text-slate-300">Cancelar</button>
+                      <button type="submit" className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20">Ativar Vitalício</button>
                     </div>
                   </form>
                 </div>
@@ -1639,14 +1787,14 @@
 
             {confirmarNovoPinOpen && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
-                  <h3 className="text-lg font-bold text-white">Gerar novo PIN?</h3>
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 space-y-6 shadow-2xl text-center">
+                  <h3 className="text-xl font-black text-white">Gerar novo PIN?</h3>
                   <p className="text-xs text-slate-400">
-                    O PIN atual (<span className="font-mono text-amber-400">{cafeteria.pinEquipe}</span>) será substituído por um novo código de 6 dígitos.
+                    O PIN atual (<span className="font-mono text-amber-400 font-bold">{cafeteria.pinEquipe}</span>) será substituído por um novo código de 6 dígitos.
                   </p>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={cancelarNovoPin} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">Não mudar</button>
-                    <button onClick={confirmarGerarNovoPin} disabled={gerandoPin} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs hover:bg-amber-400 transition">
+                  <div className="flex gap-3 pt-2">
+                    <button onClick={cancelarNovoPin} className="flex-1 py-3 bg-slate-800 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-700 transition">Não mudar</button>
+                    <button onClick={confirmarGerarNovoPin} disabled={gerandoPin} className="flex-1 py-3 bg-amber-500 text-slate-950 font-black rounded-xl text-xs hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
                       {gerandoPin ? 'A gerar...' : 'Mudar PIN'}
                     </button>
                   </div>
@@ -1656,32 +1804,32 @@
 
             {modalQrOpen && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">📱 QR Code da Mesa</h3>
+                    <h3 className="text-xl font-black text-white">📱 QR Code das Mesas</h3>
                     <button onClick={() => setModalQrOpen(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
                   </div>
 
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-bold text-slate-300 block mb-1">Mesa ou Posição:</label>
-                      <input type="text" value={mesaQr} onChange={(e) => setMesaQr(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500" />
+                      <input type="text" value={mesaQr} onChange={(e) => setMesaQr(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500 font-bold" />
                     </div>
 
                     <div id="print-qr-section" className="flex justify-center py-2">
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center text-slate-900 space-y-2 max-w-xs w-full">
-                        <div className="text-lg font-black">{cafeteria.nome}</div>
-                        <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR Code" className="w-44 h-44 rounded-lg mx-auto" />
-                        <p className="text-xs font-bold text-amber-600">MESA {mesaQr}</p>
-                        <p className="text-[10px] text-slate-500">Aponte a câmara do telemóvel para fazer o pedido.</p>
+                      <div className="bg-white p-6 rounded-3xl border border-slate-200 text-center text-slate-950 space-y-3 max-w-xs w-full shadow-xl">
+                        <div className="text-xl font-black uppercase tracking-tight">{cafeteria.nome}</div>
+                        <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR Code" className="w-48 h-48 rounded-xl mx-auto" />
+                        <div className="bg-amber-500 text-slate-950 py-1.5 px-3 rounded-xl font-black text-sm tracking-wide">MESA {mesaQr}</div>
+                        <p className="text-[11px] text-slate-500 font-medium">Aponte a câmara do telemóvel para aceder à ementa e fazer o pedido.</p>
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <button onClick={copiarLinkCardapio} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs">
-                        {linkCopiado ? '✓ Link Copiado' : 'Copiar Link'}
+                    <div className="flex gap-3 pt-2">
+                      <button onClick={copiarLinkCardapio} className="flex-1 py-3 bg-slate-800 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-700 transition">
+                        {linkCopiado ? '✓ Link Copiado' : 'Copiar Link da Mesa'}
                       </button>
-                      <button onClick={() => window.print()} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs">🖨️ Imprimir Placa</button>
+                      <button onClick={() => window.print()} className="flex-1 py-3 bg-amber-500 text-slate-950 font-black rounded-xl text-xs hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">🖨️ Imprimir Placa</button>
                     </div>
                   </div>
                 </div>
@@ -1690,74 +1838,61 @@
 
             {modalProduto.open && (
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white">{modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}</h3>
-                  <form onSubmit={handleSalvarProduto} className="space-y-3">
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome do Produto</label>
-                      <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Ex: Espresso Duplo" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Preço (€)</label>
-                      <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
-                      <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
-                        {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block uname mb-1">Descrição</label>
-                      <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-300">
-                        Imagem do produto
-                      </label>
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-black text-white">{modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}</h3>
+                    <button onClick={() => setModalProduto({ open: false, data: null })} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+                  </div>
 
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const arquivo = e.target.files?.[0] || null;
-                          setProdutoAtual({
-                            ...(produtoAtual || modalProduto.data || {}),
-                            arquivoImagem: arquivo,
-                            imagem: arquivo ? URL.createObjectURL(arquivo) : (modalProduto.data?.imagem || '')
-                          });
-                        }}
-                        className="block w-full text-sm text-slate-300
-                          file:mr-4 file:rounded-lg file:border-0
-                          file:bg-amber-500 file:px-4 file:py-2
-                          file:text-sm file:font-semibold
-                          file:text-white hover:file:bg-amber-600"
-                      />
-
-                      {(produtoAtual?.imagem || modalProduto.data?.imagem) && (
-                        <img
-                          src={produtoAtual?.imagem || modalProduto.data?.imagem}
-                          alt={produtoAtual?.nome || modalProduto.data?.nome || 'Produto'}
-                          className="mt-3 h-32 w-32 rounded-xl object-cover border border-slate-700"
-                        />
-                      )}
+                  <form onSubmit={handleSalvarProduto} className="space-y-4">
+                    <div>
+                      <label className="text-xs text-slate-400 font-bold block mb-1">Nome do Produto</label>
+                      <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Ex: Espresso Duplo" required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                     </div>
-
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-700">
-                      <button type="button" onClick={() => { setModalProduto({ open: false, data: null }); setProdutoAtual(null); }} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
-                      <button type="submit" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg">Guardar</button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-slate-400 font-bold block mb-1">Preço (€ ou R$)</label>
+                        <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-400 font-bold block mb-1">Categoria</label>
+                        <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                          {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 font-bold block mb-1">Descrição</label>
+                      <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado com notas de chocolate" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 font-bold block mb-1">Imagem do Produto (Arquivo)</label>
+                      <input type="file" accept="image/*" onChange={e => setProdutoAtual(prev => ({ ...(prev || {}), arquivoImagem: e.target.files?.[0] }))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 transition" />
+                    </div>
+                    <div className="pt-2 flex gap-3">
+                      <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs">Cancelar</button>
+                      <button type="submit" className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20">Salvar Produto</button>
                     </div>
                   </form>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Footer Profissional SaaS */}
+          <footer className="bg-slate-950 border-t border-slate-900 py-10 px-6 text-center text-xs text-slate-500 space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-6 h-6 bg-amber-500 text-slate-950 rounded-lg flex items-center justify-center font-black text-xs">☕</div>
+              <span className="font-extrabold text-white text-sm">CoffeeFlow SaaS</span>
+            </div>
+            <p>Sistema inteligente de ementa digital e gestão de pedidos para cafetarias e restaurantes.</p>
+            <p>© {new Date().getFullYear()} CoffeeFlow. Todos os direitos reservados.</p>
+          </footer>
         </div>
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 </html>
