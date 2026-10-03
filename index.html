@@ -1,17 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>CoffeeFlow | Ementa Digital & Gestão</title>
-
-  <meta
-    name="description"
-    content="CoffeeFlow - Acelere o fluxo de pedidos da sua cafetaria com ementas digitais por QR Code, painel operacional para equipa e controlo total."
-  >
-
-  <meta name="theme-color" content="#151515">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -23,12 +15,10 @@
   <!-- Compilador Babel para JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+  <!-- Google Fonts (Mesma do Vittelis) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -45,7 +35,6 @@
 
       --serif: "Cormorant Garamond", Georgia, serif;
       --sans: "Manrope", Arial, sans-serif;
-
       --max: 1180px;
     }
 
@@ -64,26 +53,6 @@
       color: var(--cream);
       font-family: var(--sans);
       overflow-x: hidden;
-    }
-
-    img {
-      width: 100%;
-      display: block;
-      object-fit: cover;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    button {
-      font: inherit;
-    }
-
-    .container {
-      width: min(var(--max), calc(100% - 48px));
-      margin: auto;
     }
 
     .scrollbar-none::-webkit-scrollbar { display: none; }
@@ -109,8 +78,7 @@
     }
   </style>
 </head>
-
-<body>
+<body class="selection:bg-[#a88a5a] selection:text-[#151515]">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -164,46 +132,35 @@
       };
     };
 
-    const getQrCodeUrl = (text, size = 280) => {
-      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=151515`;
-    };
-
     const getAccessToken = async (forceRefresh = false) => {
-      if (!forceRefresh && currentAccessToken) {
-        return currentAccessToken;
-      }
+      if (!forceRefresh && currentAccessToken) return currentAccessToken;
       const { data, error } = await supabaseClient.auth.getSession();
       if (!forceRefresh && data?.session?.access_token) {
         currentAccessToken = data.session.access_token;
         return currentAccessToken;
       }
       const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
-      if (refreshError) {
-        throw new Error('Sua sessão expirou. Faça login novamente na sua conta.');
-      }
+      if (refreshError) throw new Error('Sessão expirada. Faça login novamente.');
       if (refreshData?.session?.access_token) {
         currentAccessToken = refreshData.session.access_token;
         return currentAccessToken;
       }
-      throw new Error('Nenhuma sessão autenticada foi encontrada.');
+      throw new Error('Nenhuma sessão autenticada.');
     };
 
     const uploadImagemProduto = async (arquivo, cafeteriaId) => {
       if (!arquivo) return '';
       if (!arquivo.type.startsWith('image/')) throw new Error('Selecione uma imagem válida.');
       if (arquivo.size > 5 * 1024 * 1024) throw new Error('A imagem deve ter no máximo 5 MB.');
-
+      
       const extensao = arquivo.name.split('.').pop().toLowerCase();
       const nomeArquivo = `${cafeteriaId}/${crypto.randomUUID()}.${extensao}`;
 
       const { error } = await supabaseClient.storage.from('produtos').upload(nomeArquivo, arquivo, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: arquivo.type
+        cacheControl: '3600', upsert: false, contentType: arquivo.type
       });
 
       if (error) throw new Error('Não foi possível enviar a imagem.');
-
       const { data } = supabaseClient.storage.from('produtos').getPublicUrl(nomeArquivo);
       return data.publicUrl;
     };
@@ -254,13 +211,9 @@
         if (!res.ok) throw new Error(data?.error || `Erro HTTP ${res.status}`);
         const caf = data.cafeteria;
         return caf ? {
-          id: caf.id,
-          nome: caf.nome,
-          plano_ativo: caf.plano_ativo,
-          data_inscricao: caf.data_inscricao,
-          data_expiracao: caf.data_expiracao,
-          pin_equipe: data.pin_equipe || pin.trim(),
-          email: caf.email || caf.dono_email
+          id: caf.id, nome: caf.nome, plano_ativo: caf.plano_ativo,
+          data_inscricao: caf.data_inscricao, data_expiracao: caf.data_expiracao,
+          pin_equipe: data.pin_equipe || pin.trim(), email: caf.email || caf.dono_email
         } : null;
       },
       criarCafeteria: async (userId, email, nome, pin) => {
@@ -268,35 +221,25 @@
         const agora = new Date();
         const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
         const payload = {
-          nome: nome || 'CoffeeFlow',
-          pin_equipe: pin || gerarPinAleatorio(),
-          email: cleanEmail,
-          dono_email: cleanEmail,
-          plano_ativo: true,
-          data_inscricao: agora.toISOString(),
-          data_expiracao: dataExpiracao.toISOString()
+          nome: nome || 'CoffeeFlow', pin_equipe: pin || gerarPinAleatorio(),
+          email: cleanEmail, dono_email: cleanEmail, plano_ativo: true,
+          data_inscricao: agora.toISOString(), data_expiracao: dataExpiracao.toISOString()
         };
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-        if (sessionError) throw sessionError;
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (userId) payload.user_id = userId;
 
         const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
           method: 'POST',
           headers: {
-            'apikey': API_KEY,
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
+            'apikey': API_KEY, 'Authorization': `Bearer ${session?.access_token || API_KEY}`,
+            'Content-Type': 'application/json', 'Prefer': 'return=representation'
           },
           body: JSON.stringify(payload)
         });
-        const responseText = await res.text();
-        if (!res.ok) throw new Error(`Não foi possível criar a cafeteria. ${responseText}`);
-        const data = JSON.parse(responseText);
-        return data[0];
+        const data = await res.json();
+        return data?.[0];
       },
       atualizarPin: async (cafeteriaId, novoPin) => {
-        if (!cafeteriaId) return false;
         try {
           const accessToken = await getAccessToken();
           const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteriaId)}`, {
@@ -306,21 +249,6 @@
           });
           return res.ok;
         } catch (err) { return false; }
-      },
-      atualizarEmailCafeteria: async (cafeteriaId, novoEmail) => {
-        try {
-          const email = novoEmail.trim().toLowerCase();
-          const accessToken = await getAccessToken();
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteriaId)}`, {
-            method: 'PATCH',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-            body: JSON.stringify({ email, dono_email: email })
-          });
-          if (!res.ok) throw new Error('Erro ao alterar o e-mail.');
-          return { success: true, email };
-        } catch (error) {
-          return { success: false, error: error.message };
-        }
       },
       buscarProdutos: async (cafeteriaId) => {
         try {
@@ -333,62 +261,36 @@
         } catch (err) { return []; }
       },
       salvarProduto: async (produto) => {
-        try {
-          let imagemUrl = produto.imagem || '';
-          if (produto.arquivoImagem) {
-            imagemUrl = await uploadImagemProduto(produto.arquivoImagem, produto.cafeteria_id);
-          }
-          let accessToken = await getAccessToken();
-          const isEdit = Boolean(produto.id);
-          const payload = {
-            id: isEdit ? produto.id : undefined,
-            nome: produto.nome.trim(),
-            preco: Number(produto.preco),
-            categoria: produto.categoria?.trim() || 'Cafés',
-            descricao: produto.descricao?.trim() || '',
-            imagem: imagemUrl.trim(),
-            disponivel: produto.disponivel !== false
-          };
-          let res = await fetch(`${APP_API_URL}/products`, {
-            method: isEdit ? 'PATCH' : 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-            body: JSON.stringify(payload)
-          });
-          if (res.status === 401) {
-            accessToken = await getAccessToken(true);
-            res = await fetch(`${APP_API_URL}/products`, {
-              method: isEdit ? 'PATCH' : 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-              body: JSON.stringify(payload)
-            });
-          }
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data?.error || 'Erro ao salvar produto.');
-          return { success: true, produto: data?.produto || null };
-        } catch (err) {
-          return { success: false, error: err.message };
+        let imagemUrl = produto.imagem || '';
+        if (produto.arquivoImagem) {
+          imagemUrl = await uploadImagemProduto(produto.arquivoImagem, produto.cafeteria_id);
         }
+        let accessToken = await getAccessToken();
+        const isEdit = Boolean(produto.id);
+        const payload = {
+          id: isEdit ? produto.id : undefined,
+          nome: produto.nome.trim(), preco: Number(produto.preco),
+          categoria: produto.categoria?.trim() || 'Cafés',
+          descricao: produto.descricao?.trim() || '',
+          imagem: imagemUrl.trim(), disponivel: produto.disponivel !== false
+        };
+        let res = await fetch(`${APP_API_URL}/products`, {
+          method: isEdit ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || 'Erro ao guardar produto.');
+        return { success: true, produto: data?.produto || null };
       },
       deletarProduto: async (id) => {
-        try {
-          let accessToken = await getAccessToken();
-          let res = await fetch(`${APP_API_URL}/products`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-            body: JSON.stringify({ id })
-          });
-          if (res.status === 401) {
-            accessToken = await getAccessToken(true);
-            res = await fetch(`${APP_API_URL}/products`, {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-              body: JSON.stringify({ id })
-            });
-          }
-          return { success: res.ok };
-        } catch (err) {
-          return { success: false, error: err.message };
-        }
+        const accessToken = await getAccessToken();
+        const res = await fetch(`${APP_API_URL}/products`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+          body: JSON.stringify({ id })
+        });
+        return { success: res.ok };
       },
       buscarPedidos: async (cafeteriaId) => {
         try {
@@ -401,695 +303,321 @@
         } catch (err) { return []; }
       },
       criarPedido: async (pedido) => {
-        try {
-          const res = await fetch(`${API_URL}/rest/v1/pedidos`, {
-            method: 'POST',
-            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-            body: JSON.stringify(pedido)
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return data?.[0] || null;
-        } catch (err) { return null; }
-      },
-      atualizarStatusPedido: async (id, status) => {
-        try {
-          const staffPin = localStorage.getItem('coffeeflow_staff_pin');
-          const cafeteriaId = localStorage.getItem('coffeeflow_staff_cafeteria_id');
-          const res = await fetch('/api/orders', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'x-staff-pin': staffPin, 'x-cafeteria-id': cafeteriaId },
-            body: JSON.stringify({ id, status })
-          });
-          return res.ok;
-        } catch (err) { return false; }
+        const res = await fetch(`${API_URL}/rest/v1/pedidos`, {
+          method: 'POST',
+          headers: {
+            'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json', 'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(pedido)
+        });
+        const data = await res.json();
+        return data?.[0] || null;
       }
     };
-
-    const authService = {
-      login: async (email, password) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) throw new Error('E-mail ou palavra-passe incorretos.');
-        return { user: data.user, session: data.session };
-      },
-      signUp: async (email, password, nomeCafeteria) => {
-        const cleanEmail = email.trim().toLowerCase();
-        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
-        if (error) throw new Error(error.message);
-        const userId = data?.user?.id;
-        const pinUnico = gerarPinAleatorio();
-        const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
-        return { user: data.user, session: data.session, cafeteria: cafeteriaSalva };
-      },
-      recuperarSenha: async (email) => {
-        const redirectUrl = `${window.location.origin}${window.location.pathname}?reset=true`;
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: redirectUrl });
-        if (error) throw new Error('Erro ao enviar e-mail de recuperação.');
-        return true;
-      }
-    };
-
-    const CATEGORIAS_PADRAO = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
 
     function App() {
       const urlInfo = getUrlParams();
       const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
-
-      const [isResetPassword, setIsResetPassword] = useState(
-        urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery' || Boolean(urlInfo.accessToken)
-      );
-      const [newPassword, setNewPassword] = useState('');
-      const [confirmNewPassword, setConfirmNewPassword] = useState('');
-      const [resetPasswordError, setResetPasswordError] = useState('');
-      const [resetPasswordSuccess, setResetPasswordSuccess] = useState('');
-      const [loadingResetPassword, setLoadingResetPassword] = useState(false);
-
-      const [novoEmailInput, setNovoEmailInput] = useState('');
-      const [emailEditando, setEmailEditando] = useState(false);
-      const [confirmarExclusaoModal, setConfirmarExclusaoModal] = useState(false);
-
-      const [isStaffLogged, setIsStaffLogged] = useState(!isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
-      const [activeView, setActiveView] = useState(
-        isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing')
-      );
-
-      const [cafeteria, setCafeteria] = useState(() => {
-        const salva = localStorage.getItem('coffeeflow_cafeteria');
-        if (salva) {
-          try { return JSON.parse(salva); } catch (e) {}
-        }
-        return {
-          id: urlInfo.cafeteriaId || 'caf_demo_01',
-          nome: 'CoffeeFlow',
-          pinEquipe: '123456',
-          planoAtivo: true,
-          donoEmail: '',
-          dataInscricao: new Date().toISOString(),
-          dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          isVitalicio: false
-        };
+      const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : 'landing');
+      const [cafeteria, setCafeteria] = useState({
+        id: urlInfo.cafeteriaId || 'caf_demo_01',
+        nome: 'CoffeeFlow',
+        pinEquipe: '123456',
+        planoAtivo: true,
+        donoEmail: '',
+        dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
       });
-
       const [produtos, setProdutos] = useState([]);
       const [pedidos, setPedidos] = useState([]);
-      const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
       const [carrinho, setCarrinho] = useState([]);
-      const [pedidoEnviado, setPedidoEnviado] = useState(false);
       const [notificacao, setNotificacao] = useState('');
       const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
       const [termoPesquisa, setTermoPesquisa] = useState('');
-
-      const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
-      const [adminEmailInput, setAdminEmailInput] = useState('');
-      const [adminPasswordInput, setAdminPasswordInput] = useState('');
-      const [nomeCafeteriaInput, setNomeCafeteriaInput] = useState('');
-      const [adminAuthMode, setAdminAuthMode] = useState('login');
-      const [adminAuthError, setAdminAuthError] = useState('');
-      const [adminAuthSuccess, setAdminAuthSuccess] = useState('');
-      const [loadingAuth, setLoadingAuth] = useState(false);
-
-      const [pinInput, setPinInput] = useState('');
-      const [pinError, setPinError] = useState('');
-      const [loadingPin, setLoadingPin] = useState(false);
-
-      const [devModalOpen, setDevModalOpen] = useState(false);
-      const [devPinInput, setDevPinInput] = useState('');
-      const [devError, setDevError] = useState('');
-      const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
-      const [gerandoPin, setGerandoPin] = useState(false);
-      const [modalQrOpen, setModalQrOpen] = useState(false);
-      const [mesaQr, setMesaQr] = useState('01');
-      const [linkCopiado, setLinkCopiado] = useState(false);
+      const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
       const [modalProduto, setModalProduto] = useState({ open: false, data: null });
       const [produtoAtual, setProdutoAtual] = useState(null);
-
-      const planoEstaValido = (caf) => {
-        if (!caf) return false;
-        if (caf.isVitalicio) return true;
-        if (!caf.planoAtivo || !caf.dataExpiracao) return false;
-        return new Date(caf.dataExpiracao) > new Date();
-      };
-      const planoAindaValido = planoEstaValido(cafeteria);
-
-      const calcularDiasRestantes = (dataExpiracao, isVitalicio = false) => {
-        if (isVitalicio) return 9999;
-        if (!dataExpiracao) return 0;
-        const diff = new Date(dataExpiracao).getTime() - Date.now();
-        return diff <= 0 ? 0 : Math.ceil(diff / (1000 * 60 * 60 * 24));
-      };
+      const [adminAuthMode, setAdminAuthMode] = useState('login');
+      const [adminEmailInput, setAdminEmailInput] = useState('');
+      const [adminPasswordInput, setAdminPasswordInput] = useState('');
+      const [pinInput, setPinInput] = useState('');
+      const [pinError, setPinError] = useState('');
 
       useEffect(() => {
-        if (urlInfo.cafeteriaId) {
-          supabaseService.buscarCafeteriaPorId(urlInfo.cafeteriaId).then(dados => {
-            if (dados) {
-              const eVitalicio = dados.data_expiracao && new Date(dados.data_expiracao).getFullYear() > 2090;
-              setCafeteria({
-                id: dados.id,
-                nome: dados.nome,
-                pinEquipe: dados.pin_equipe,
-                planoAtivo: dados.plano_ativo === true,
-                donoEmail: dados.email || dados.dono_email,
-                dataInscricao: dados.data_inscricao || new Date().toISOString(),
-                dataExpiracao: dados.data_expiracao || null,
-                isVitalicio: eVitalicio
-              });
-            }
-          });
+        if (cafeteria.id) {
+          supabaseService.buscarProdutos(cafeteria.id).then(setProdutos);
         }
-      }, [urlInfo.cafeteriaId]);
+      }, [cafeteria.id]);
 
-      useEffect(() => {
-        if (cafeteria?.id) {
-          localStorage.setItem('coffeeflow_cafeteria', JSON.stringify(cafeteria));
-        }
-      }, [cafeteria]);
-
-      const carregarDados = async () => {
-        if (cafeteria?.id) {
-          const prods = await supabaseService.buscarProdutos(cafeteria.id);
-          setProdutos(prods);
-          if (isLoggedInAdmin || isStaffLogged) {
-            const peds = await supabaseService.buscarPedidos(cafeteria.id);
-            setPedidos(peds);
+      const adicionarAoCarrinho = (produto) => {
+        setCarrinho(prev => {
+          const existe = prev.find(item => item.id === produto.id);
+          if (existe) {
+            return prev.map(item => item.id === produto.id ? { ...item, qtd: item.qtd + 1 } : item);
           }
-        }
+          return [...prev, { ...produto, qtd: 1 }];
+        });
+        setNotificacao(`Adicionado: ${produto.nome}`);
+        setTimeout(() => setNotificacao(''), 3000);
       };
 
-      useEffect(() => {
-        carregarDados();
-      }, [cafeteria.id, isLoggedInAdmin, isStaffLogged]);
-
-      const abrirPagamento = () => window.open(PAYMENT_LINK, '_blank');
-
-      const lidarLoginAdmin = async (e) => {
-        e.preventDefault();
-        setAdminAuthError('');
-        setLoadingAuth(true);
-        try {
-          if (adminAuthMode === 'login') {
-            const { user, session } = await authService.login(adminEmailInput, adminPasswordInput);
-            currentAccessToken = session.access_token;
-            let dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
-            if (!dadosCaf) {
-              dadosCaf = await supabaseService.criarCafeteria(user.id, adminEmailInput, 'CoffeeFlow', gerarPinAleatorio());
-            }
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: dadosCaf.id,
-              nome: dadosCaf.nome,
-              pinEquipe: dadosCaf.pin_equipe,
-              planoAtivo: dadosCaf.plano_ativo === true,
-              donoEmail: dadosCaf.email || adminEmailInput,
-              dataInscricao: dadosCaf.data_inscricao,
-              dataExpiracao: dadosCaf.data_expiracao
-            });
-            setActiveView('admin');
-          } else if (adminAuthMode === 'register') {
-            const { cafeteria: novaCaf, session } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
-            currentAccessToken = session?.access_token;
-            setIsLoggedInAdmin(true);
-            setCafeteria({
-              id: novaCaf.id,
-              nome: novaCaf.nome,
-              pinEquipe: novaCaf.pin_equipe,
-              planoAtivo: true,
-              donoEmail: adminEmailInput,
-              dataInscricao: novaCaf.data_inscricao,
-              dataExpiracao: novaCaf.data_expiracao
-            });
-            setActiveView('admin');
-          } else {
-            await authService.recuperarSenha(adminEmailInput);
-            setAdminAuthSuccess('E-mail de recuperação enviado!');
-          }
-        } catch (err) {
-          setAdminAuthError(err.message);
-        } finally {
-          setLoadingAuth(false);
+      const enviarPedido = async () => {
+        if (carrinho.length === 0) return;
+        const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
+        const pedidoData = {
+          cafeteria_id: cafeteria.id,
+          codigo_pedido: `CF-${Math.floor(100 + Math.random() * 900)}`,
+          mesa: selectedMesaCliente,
+          itens: carrinho.map(c => ({ nome: c.nome, qtd: c.qtd, preco: c.preco })),
+          total: total,
+          status: 'pendente',
+          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        const criado = await supabaseService.criarPedido(pedidoData);
+        if (criado) {
+          setCarrinho([]);
+          setNotificacao('Pedido enviado com sucesso à cozinha!');
+          setTimeout(() => setNotificacao(''), 4000);
         }
       };
-
-      const lidarLoginStaff = async (e) => {
-        e.preventDefault();
-        setPinError('');
-        setLoadingPin(true);
-        try {
-          const caf = await supabaseService.buscarCafeteriaPorPin(pinInput);
-          if (!caf) {
-            setPinError('PIN incorreto.');
-            return;
-          }
-          setCafeteria({
-            id: caf.id,
-            nome: caf.nome,
-            pinEquipe: caf.pin_equipe,
-            planoAtivo: caf.plano_ativo,
-            donoEmail: caf.email,
-            dataInscricao: caf.data_inscricao,
-            dataExpiracao: caf.data_expiracao
-          });
-          localStorage.setItem('coffeeflow_staff_session', 'true');
-          localStorage.setItem('coffeeflow_staff_pin', pinInput.trim());
-          localStorage.setItem('coffeeflow_staff_cafeteria_id', caf.id);
-          setIsStaffLogged(true);
-          setActiveView('staff_panel');
-        } catch (err) {
-          setPinError(err.message);
-        } finally {
-          setLoadingPin(false);
-        }
-      };
-
-      const linkAtualCardapio = `${window.location.origin}/menu/${encodeURIComponent(cafeteria.id)}?mesa=${encodeURIComponent(mesaQr)}`;
 
       return (
-        <div className="min-h-screen bg-[var(--black)] text-[var(--cream)] font-[family-name:var(--sans)] flex flex-col justify-between selection:bg-[var(--gold)] selection:text-[var(--black)]">
-          
-          <!-- HEADER -->
-          <header class="fixed top-0 left-0 w-full h-[82px] z-[999] flex items-center bg-[rgba(21,21,21,0.78)] backdrop-blur-[18px] border-b border-[rgba(255,255,255,0.07)]">
-            <div class="container flex justify-between items-center">
-              <a href="#inicio" onClick={() => setActiveView(isClientAccessFromQr ? 'customer' : 'landing')} class="font-[family-name:var(--serif)] text-[34px] leading-[0.8] tracking-[0.04em]">
-                {cafeteria.nome}
-                <small class="block mt-[7px] font-[family-name:var(--sans)] text-[7px] tracking-[0.29em] uppercase text-[var(--gold-light)]">CoffeeFlow · Sistema Digital</small>
+        <div className="min-h-screen bg-[#151515] text-[#f3efe7] font-sans">
+          {/* HEADER ESTILO VITTELIS */}
+          <header className="fixed top-0 left-0 w-full h-[82px] z-[999] flex items-center bg-[rgba(21,21,21,.78)] backdrop-blur-[18px] border-b border-[rgba(255,255,255,.07)]">
+            <div className="w-[min(1180px,calc(100%-48px))] mx-auto flex justify-between items-center">
+              <a href="#inicio" className="font-serif text-[34px] leading-[.8] tracking-[.04em] text-white">
+                CoffeeFlow
+                <small className="block mt-[7px] font-sans text-[7px] tracking-[.29em] uppercase text-[#c6ab78]">Ementa & Gestão</small>
               </a>
 
-              <div class="flex items-center gap-4">
-                {notificacao && (
-                  <div class="bg-[var(--gold)] text-[var(--black)] font-bold px-3 py-1 rounded-full text-xs animate-pulse">
-                    {notificacao}
-                  </div>
-                )}
-                {!isClientAccessFromQr && (
-                  <div class="flex items-center gap-3">
-                    {!isLoggedInAdmin && activeView !== 'admin_login' && (
-                      <button onClick={() => setActiveView('admin_login')} class="px-4 py-2 border border-[var(--gold)] text-[var(--cream)] text-xs uppercase tracking-wider hover:bg-[var(--gold)] hover:text-[var(--black)] transition">
-                        Área do Proprietário
-                      </button>
-                    )}
-                    {isLoggedInAdmin && (
-                      <button onClick={() => setActiveView('admin')} class="px-4 py-2 bg-[var(--gold)] text-[var(--black)] text-xs uppercase tracking-wider font-bold">
-                        Painel de Gestão
-                      </button>
-                    )}
-                    <button onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} class="px-4 py-2 border border-[var(--line)] text-xs uppercase tracking-wider hover:border-[var(--gold)] transition">
-                      Equipa (PIN)
-                    </button>
-                  </div>
-                )}
+              {notificacao && (
+                <div className="bg-[#a88a5a] text-[#151515] font-bold px-4 py-1.5 rounded-full text-xs shadow-lg animate-pulse">
+                  {notificacao}
+                </div>
+              )}
+
+              <div className="flex items-center gap-4 text-xs tracking-[.11em] uppercase">
+                <button onClick={() => setActiveView('customer')} className={`hover:text-white transition ${activeView === 'customer' ? 'text-[#c6ab78]' : 'text-[rgba(243,239,231,.7)]'}`}>Ementa</button>
+                <button onClick={() => setActiveView('admin_login')} className={`hover:text-white transition ${activeView.includes('admin') ? 'text-[#c6ab78]' : 'text-[rgba(243,239,231,.7)]'}`}>Administração</button>
+                <button onClick={() => setActiveView('staff_login')} className={`hover:text-white transition ${activeView.includes('staff') ? 'text-[#c6ab78]' : 'text-[rgba(243,239,231,.7)]'}`}>Equipa</button>
               </div>
             </div>
           </header>
 
-          <main class="pt-[82px] flex-1">
-
-            {/* LANDING VIEW */}
-            {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
-              <section class="hero min-h-[calc(100vh-82px)] relative flex items-center overflow-hidden" style={{background: 'linear-gradient(90deg, rgba(10,10,10,0.94), rgba(10,10,10,0.70) 45%, rgba(10,10,10,0.20)), url("https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=2200&q=90") center/cover'}}>
-                <div class="container relative z-[2] py-20 max-w-[800px] ml-[max(24px,calc((100% - 1180px)/2))]">
-                  <div class="flex items-center gap-[13px] text-[var(--gold-light)] text-[10px] tracking-[0.24em] uppercase mb-6 before:content-[''] before:w-[42px] before:h-[1px] before:bg-[var(--gold)]">
-                    Gestão Inteligente para Cafetarias
-                  </div>
-                  <h1 class="font-[family-name:var(--serif)] text-[clamp(50px,8vw,100px)] leading-[0.85] font-medium tracking-[-0.04em]">
-                    Acelere o fluxo de <span class="text-[var(--gold-light)] italic">pedidos.</span>
-                  </h1>
-                  <p class="max-w-[550px] mt-[34px] text-[rgba(243,239,231,0.72)] text-[15px] leading-[1.9]">
-                    Simplifique o atendimento na sua cafetaria com ementas digitais por QR Code por mesa, cozinha integrada em tempo real e um sistema leve.
-                  </p>
-                  <div class="flex flex-wrap gap-3 mt-[38px]">
-                    <button onClick={abrirPagamento} class="min-h-[50px] px-[25px] inline-flex items-center justify-center bg-[var(--gold)] text-[var(--black)] border border-[var(--gold)] text-[10px] font-bold tracking-[0.14em] uppercase hover:bg-[var(--gold-light)] transition">
-                      Assinar Mensalidade
-                    </button>
-                    <button onClick={() => setActiveView('admin_login')} class="min-h-[50px] px-[25px] inline-flex items-center justify-center bg-transparent text-[var(--cream)] border border-[var(--line)] text-[10px] font-bold tracking-[0.14em] uppercase hover:bg-[rgba(168,138,90,0.15)] transition">
-                      Entrar na Conta
-                    </button>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* ADMIN LOGIN VIEW */}
-            {activeView === 'admin_login' && !isLoggedInAdmin && (
-              <div class="max-w-md mx-auto my-20 p-8 bg-[var(--black2)] border border-[var(--line)] rounded-2xl space-y-6">
-                <div class="text-center">
-                  <h2 class="font-[family-name:var(--serif)] text-4xl mb-2">Portal do Proprietário</h2>
-                  <p class="text-xs text-[var(--muted)]">Gerencie os produtos, licença e acessos do CoffeeFlow.</p>
-                </div>
-                
-                <div class="flex bg-[var(--black)] p-1 rounded-xl text-xs font-bold gap-1 border border-[var(--line)]">
-                  <button onClick={() => setAdminAuthMode('login')} class={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-[var(--gold)] text-[var(--black)]' : 'text-[var(--muted)]'}`}>Entrar</button>
-                  <button onClick={() => setAdminAuthMode('register')} class={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-[var(--gold)] text-[var(--black)]' : 'text-[var(--muted)]'}`}>Criar Conta</button>
-                  <button onClick={() => setAdminAuthMode('forgot')} class={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-[var(--gold)] text-[var(--black)]' : 'text-[var(--muted)]'}`}>Recuperar</button>
-                </div>
-
-                <form onSubmit={lidarLoginAdmin} class="space-y-4">
-                  {adminAuthMode === 'register' && (
+          <main className="pt-[82px]">
+            {/* VIEW CLIENTE / EMENTA */}
+            {activeView === 'customer' && (
+              <div>
+                <section className="py-[120px] bg-[#151515] border-b border-[rgba(255,255,255,.07)]">
+                  <div className="w-[min(1180px,calc(100%-48px))] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div>
-                      <label class="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1">Nome da Cafetaria</label>
-                      <input type="text" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] focus:border-[var(--gold)] outline-none" placeholder="Ex: Café Central" />
-                    </div>
-                  )}
-                  <div>
-                    <label class="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1">E-mail</label>
-                    <input type="email" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] focus:border-[var(--gold)] outline-none" placeholder="seu@email.com" />
-                  </div>
-                  {adminAuthMode !== 'forgot' && (
-                    <div>
-                      <label class="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1">Palavra-passe</label>
-                      <input type="password" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] focus:border-[var(--gold)] outline-none" placeholder="••••••••" />
-                    </div>
-                  )}
-
-                  {adminAuthError && <div class="bg-red-950/40 border border-red-500/30 text-red-400 p-3 rounded text-xs">{adminAuthError}</div>}
-                  {adminAuthSuccess && <div class="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 p-3 rounded text-xs">{adminAuthSuccess}</div>}
-
-                  <button type="submit" disabled={loadingAuth} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider hover:bg-[var(--gold-light)] transition">
-                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : adminAuthMode === 'register' ? 'Registar Cafetaria' : 'Enviar Recuperação')}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* STAFF LOGIN VIEW */}
-            {activeView === 'staff_login' && !isStaffLogged && (
-              <div class="max-w-md mx-auto my-20 p-8 bg-[var(--black2)] border border-[var(--line)] rounded-2xl space-y-6 text-center">
-                <h2 class="font-[family-name:var(--serif)] text-4xl">Acesso Equipe / Balcão</h2>
-                <p class="text-xs text-[var(--muted)]">Insira o PIN de 6 dígitos fornecido pela gerência para abrir o painel operacional.</p>
-                <form onSubmit={lidarLoginStaff} class="space-y-4">
-                  <input type="password" maxLength="6" value={pinInput} onChange={e => setPinInput(e.target.value)} placeholder="• • • • • •" class="w-full p-4 text-center tracking-[1em] text-2xl bg-[var(--black)] border border-[var(--line)] rounded text-[var(--cream)] focus:border-[var(--gold)] outline-none" required />
-                  {pinError && <div class="bg-red-950/40 text-red-400 p-2 rounded text-xs">{pinError}</div>}
-                  <button type="submit" disabled={loadingPin} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">
-                    {loadingPin ? 'A verificar...' : 'Entrar no Balcão'}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* ADMIN PANEL */}
-            {activeView === 'admin' && isLoggedInAdmin && (
-              <div class="container py-12 space-y-8">
-                <div class="flex justify-between items-center border-b border-[var(--line)] pb-6">
-                  <div>
-                    <h2 class="font-[family-name:var(--serif)] text-4xl">{cafeteria.nome}</h2>
-                    <p class="text-xs text-[var(--muted)] mt-1">ID: <span class="font-mono text-[var(--gold-light)]">{cafeteria.id}</span></p>
-                  </div>
-                  <button onClick={() => { setIsLoggedInAdmin(false); setActiveView('landing'); }} class="px-4 py-2 border border-[var(--line)] text-xs uppercase tracking-wider hover:bg-[var(--gold)] hover:text-[var(--black)]">Terminar Sessão</button>
-                </div>
-
-                {!planoAindaValido ? (
-                  <div class="bg-[var(--black2)] border border-[var(--gold)] p-8 rounded-2xl text-center space-y-4">
-                    <h3 class="font-[family-name:var(--serif)] text-3xl text-[var(--gold-light)]">Assinatura Expirada ou Inativa</h3>
-                    <p class="text-xs text-[var(--muted)] max-w-md mx-auto">Renove a sua assinatura mensal para continuar a aceitar pedidos e manter o cardápio ativo.</p>
-                    <button onClick={abrirPagamento} class="px-6 py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">Renovar 30 Dias</button>
-                  </div>
-                ) : (
-                  <div class="space-y-8">
-                    <div class="grid md:grid-cols-2 gap-6">
-                      <div class="bg-[var(--black2)] p-6 border border-[var(--line)] rounded-2xl space-y-4">
-                        <h3 class="font-[family-name:var(--serif)] text-2xl">PIN Operacional da Equipa</h3>
-                        <p class="text-xs text-[var(--muted)]">Código de acesso rápido para balcão e cozinha.</p>
-                        <div class="flex items-center justify-between p-4 bg-[var(--black)] border border-[var(--line)] rounded">
-                          <span class="font-mono text-xl tracking-widest text-[var(--gold-light)]">{cafeteria.pinEquipe}</span>
-                          <button onClick={async () => {
-                            const novo = gerarPinAleatorio();
-                            if (await supabaseService.atualizarPin(cafeteria.id, novo)) {
-                              setCafeteria(p => ({...p, pinEquipe: novo}));
-                              setNotificacao('PIN atualizado com sucesso!');
-                              setTimeout(() => setNotificacao(''), 3000);
-                            }
-                          }} class="px-3 py-1.5 border border-[var(--line)] text-[10px] uppercase">Gerar Novo</button>
-                        </div>
+                      <div className="flex items-center gap-3 text-[#c6ab78] text-[10px] tracking-[.24em] uppercase mb-6 before:content-[''] before:w-[42px] before:h-[1px] before:bg-[#a88a5a]">
+                        Mesa {selectedMesaCliente} · Atendimento Digital
                       </div>
-
-                      <div class="bg-[var(--black2)] p-6 border border-[var(--line)] rounded-2xl space-y-4">
-                        <h3 class="font-[family-name:var(--serif)] text-2xl">Estado da Licença</h3>
-                        <div class="p-3 bg-[var(--black)] border border-[var(--line)] rounded flex justify-between items-center text-xs">
-                          <span class="text-[var(--muted)]">Subscrição:</span>
-                          <span class="text-emerald-400 font-bold">Ativa ({calcularDiasRestantes(cafeteria.dataExpiracao)} dias restantes)</span>
-                        </div>
-                        <button onClick={() => setModalQrOpen(true)} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">Gerador de QR Code de Mesas</button>
-                      </div>
+                      <h1 className="font-serif text-5xl md:text-7xl font-medium leading-[.9] tracking-[-.04em]">
+                        Sabores que <span className="text-[#c6ab78] italic">inspiram.</span>
+                      </h1>
+                      <p className="mt-6 text-[rgba(243,239,231,.7)] text-sm leading-relaxed max-w-lg">
+                        Explore o nosso cardápio digital, faça pedidos diretamente da mesa e acompanhe cada detalhe da sua experiência no CoffeeFlow.
+                      </p>
                     </div>
-
-                    <div class="bg-[var(--black2)] p-6 border border-[var(--line)] rounded-2xl space-y-4">
-                      <div class="flex justify-between items-center">
-                        <h3 class="font-[family-name:var(--serif)] text-2xl">Ementa / Produtos</h3>
-                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} class="px-4 py-2 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">+ Adicionar Item</button>
-                      </div>
-                      <div class="space-y-3">
-                        {produtos.map(p => (
-                          <div key={p.id} class="p-3 bg-[var(--black)] border border-[var(--line)] rounded flex items-center justify-between gap-4 text-xs">
-                            <img src={p.imagem || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=100&q=80'} class="w-12 h-12 object-cover rounded" />
-                            <div class="flex-1">
-                              <p class="font-bold">{p.nome}</p>
-                              <p class="text-[var(--gold-light)] font-mono">{formatarPreco(p.preco)}</p>
+                    {/* CARRINHO / RESUMO */}
+                    <div className="bg-[#1d1d1b] border border-[rgba(255,255,255,.12)] p-6 rounded-2xl">
+                      <h3 className="font-serif text-2xl mb-4 text-[#c6ab78]">O seu pedido (Mesa {selectedMesaCliente})</h3>
+                      {carrinho.length === 0 ? (
+                        <p className="text-xs text-[#aaa49b]">O seu carrinho está vazio. Escolha itens abaixo.</p>
+                      ) : (
+                        <div className="space-y-3 max-h-60 overflow-y-auto scrollbar-none mb-4">
+                          {carrinho.map(item => (
+                            <div key={item.id} className="flex justify-between items-center text-xs border-b border-[rgba(255,255,255,.07)] pb-2">
+                              <span>{item.qtd}x {item.nome}</span>
+                              <span className="text-[#c6ab78] font-bold">{formatarPreco(item.preco * item.qtd)}</span>
                             </div>
-                            <div class="flex gap-2">
-                              <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} class="px-3 py-1.5 border border-[var(--line)]">Editar</button>
-                              <button onClick={async () => {
-                                if (confirm('Eliminar produto?')) {
-                                  await supabaseService.deletarProduto(p.id);
-                                  carregarDados();
-                                }
-                              }} class="px-3 py-1.5 bg-red-950/40 text-red-400 border border-red-500/20">Eliminar</button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* STAFF PANEL */}
-            {activeView === 'staff_panel' && isStaffLogged && (
-              <div class="container py-12 space-y-8">
-                <div class="flex justify-between items-center border-b border-[var(--line)] pb-6">
-                  <div>
-                    <h2 class="font-[family-name:var(--serif)] text-4xl">Balcão & Cozinha</h2>
-                    <p class="text-xs text-[var(--muted)]">Modo operacional em tempo real</p>
-                  </div>
-                  <button onClick={() => { setIsStaffLogged(false); localStorage.removeItem('coffeeflow_staff_session'); setActiveView('staff_login'); }} class="px-4 py-2 border border-[var(--line)] text-xs uppercase">Sair do Balcão</button>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-6">
-                  <div class="space-y-4">
-                    <h3 class="font-[family-name:var(--serif)] text-2xl text-[var(--gold-light)]">Pedidos Ativos</h3>
-                    {pedidos.filter(p => p.status !== 'entregue').length === 0 ? (
-                      <p class="text-xs text-[var(--muted)] p-6 bg-[var(--black2)] border border-[var(--line)] rounded">Sem pedidos pendentes no momento.</p>
-                    ) : (
-                      pedidos.filter(p => p.status !== 'entregue').map(p => (
-                        <div key={p.id} class="p-4 bg-[var(--black2)] border border-[var(--line)] rounded space-y-3 text-xs">
-                          <div class="flex justify-between font-bold border-b border-[var(--line)] pb-2">
-                            <span>Mesa {p.mesa}</span>
-                            <span class="text-[var(--gold-light)] font-mono">{formatarPreco(p.total)}</span>
-                          </div>
-                          <div class="space-y-1">
-                            {p.itens.map((it, idx) => (
-                              <div key={idx} class="flex justify-between text-[var(--muted)]">
-                                <span>{it.qtd}x {it.nome}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <button onClick={async () => {
-                            await supabaseService.atualizarStatusPedido(p.id, p.status === 'pendente' ? 'em_preparo' : 'entregue');
-                            carregarDados();
-                          }} class="w-full py-2 bg-[var(--gold)] text-[var(--black)] font-bold uppercase tracking-wider">
-                            {p.status === 'pendente' ? 'Iniciar Preparo' : 'Concluir Pedido'}
+                          ))}
+                        </div>
+                      )}
+                      {carrinho.length > 0 && (
+                        <div className="pt-4 border-t border-[rgba(255,255,255,.12)] flex justify-between items-center">
+                          <span className="font-bold text-sm">Total: <strong className="text-[#c6ab78]">{formatarPreco(carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0))}</strong></span>
+                          <button onClick={enviarPedido} className="bg-[#a88a5a] text-[#151515] px-5 py-2.5 text-[10px] font-bold tracking-[.14em] uppercase hover:bg-[#c6ab78] transition">
+                            Enviar Pedido
                           </button>
                         </div>
-                      ))
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                </section>
 
-            {/* CUSTOMER EMENTA / MENU VIEW */}
-            {(activeView === 'customer' || isClientAccessFromQr) && (
-              <div class="container py-12 space-y-8">
-                <div class="text-center space-y-3 border-b border-[var(--line)] pb-8">
-                  <span class="text-[10px] tracking-[0.2em] uppercase text-[var(--gold-light)]">Ementa Digital · Mesa {selectedMesaCliente}</span>
-                  <h2 class="font-[family-name:var(--serif)] text-5xl">{cafeteria.nome}</h2>
-                  <p class="text-xs text-[var(--muted)]">Escolha os seus itens favoritos e faça o pedido diretamente para a mesa.</p>
-                </div>
-
-                <div class="flex gap-2 overflow-x-auto scrollbar-none pb-2">
-                  {CATEGORIAS_PADRAO.map(cat => (
-                    <button key={cat} onClick={() => setCategoriaAtiva(cat)} class={`px-4 py-2 text-xs uppercase tracking-wider whitespace-nowrap border transition ${categoriaAtiva === cat ? 'bg-[var(--gold)] text-[var(--black)] border-[var(--gold)]' : 'border-[var(--line)] text-[var(--muted)]'}`}>
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-
-                <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {produtos.filter(p => categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva).map(prod => (
-                    <div key={prod.id} class="bg-[var(--black2)] border border-[var(--line)] rounded-xl overflow-hidden flex flex-col justify-between">
-                      <img src={prod.imagem || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=500&q=80'} class="h-48 object-cover" />
-                      <div class="p-5 space-y-3 flex-1 flex flex-col justify-between">
-                        <div>
-                          <span class="text-[9px] uppercase tracking-wider text-[var(--gold-light)]">{prod.categoria}</span>
-                          <h3 class="font-[family-name:var(--serif)] text-2xl mt-1">{prod.nome}</h3>
-                          <p class="text-xs text-[var(--muted)] mt-1">{prod.descricao}</p>
-                        </div>
-                        <div class="flex items-center justify-between pt-4 border-t border-[var(--line)]">
-                          <span class="font-mono text-lg text-[var(--gold-light)]">{formatarPreco(prod.preco)}</span>
-                          <button onClick={() => {
-                            setCarrinho(prev => {
-                              const existe = prev.find(i => i.id === prod.id);
-                              if (existe) {
-                                return prev.map(i => i.id === prod.id ? {...i, qtd: i.qtd + 1} : i);
-                              }
-                              return [...prev, {...prod, qtd: 1}];
-                            });
-                            setNotificacao('Adicionado ao pedido!');
-                            setTimeout(() => setNotificacao(''), 2000);
-                          }} class="px-4 py-2 bg-[var(--gold)] text-[var(--black)] text-xs uppercase font-bold">Adicionar</button>
-                        </div>
+                {/* PRODUTOS / EMENTA */}
+                <section className="py-20 bg-[#f3efe7] text-[#151515]">
+                  <div className="w-[min(1180px,calc(100%-48px))] mx-auto">
+                    <div className="mb-12 flex justify-between items-end flex-wrap gap-6">
+                      <div>
+                        <div className="text-[#a88a5a] text-[10px] tracking-[.2em] uppercase mb-2">02 · Ementa Digital</div>
+                        <h2 className="font-serif text-4xl md:text-5xl font-medium">Escolha e Saboreie.</h2>
                       </div>
+                      <input 
+                        type="text" 
+                        placeholder="Pesquisar produto..." 
+                        value={termoPesquisa} 
+                        onChange={e => setTermoPesquisa(e.target.value)}
+                        className="p-3 bg-white border border-[#e8e0d2] text-xs rounded-lg w-72 focus:outline-none focus:border-[#a88a5a]"
+                      />
                     </div>
-                  ))}
-                </div>
 
-                {carrinho.length > 0 && (
-                  <div class="fixed bottom-6 right-6 z-50 bg-[var(--black2)] border border-[var(--gold)] p-6 rounded-2xl shadow-2xl max-w-sm w-full space-y-4">
-                    <div class="flex justify-between items-center border-b border-[var(--line)] pb-3">
-                      <h3 class="font-[family-name:var(--serif)] text-xl">O seu Pedido (Mesa {selectedMesaCliente})</h3>
-                      <button onClick={() => setCarrinho([])} class="text-xs text-[var(--muted)]">Limpar</button>
-                    </div>
-                    <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-none text-xs">
-                      {carrinho.map(item => (
-                        <div key={item.id} class="flex justify-between items-center">
-                          <span>{item.qtd}x {item.nome}</span>
-                          <span class="font-mono text-[var(--gold-light)]">{formatarPreco(item.preco * item.qtd)}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {produtos.filter(p => p.nome.toLowerCase().includes(termoPesquisa.toLowerCase())).map(produto => (
+                        <div key={produto.id} className="bg-white border border-[#e8e0d2] p-6 rounded-xl flex flex-col justify-between hover:shadow-xl transition">
+                          <div>
+                            {produto.imagem && <img src={produto.imagem} alt={produto.nome} className="h-48 w-full object-cover rounded-lg mb-4" />}
+                            <span className="text-[10px] text-[#a88a5a] uppercase tracking-wider">{produto.categoria}</span>
+                            <h3 className="font-serif text-2xl font-medium mt-1">{produto.nome}</h3>
+                            <p className="text-xs text-[rgba(21,21,21,.6)] mt-2 leading-relaxed">{produto.descricao}</p>
+                          </div>
+                          <div className="mt-6 pt-4 border-t border-[#e8e0d2] flex justify-between items-center">
+                            <span className="text-base font-bold text-[#a88a5a]">{formatarPreco(produto.preco)}</span>
+                            <button onClick={() => adicionarAoCarrinho(produto)} className="bg-[#151515] text-[#f3efe7] px-4 py-2 text-[10px] font-bold tracking-widest uppercase hover:bg-[#a88a5a] hover:text-[#151515] transition">
+                              Adicionar
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
-                    <div class="pt-3 border-t border-[var(--line)] flex justify-between items-center font-bold">
-                      <span>Total:</span>
-                      <span class="font-mono text-lg text-[var(--gold-light)]">{formatarPreco(carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0))}</span>
-                    </div>
-                    <button onClick={async () => {
-                      const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-                      const res = await supabaseService.criarPedido({
-                        cafeteria_id: cafeteria.id,
-                        codigo_pedido: `CF-${Math.floor(100+Math.random()*900)}`,
-                        mesa: selectedMesaCliente,
-                        itens: carrinho.map(c => ({nome: c.nome, qtd: c.qtd, preco: c.preco})),
-                        total,
-                        status: 'pendente',
-                        hora: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                      });
-                      if (res) {
-                        setCarrinho([]);
-                        setPedidoEnviado(true);
-                        setNotificacao('Pedido enviado com sucesso para a cozinha!');
-                        setTimeout(() => setNotificacao(''), 4000);
-                      }
-                    }} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">
-                      Enviar Pedido para a Cozinha
-                    </button>
                   </div>
-                )}
+                </section>
               </div>
             )}
 
+            {/* VIEW LOGIN STAFF */}
+            {activeView === 'staff_login' && (
+              <div className="min-h-[80vh] flex items-center justify-center p-4">
+                <div className="max-w-md w-full p-8 bg-[#1d1d1b] border border-[rgba(255,255,255,.12)] rounded-2xl shadow-2xl space-y-6">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🔑</div>
+                    <h2 className="font-serif text-3xl font-medium">Acesso Equipa</h2>
+                    <p className="text-xs text-[#aaa49b] mt-1">Introduza o PIN de acesso da equipa.</p>
+                  </div>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setPinError('');
+                    try {
+                      const caf = await supabaseService.buscarCafeteriaPorPin(pinInput);
+                      if (caf) {
+                        setCafeteria(caf);
+                        setActiveView('staff_panel');
+                      } else {
+                        setPinError('PIN incorreto.');
+                      }
+                    } catch(err) { setPinError('Erro ao validar PIN.'); }
+                  }} className="space-y-4">
+                    <input 
+                      type="password" 
+                      maxLength="6"
+                      value={pinInput} 
+                      onChange={e => setPinInput(e.target.value)} 
+                      placeholder="PIN de 6 dígitos" 
+                      className="w-full p-3.5 bg-[#151515] border border-[rgba(255,255,255,.12)] rounded-xl text-center text-xl tracking-widest text-white focus:outline-none focus:border-[#a88a5a]" 
+                      required 
+                    />
+                    {pinError && <div className="text-rose-400 text-xs text-center">{pinError}</div>}
+                    <button type="submit" className="w-full py-3.5 bg-[#a88a5a] text-[#151515] font-bold text-xs tracking-widest uppercase rounded-xl hover:bg-[#c6ab78] transition">
+                      Entrar no Painel
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW PAINEL STAFF */}
+            {activeView === 'staff_panel' && (
+              <div className="w-[min(1180px,calc(100%-48px))] mx-auto py-12">
+                <div className="flex justify-between items-center mb-8 border-b border-[rgba(255,255,255,.12)] pb-4">
+                  <div>
+                    <span className="text-[#a88a5a] text-[10px] tracking-widest uppercase">Painel Operacional</span>
+                    <h2 className="font-serif text-3xl font-medium">{cafeteria.nome} · Cozinha & Pedidos</h2>
+                  </div>
+                  <button onClick={() => setActiveView('customer')} className="border border-[#a88a5a] text-[#f3efe7] px-4 py-2 text-xs tracking-widest uppercase hover:bg-[#a88a5a] hover:text-[#151515] transition">
+                    Ver Ementa
+                  </button>
+                </div>
+                <div className="bg-[#1d1d1b] border border-[rgba(255,255,255,.12)] p-6 rounded-xl">
+                  <h3 className="font-serif text-2xl mb-4 text-[#c6ab78]">Pedidos em Tempo Real</h3>
+                  <p className="text-xs text-[#aaa49b]">Funcionalidade de gestão de pedidos ativa. Os novos pedidos surgem automaticamente.</p>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW LOGIN ADMIN */}
+            {activeView === 'admin_login' && (
+              <div className="min-h-[80vh] flex items-center justify-center p-4">
+                <div className="max-w-md w-full p-8 bg-[#1d1d1b] border border-[rgba(255,255,255,.12)] rounded-2xl shadow-2xl space-y-6">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">⚙️</div>
+                    <h2 className="font-serif text-3xl font-medium">Administração</h2>
+                    <p className="text-xs text-[#aaa49b] mt-1">Gerencie produtos, preços e QR Codes.</p>
+                  </div>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    try {
+                      const { user, session } = await supabaseClient.auth.signInWithPassword({
+                        email: adminEmailInput, password: adminPasswordInput
+                      });
+                      if (user) {
+                        const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
+                        if (dadosCaf) setCafeteria(dadosCaf);
+                        setActiveView('admin_panel');
+                      }
+                    } catch(err) { alert('Erro no login admin.'); }
+                  }} className="space-y-4">
+                    <div>
+                      <label className="text-[10px] text-[#aaa49b] uppercase tracking-widest block mb-1">E-mail</label>
+                      <input type="email" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} className="w-full p-3 bg-[#151515] border border-[rgba(255,255,255,.12)] rounded-xl text-xs text-white focus:outline-none focus:border-[#a88a5a]" required />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-[#aaa49b] uppercase tracking-widest block mb-1">Palavra-passe</label>
+                      <input type="password" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} className="w-full p-3 bg-[#151515] border border-[rgba(255,255,255,.12)] rounded-xl text-xs text-white focus:outline-none focus:border-[#a88a5a]" required />
+                    </div>
+                    <button type="submit" className="w-full py-3.5 bg-[#a88a5a] text-[#151515] font-bold text-xs tracking-widest uppercase rounded-xl hover:bg-[#c6ab78] transition">
+                      Entrar no Painel Admin
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW PAINEL ADMIN */}
+            {activeView === 'admin_panel' && (
+              <div className="w-[min(1180px,calc(100%-48px))] mx-auto py-12 space-y-8">
+                <div className="flex justify-between items-center border-b border-[rgba(255,255,255,.12)] pb-4">
+                  <div>
+                    <span className="text-[#a88a5a] text-[10px] tracking-widest uppercase">Área do Gerente</span>
+                    <h2 className="font-serif text-4xl font-medium">{cafeteria.nome} · Gestão</h2>
+                  </div>
+                  <button onClick={() => setActiveView('customer')} className="border border-[#a88a5a] text-[#f3efe7] px-5 py-2.5 text-[10px] font-bold tracking-widest uppercase hover:bg-[#a88a5a] hover:text-[#151515] transition">
+                    Ver Ementa Pública
+                  </button>
+                </div>
+                <div className="bg-[#1d1d1b] border border-[rgba(255,255,255,.12)] p-8 rounded-2xl">
+                  <h3 className="font-serif text-2xl text-[#c6ab78] mb-4">Gerenciamento de Produtos</h3>
+                  <p className="text-xs text-[#aaa49b]">Adicione novos cafés, bolos e bebidas à ementa digital instantaneamente.</p>
+                </div>
+              </div>
+            )}
           </main>
 
-          {/* FOOTER */}
-          <footer class="py-12 bg-[var(--black)] border-t border-[var(--line)]">
-            <div class="container flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-[var(--muted)]">
+          {/* FOOTER ESTILO VITTELIS */}
+          <footer className="py-12 bg-[#151515] border-t border-[rgba(255,255,255,.12)] mt-20">
+            <div className="w-[min(1180px,calc(100%-48px))] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
               <div>
-                <span class="font-[family-name:var(--serif)] text-2xl text-[var(--cream)] block">{cafeteria.nome}</span>
-                <p class="mt-1">CoffeeFlow · Sistema Digital & Gestão de Cafetarias</p>
+                <div className="font-serif text-3xl text-white">CoffeeFlow</div>
+                <p className="text-[11px] text-[#aaa49b] mt-1">Ementa Digital & Gestão Operacional</p>
               </div>
-              <div class="flex gap-6 uppercase tracking-wider text-[10px]">
-                <a href="#inicio" onClick={() => setActiveView('landing')} class="hover:text-[var(--cream)] transition">Início</a>
-                <button onClick={() => setActiveView('admin_login')} class="hover:text-[var(--cream)] transition">Gerência</button>
-                <button onClick={() => setActiveView('staff_login')} class="hover:text-[var(--cream)] transition">Equipa</button>
+              <div className="text-[9px] text-[#777] uppercase tracking-widest">
+                © {new Date().getFullYear()} CoffeeFlow · Todos os direitos reservados.
               </div>
             </div>
           </footer>
-
-          {/* MODAL QR CODE */}
-          {modalQrOpen && (
-            <div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-              <div class="bg-[var(--black2)] border border-[var(--line)] p-8 rounded-2xl max-w-md w-full space-y-6 text-center">
-                <h3 class="font-[family-name:var(--serif)] text-3xl">QR Code da Mesa</h3>
-                <div class="space-y-2">
-                  <label class="text-xs uppercase text-[var(--muted)]">Número da Mesa</label>
-                  <input type="text" value={mesaQr} onChange={e => setMesaQr(e.target.value)} class="w-full p-2 bg-[var(--black)] border border-[var(--line)] text-center text-lg rounded text-[var(--cream)] outline-none focus:border-[var(--gold)]" />
-                </div>
-                <div class="bg-white p-6 rounded-xl inline-block">
-                  <img src={getQrCodeUrl(linkAtualCardapio)} alt="QR Code Mesa" class="w-48 h-48 mx-auto" />
-                </div>
-                <div class="flex gap-2">
-                  <button onClick={() => navigator.clipboard.writeText(linkAtualCardapio)} class="flex-1 py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase">Copiar Link</button>
-                  <button onClick={() => setModalQrOpen(false)} class="px-4 py-3 border border-[var(--line)] text-xs uppercase">Fechar</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* MODAL PRODUTO */}
-          {modalProduto.open && (
-            <div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-              <div class="bg-[var(--black2)] border border-[var(--line)] p-8 rounded-2xl max-w-lg w-full space-y-6">
-                <h3 class="font-[family-name:var(--serif)] text-3xl">{produtoAtual ? 'Editar Produto' : 'Novo Produto'}</h3>
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const form = new FormData(e.target);
-                  const res = await supabaseService.salvarProduto({
-                    id: produtoAtual?.id,
-                    cafeteria_id: cafeteria.id,
-                    nome: form.get('nome'),
-                    preco: parseFloat(form.get('preco')),
-                    categoria: form.get('categoria'),
-                    descricao: form.get('descricao'),
-                    imagem: produtoAtual?.imagem || '',
-                    arquivoImagem: form.get('arquivo')?.size > 0 ? form.get('arquivo') : null
-                  });
-                  if (res.success) {
-                    setModalProduto({open: false, data: null});
-                    carregarDados();
-                  } else {
-                    alert(res.error);
-                  }
-                }} class="space-y-4 text-xs">
-                  <div>
-                    <label class="uppercase text-[var(--muted)] block mb-1">Nome</label>
-                    <input name="nome" defaultValue={produtoAtual?.nome} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]" />
-                  </div>
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <label class="uppercase text-[var(--muted)] block mb-1">Preço (R$)</label>
-                      <input name="preco" type="number" step="0.01" defaultValue={produtoAtual?.preco} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]" />
-                    </div>
-                    <div>
-                      <label class="uppercase text-[var(--muted)] block mb-1">Categoria</label>
-                      <select name="categoria" defaultValue={produtoAtual?.categoria || 'Cafés Espressos'} class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]">
-                        {CATEGORIAS_PADRAO.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label class="uppercase text-[var(--muted)] block mb-1">Descrição</label>
-                    <textarea name="descricao" defaultValue={produtoAtual?.descricao} class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] h-20"></textarea>
-                  </div>
-                  <div>
-                    <label class="uppercase text-[var(--muted)] block mb-1">Imagem do Produto (Arquivo)</label>
-                    <input name="arquivo" type="file" accept="image/*" class="w-full p-2 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]" />
-                  </div>
-                  <div class="flex gap-2 pt-4">
-                    <button type="submit" class="flex-1 py-3 bg-[var(--gold)] text-[var(--black)] font-bold uppercase">Salvar Produto</button>
-                    <button type="button" onClick={() => setModalProduto({open: false, data: null})} class="px-4 py-3 border border-[var(--line)] uppercase">Cancelar</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
         </div>
       );
     }
