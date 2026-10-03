@@ -4,32 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Vittelis Restaurante Contemporâneo | Vila Mascote</title>
+  <title>CoffeeFlow | Ementa Digital & Gestão</title>
 
   <meta
     name="description"
-    content="Vittelis Restaurante Contemporâneo, na Vila Mascote, São Paulo. À la carte, executivo, express, feijoada, pizza napolitana, hambúrgueres e eventos."
+    content="CoffeeFlow - Acelere o fluxo de pedidos da sua cafetaria com ementas digitais por QR Code, painel operacional para equipa e controlo total."
   >
 
   <meta name="theme-color" content="#151515">
 
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Vittelis Restaurante Contemporâneo">
-  <meta
-    property="og:description"
-    content="Sabores da Dona Lia. Restaurante contemporâneo na Vila Mascote, São Paulo."
-  >
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Compilador Babel para JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   >
 
   <style>
-
     :root {
       --black: #151515;
       --black2: #1d1d1b;
@@ -85,1922 +86,9 @@
       margin: auto;
     }
 
-    /* =========================
-       HEADER
-    ========================= */
-
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 82px;
-      z-index: 999;
-
-      display: flex;
-      align-items: center;
-
-      background: rgba(21,21,21,.78);
-      backdrop-filter: blur(18px);
-      border-bottom: 1px solid rgba(255,255,255,.07);
-    }
-
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo {
-      font-family: var(--serif);
-      font-size: 34px;
-      line-height: .8;
-      letter-spacing: .04em;
-    }
-
-    .logo small {
-      display: block;
-      margin-top: 7px;
-
-      font-family: var(--sans);
-      font-size: 7px;
-      letter-spacing: .29em;
-      text-transform: uppercase;
-
-      color: var(--gold-light);
-    }
-
-    .nav-links {
-      list-style: none;
-      display: flex;
-      align-items: center;
-      gap: 28px;
-
-      font-size: 11px;
-      letter-spacing: .11em;
-      text-transform: uppercase;
-    }
-
-    .nav-links a {
-      color: rgba(243,239,231,.7);
-      transition: .25s;
-    }
-
-    .nav-links a:hover {
-      color: var(--white);
-    }
-
-    .nav-cta {
-      padding: 12px 18px;
-      border: 1px solid var(--gold);
-      color: var(--cream) !important;
-    }
-
-    .nav-cta:hover {
-      background: var(--gold);
-      color: var(--black) !important;
-    }
-
-    .menu-button {
-      display: none;
-      border: 0;
-      background: none;
-      color: var(--cream);
-      font-size: 27px;
-      cursor: pointer;
-    }
-
-    /* =========================
-       HERO
-    ========================= */
-
-    .hero {
-      min-height: 100vh;
-      position: relative;
-
-      display: flex;
-      align-items: center;
-
-      overflow: hidden;
-
-      background:
-        linear-gradient(
-          90deg,
-          rgba(10,10,10,.94),
-          rgba(10,10,10,.70) 45%,
-          rgba(10,10,10,.20)
-        ),
-        url("https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=2200&q=90")
-        center/cover;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-
-      background:
-        radial-gradient(
-          circle at 75% 35%,
-          rgba(168,138,90,.18),
-          transparent 32%
-        );
-    }
-
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      padding-top: 80px;
-      max-width: 800px;
-    }
-
-    .eyebrow {
-      display: flex;
-      align-items: center;
-      gap: 13px;
-
-      color: var(--gold-light);
-
-      font-size: 10px;
-      letter-spacing: .24em;
-      text-transform: uppercase;
-      margin-bottom: 24px;
-    }
-
-    .eyebrow::before {
-      content: "";
-      width: 42px;
-      height: 1px;
-      background: var(--gold);
-    }
-
-    h1 {
-      font-family: var(--serif);
-      font-size: clamp(64px, 9vw, 120px);
-      line-height: .83;
-      font-weight: 500;
-      letter-spacing: -.04em;
-    }
-
-    h1 span {
-      color: var(--gold-light);
-      font-style: italic;
-    }
-
-    .hero-text {
-      max-width: 550px;
-      margin-top: 34px;
-
-      color: rgba(243,239,231,.72);
-      font-size: 15px;
-      line-height: 1.9;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 38px;
-    }
-
-    .button {
-      min-height: 50px;
-      padding: 0 25px;
-
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-
-      background: var(--gold);
-      color: var(--black);
-
-      border: 1px solid var(--gold);
-
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-
-      transition: .25s;
-    }
-
-    .button:hover {
-      background: var(--gold-light);
-      transform: translateY(-2px);
-    }
-
-    .button-outline {
-      background: transparent;
-      color: var(--cream);
-    }
-
-    .button-outline:hover {
-      background: rgba(168,138,90,.15);
-      color: var(--cream);
-    }
-
-    .hero-info {
-      position: absolute;
-      bottom: 32px;
-      left: 0;
-      right: 0;
-      z-index: 3;
-
-      display: flex;
-      justify-content: space-between;
-
-      color: rgba(255,255,255,.52);
-
-      font-size: 9px;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-    }
-
-    /* =========================
-       SECTIONS
-    ========================= */
-
-    section {
-      padding: 120px 0;
-    }
-
-    .dark {
-      background: var(--black);
-    }
-
-    .light {
-      background: var(--cream);
-      color: var(--black);
-    }
-
-    .section-top {
-      display: grid;
-      grid-template-columns: 1fr 1.25fr;
-      gap: 60px;
-      align-items: end;
-
-      margin-bottom: 65px;
-    }
-
-    .number {
-      color: var(--gold);
-      font-size: 10px;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-
-    h2 {
-      font-family: var(--serif);
-      font-size: clamp(50px, 6vw, 82px);
-      font-weight: 500;
-      line-height: .92;
-      letter-spacing: -.03em;
-    }
-
-    .intro {
-      max-width: 580px;
-
-      color: rgba(243,239,231,.62);
-      font-size: 14px;
-      line-height: 1.95;
-    }
-
-    .light .intro {
-      color: rgba(21,21,21,.62);
-    }
-
-    /* =========================
-       ABOUT
-    ========================= */
-
-    .about {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 80px;
-      align-items: center;
-    }
-
-    .about-image {
-      min-height: 620px;
-
-      background:
-        linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.12)),
-        url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1500&q=90")
-        center/cover;
-    }
-
-    .about-copy p {
-      color: rgba(243,239,231,.7);
-      font-size: 15px;
-      line-height: 2;
-      margin-bottom: 22px;
-    }
-
-    .signature {
-      margin-top: 32px;
-
-      font-family: var(--serif);
-      font-size: 32px;
-      font-style: italic;
-      color: var(--gold-light);
-    }
-
-    /* =========================
-       MENU TYPES
-    ========================= */
-
-    .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-
-      border-top: 1px solid rgba(21,21,21,.18);
-      border-left: 1px solid rgba(21,21,21,.18);
-    }
-
-    .menu-card {
-      min-height: 230px;
-      padding: 35px 30px;
-
-      border-right: 1px solid rgba(21,21,21,.18);
-      border-bottom: 1px solid rgba(21,21,21,.18);
-
-      transition: .3s;
-    }
-
-    .menu-card:hover {
-      background: #ebe4d8;
-    }
-
-    .menu-card span {
-      color: var(--gold);
-      font-size: 10px;
-      letter-spacing: .18em;
-    }
-
-    .menu-card h3 {
-      margin-top: 25px;
-
-      font-family: var(--serif);
-      font-size: 38px;
-      font-weight: 500;
-    }
-
-    .menu-card p {
-      margin-top: 8px;
-
-      color: rgba(21,21,21,.58);
-      font-size: 12px;
-      line-height: 1.8;
-    }
-
-    /* =========================
-       DISHES
-    ========================= */
-
-    .dishes {
-      display: grid;
-      grid-template-columns: repeat(2,1fr);
-      gap: 20px;
-    }
-
-    .dish {
-      position: relative;
-      height: 570px;
-      overflow: hidden;
-      background: #242424;
-    }
-
-    .dish img {
-      height: 100%;
-      transition: transform .8s ease;
-    }
-
-    .dish:hover img {
-      transform: scale(1.05);
-    }
-
-    .dish::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-
-      background:
-        linear-gradient(
-          transparent 25%,
-          rgba(0,0,0,.9)
-        );
-    }
-
-    .dish-content {
-      position: absolute;
-      z-index: 2;
-
-      left: 30px;
-      right: 30px;
-      bottom: 28px;
-    }
-
-    .dish-label {
-      color: var(--gold-light);
-      font-size: 9px;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-    }
-
-    .dish h3 {
-      margin-top: 7px;
-
-      font-family: var(--serif);
-      font-size: 44px;
-      font-weight: 500;
-    }
-
-    .dish p {
-      max-width: 450px;
-      margin-top: 8px;
-
-      color: rgba(255,255,255,.62);
-      font-size: 12px;
-      line-height: 1.7;
-    }
-
-    /* =========================
-       EXPERIENCE
-    ========================= */
-
-    .experience {
-      display: grid;
-      grid-template-columns: .9fr 1.1fr;
-    }
-
-    .experience-image {
-      min-height: 620px;
-
-      background:
-        linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.08)),
-        url("https://images.unsplash.com/photo-1515669097368-22e68427d265?auto=format&fit=crop&w=1500&q=90")
-        center/cover;
-    }
-
-    .experience-copy {
-      padding: 80px;
-
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-
-      background: var(--brown);
-    }
-
-    .experience-copy p {
-      max-width: 530px;
-      margin-top: 28px;
-
-      color: rgba(243,239,231,.7);
-      line-height: 1.9;
-      font-size: 15px;
-    }
-
-    /* =========================
-       EVENTS
-    ========================= */
-
-    .events {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 75px;
-      align-items: center;
-    }
-
-    .events-image {
-      min-height: 560px;
-
-      background:
-        linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.08)),
-        url("https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1500&q=90")
-        center/cover;
-    }
-
-    .events-copy p {
-      margin-top: 25px;
-      max-width: 520px;
-
-      color: rgba(243,239,231,.65);
-      line-height: 1.9;
-    }
-
-    .event-list {
-      margin-top: 32px;
-      border-top: 1px solid var(--line);
-    }
-
-    .event-item {
-      display: flex;
-      justify-content: space-between;
-
-      padding: 18px 0;
-
-      border-bottom: 1px solid var(--line);
-
-      font-size: 12px;
-    }
-
-    .event-item span:last-child {
-      color: var(--gold-light);
-    }
-
-    /* =========================
-       DELIVERY
-    ========================= */
-
-    .delivery {
-      background: #211f1c;
-    }
-
-    .delivery-box {
-      padding: 55px;
-
-      border: 1px solid var(--line);
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 40px;
-    }
-
-    .delivery-box h2 {
-      font-size: 58px;
-    }
-
-    .delivery-box p {
-      margin-top: 12px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-
-    /* =========================
-       LOCATION
-    ========================= */
-
-    .location {
-      display: grid;
-      grid-template-columns: .9fr 1.1fr;
-      gap: 70px;
-    }
-
-    .information {
-      display: grid;
-      gap: 30px;
-    }
-
-    .info span {
-      display: block;
-
-      color: var(--gold);
-
-      font-size: 9px;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-
-      margin-bottom: 8px;
-    }
-
-    .info p {
-      font-size: 15px;
-      line-height: 1.8;
-    }
-
-    .map {
-      min-height: 470px;
-      position: relative;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      overflow: hidden;
-
-      background:
-        linear-gradient(
-          120deg,
-          #d8d0c2 25%,
-          #c3baaa 25%,
-          #c3baaa 50%,
-          #d8d0c2 50%,
-          #d8d0c2 75%,
-          #c3baaa 75%
-        );
-
-      background-size: 100px 100px;
-    }
-
-    .road {
-      position: absolute;
-      width: 150%;
-      height: 35px;
-
-      background: rgba(21,21,21,.13);
-
-      transform: rotate(-23deg);
-    }
-
-    .road-two {
-      transform: rotate(31deg);
-      height: 20px;
-    }
-
-    .pin {
-      position: relative;
-      z-index: 2;
-
-      width: 75px;
-      height: 75px;
-
-      display: grid;
-      place-items: center;
-
-      border-radius: 50%;
-
-      background: var(--black);
-      color: var(--gold-light);
-
-      font-family: var(--serif);
-      font-size: 28px;
-
-      box-shadow: 0 20px 50px rgba(0,0,0,.25);
-    }
-
-    /* =========================
-       FINAL CTA
-    ========================= */
-
-    .final {
-      text-align: center;
-
-      background:
-        radial-gradient(
-          circle at center,
-          rgba(168,138,90,.14),
-          transparent 42%
-        ),
-        var(--black);
-    }
-
-    .final h2 {
-      max-width: 900px;
-      margin: auto;
-    }
-
-    .final p {
-      max-width: 550px;
-      margin: 25px auto 0;
-
-      color: var(--muted);
-      line-height: 1.8;
-    }
-
-    .final .actions {
-      justify-content: center;
-    }
-
-    /* =========================
-       FOOTER
-    ========================= */
-
-    footer {
-      padding: 50px 0 25px;
-      background: var(--black);
-
-      border-top: 1px solid var(--line);
-    }
-
-    .footer-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 40px;
-    }
-
-    .footer-logo {
-      font-family: var(--serif);
-      font-size: 42px;
-    }
-
-    .footer-desc {
-      max-width: 320px;
-      margin-top: 8px;
-
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.8;
-    }
-
-    .footer-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 22px;
-
-      color: var(--muted);
-
-      font-size: 10px;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-
-    .footer-links a:hover {
-      color: var(--cream);
-    }
-
-    .footer-bottom {
-      margin-top: 45px;
-      padding-top: 22px;
-
-      border-top: 1px solid var(--line);
-
-      display: flex;
-      justify-content: space-between;
-
-      color: #777;
-      font-size: 9px;
-    }
-
-    /* =========================
-       ANIMATION
-    ========================= */
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(24px);
-
-      transition:
-        opacity .8s ease,
-        transform .8s ease;
-    }
-
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* =========================
-       RESPONSIVE
-    ========================= */
-
-    @media(max-width:900px) {
-
-      .menu-button {
-        display: block;
-      }
-
-      .nav-links {
-        display: none;
-
-        position: fixed;
-        top: 82px;
-        left: 0;
-        right: 0;
-
-        padding: 25px;
-
-        flex-direction: column;
-        align-items: stretch;
-
-        background: rgba(21,21,21,.98);
-      }
-
-      .nav-links.active {
-        display: flex;
-      }
-
-      .nav-links a {
-        display: block;
-        padding: 10px 0;
-      }
-
-      .section-top,
-      .about,
-      .experience,
-      .events,
-      .location {
-        grid-template-columns: 1fr;
-      }
-
-      .menu-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .delivery-box {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-
-    @media(max-width:600px) {
-
-      .container {
-        width: calc(100% - 32px);
-      }
-
-      header {
-        height: 72px;
-      }
-
-      .nav-links {
-        top: 72px;
-      }
-
-      section {
-        padding: 80px 0;
-      }
-
-      .hero {
-        min-height: 850px;
-        background-position: 65% center;
-      }
-
-      h1 {
-        font-size: clamp(58px, 18vw, 85px);
-      }
-
-      .hero-info {
-        display: none;
-      }
-
-      .section-top {
-        margin-bottom: 45px;
-      }
-
-      .menu-grid,
-      .dishes {
-        grid-template-columns: 1fr;
-      }
-
-      .about-image,
-      .experience-image,
-      .events-image {
-        min-height: 420px;
-      }
-
-      .dish {
-        height: 470px;
-      }
-
-      .experience-copy {
-        padding: 60px 30px;
-      }
-
-      .delivery-box {
-        padding: 35px 25px;
-      }
-
-      .delivery-box h2 {
-        font-size: 45px;
-      }
-
-      .map {
-        min-height: 350px;
-      }
-
-      .footer-top,
-      .footer-bottom {
-        flex-direction: column;
-      }
-    }
-
-    @media(prefers-reduced-motion:reduce) {
-      *,
-      *::before,
-      *::after {
-        scroll-behavior: auto !important;
-        transition: none !important;
-      }
-    }
-
-  </style>
-</head>
-
-<body>
-
-  <!-- =========================
-       HEADER
-  ========================= -->
-
-  <header>
-
-    <div class="container nav">
-
-      <a href="#inicio" class="logo">
-        Vittelis
-        <small>Restaurante Contemporâneo</small>
-      </a>
-
-      <button
-        class="menu-button"
-        id="menuButton"
-        aria-label="Abrir menu"
-        aria-expanded="false"
-      >
-        ☰
-      </button>
-
-      <ul class="nav-links" id="navLinks">
-
-        <li>
-          <a href="#sobre">O restaurante</a>
-        </li>
-
-        <li>
-          <a href="#cardapio">Cardápio</a>
-        </li>
-
-        <li>
-          <a href="#destaques">Destaques</a>
-        </li>
-
-        <li>
-          <a href="#eventos">Eventos</a>
-        </li>
-
-        <li>
-          <a href="#localizacao">Localização</a>
-        </li>
-
-        <li>
-          <a
-            href="https://wa.me/5511994389717"
-            target="_blank"
-            rel="noopener"
-            class="nav-cta"
-          >
-            Reservar
-          </a>
-        </li>
-
-      </ul>
-
-    </div>
-
-  </header>
-
-
-  <main>
-
-    <!-- =========================
-         HERO
-    ========================= -->
-
-    <section class="hero" id="inicio">
-
-      <div class="container hero-content reveal">
-
-        <div class="eyebrow">
-          Vila Mascote · São Paulo
-        </div>
-
-        <h1>
-          Sabores que
-          <span>reúnem.</span>
-        </h1>
-
-        <p class="hero-text">
-          O Vittelis Restaurante Contemporâneo reúne diferentes
-          possibilidades gastronômicas em um espaço pensado para
-          refeições, encontros e celebrações.
-        </p>
-
-        <div class="actions">
-
-          <a
-            href="https://www.dguests.com.br/cardapio/vittelisrestaurante"
-            target="_blank"
-            rel="noopener"
-            class="button"
-          >
-            Ver cardápio
-          </a>
-
-          <a
-            href="https://wa.me/5511994389717"
-            target="_blank"
-            rel="noopener"
-            class="button button-outline"
-          >
-            Reservar mesa
-          </a>
-
-        </div>
-
-      </div>
-
-      <div class="container hero-info">
-
-        <span>
-          Av. Mascote, 717 · Vila Mascote
-        </span>
-
-        <span>
-          São Paulo · SP
-        </span>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         SOBRE
-    ========================= -->
-
-    <section class="dark" id="sobre">
-
-      <div class="container">
-
-        <div class="section-top reveal">
-
-          <div>
-
-            <div class="number">
-              01 · O restaurante
-            </div>
-
-            <h2>
-              Sabores da<br>
-              Dona Lia.
-            </h2>
-
-          </div>
-
-          <p class="intro">
-            O Vittelis Restaurante Contemporâneo está localizado na
-            Vila Mascote, em São Paulo, e reúne diferentes formatos
-            gastronômicos em uma mesma experiência.
-          </p>
-
-        </div>
-
-
-        <div class="about">
-
-          <div class="about-image reveal"></div>
-
-          <div class="reveal">
-
-            <div class="about-copy">
-
-              <p>
-                À la carte, executivo, express, feijoada, pizza
-                napolitana e hambúrgueres fazem parte das opções
-                apresentadas atualmente pela casa.
-              </p>
-
-              <p>
-                A proposta permite que o Vittelis acompanhe diferentes
-                momentos: um almoço durante a semana, um jantar,
-                encontros entre amigos ou uma celebração especial.
-              </p>
-
-              <p>
-                O restaurante também recebe eventos e
-                confraternizações.
-              </p>
-
-            </div>
-
-            <div class="signature">
-              Vittelis
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         CARDÁPIO
-    ========================= -->
-
-    <section class="light" id="cardapio">
-
-      <div class="container">
-
-        <div class="section-top reveal">
-
-          <div>
-
-            <div class="number">
-              02 · Cardápio
-            </div>
-
-            <h2>
-              Para diferentes<br>
-              momentos.
-            </h2>
-
-          </div>
-
-          <p class="intro">
-            Uma variedade de formatos para acompanhar diferentes
-            ocasiões, do almoço ao jantar.
-          </p>
-
-        </div>
-
-
-        <div class="menu-grid">
-
-          <article class="menu-card reveal">
-
-            <span>01</span>
-
-            <h3>À la carte</h3>
-
-            <p>
-              Pratos da casa para uma experiência completa.
-            </p>
-
-          </article>
-
-
-          <article class="menu-card reveal">
-
-            <span>02</span>
-
-            <h3>Executivo</h3>
-
-            <p>
-              Opções para o almoço durante a semana.
-            </p>
-
-          </article>
-
-
-          <article class="menu-card reveal">
-
-            <span>03</span>
-
-            <h3>Express</h3>
-
-            <p>
-              Uma alternativa para quem busca praticidade.
-            </p>
-
-          </article>
-
-
-          <article class="menu-card reveal">
-
-            <span>04</span>
-
-            <h3>Feijoada</h3>
-
-            <p>
-              Uma das opções apresentadas pela casa.
-            </p>
-
-          </article>
-
-
-          <article class="menu-card reveal">
-
-            <span>05</span>
-
-            <h3>Pizza Napolitana</h3>
-
-            <p>
-              Pizzas inspiradas na tradição napolitana.
-            </p>
-
-          </article>
-
-
-          <article class="menu-card reveal">
-
-            <span>06</span>
-
-            <h3>Hambúrgueres</h3>
-
-            <p>
-              Opções de hambúrguer para diferentes ocasiões.
-            </p>
-
-          </article>
-
-        </div>
-
-
-        <div class="actions reveal">
-
-          <a
-            href="https://www.dguests.com.br/cardapio/vittelisrestaurante"
-            target="_blank"
-            rel="noopener"
-            class="button"
-          >
-            Abrir cardápio completo
-          </a>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         DESTAQUES
-    ========================= -->
-
-    <section class="dark" id="destaques">
-
-      <div class="container">
-
-        <div class="section-top reveal">
-
-          <div>
-
-            <div class="number">
-              03 · Destaques
-            </div>
-
-            <h2>
-              Alguns sabores<br>
-              da casa.
-            </h2>
-
-          </div>
-
-          <p class="intro">
-            Entre os pratos encontrados nas informações públicas do
-            restaurante estão opções como Filet au Poivre, Mignon à
-            Popeye, Bruschetta Contemporânea e Tiramisù.
-          </p>
-
-        </div>
-
-
-        <div class="dishes">
-
-          <article class="dish reveal">
-
-            <img
-              src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=1400&q=90"
-              alt="Prato de gastronomia contemporânea"
-              loading="lazy"
-            >
-
-            <div class="dish-content">
-
-              <div class="dish-label">
-                Prato
-              </div>
-
-              <h3>
-                Filet au Poivre
-              </h3>
-
-              <p>
-                Medalhão de filé mignon com molho de pimenta,
-                apresentado entre os destaques do restaurante.
-              </p>
-
-            </div>
-
-          </article>
-
-
-          <article class="dish reveal">
-
-            <img
-              src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1400&q=90"
-              alt="Prato de restaurante"
-              loading="lazy"
-            >
-
-            <div class="dish-content">
-
-              <div class="dish-label">
-                Prato
-              </div>
-
-              <h3>
-                Mignon à Popeye
-              </h3>
-
-              <p>
-                Uma das preparações apresentadas entre os pratos
-                destacados da casa.
-              </p>
-
-            </div>
-
-          </article>
-
-
-          <article class="dish reveal">
-
-            <img
-              src="https://images.unsplash.com/photo-1572449043416-55f4685c9bb7?auto=format&fit=crop&w=1400&q=90"
-              alt="Bruschetta"
-              loading="lazy"
-            >
-
-            <div class="dish-content">
-
-              <div class="dish-label">
-                Entrada
-              </div>
-
-              <h3>
-                Bruschetta
-              </h3>
-
-              <p>
-                A Bruschetta Contemporânea aparece entre as opções
-                destacadas publicamente do restaurante.
-              </p>
-
-            </div>
-
-          </article>
-
-
-          <article class="dish reveal">
-
-            <img
-              src="https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=1400&q=90"
-              alt="Tiramisù"
-              loading="lazy"
-            >
-
-            <div class="dish-content">
-
-              <div class="dish-label">
-                Sobremesa
-              </div>
-
-              <h3>
-                Tiramisù
-              </h3>
-
-              <p>
-                Uma sobremesa clássica italiana presente entre as
-                opções mencionadas da casa.
-              </p>
-
-            </div>
-
-          </article>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         EXPERIÊNCIA
-    ========================= -->
-
-    <section class="dark">
-
-      <div class="experience">
-
-        <div class="experience-image reveal"></div>
-
-        <div class="experience-copy reveal">
-
-          <div class="number">
-            04 · Experiência
-          </div>
-
-          <h2>
-            Um espaço para
-            bons momentos.
-          </h2>
-
-          <p>
-            Do almoço ao jantar, o Vittelis foi pensado para diferentes
-            ocasiões. A casa também recebe eventos,
-            confraternizações e reservas especiais.
-          </p>
-
-          <div class="actions">
-
-            <a
-              href="https://wa.me/5511994389717"
-              target="_blank"
-              rel="noopener"
-              class="button"
-            >
-              Falar sobre uma reserva
-            </a>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         EVENTOS
-    ========================= -->
-
-    <section class="dark" id="eventos">
-
-      <div class="container">
-
-        <div class="events">
-
-          <div class="events-image reveal"></div>
-
-          <div class="events-copy reveal">
-
-            <div class="number">
-              05 · Eventos
-            </div>
-
-            <h2>
-              Celebre<br>
-              à mesa.
-            </h2>
-
-            <p>
-              O Vittelis recebe eventos e confraternizações.
-              Para consultar disponibilidade e condições, entre em
-              contato diretamente com a equipe.
-            </p>
-
-            <div class="event-list">
-
-              <div class="event-item">
-                <span>Confraternizações</span>
-                <span>Consultar</span>
-              </div>
-
-              <div class="event-item">
-                <span>Eventos</span>
-                <span>Consultar</span>
-              </div>
-
-              <div class="event-item">
-                <span>Reservas especiais</span>
-                <span>Consultar</span>
-              </div>
-
-            </div>
-
-            <div class="actions">
-
-              <a
-                href="https://wa.me/5511994389717"
-                target="_blank"
-                rel="noopener"
-                class="button"
-              >
-                Consultar pelo WhatsApp
-              </a>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         DELIVERY
-    ========================= -->
-
-    <section class="delivery">
-
-      <div class="container">
-
-        <div class="delivery-box reveal">
-
-          <div>
-
-            <div class="number">
-              06 · Delivery
-            </div>
-
-            <h2>
-              Vittelis em casa.
-            </h2>
-
-            <p>
-              Faça seu pedido pelos canais de delivery disponíveis.
-            </p>
-
-          </div>
-
-          <div class="actions">
-
-            <a
-              href="https://www.ifood.com.br/delivery/sao-paulo-sp/vittelis-restaurante-contemporaneo-vila-mascote/fb37d645-3e19-4147-8034-7a16f1478a4b"
-              target="_blank"
-              rel="noopener"
-              class="button"
-            >
-              Pedir pelo iFood
-            </a>
-
-            <a
-              href="https://url-eu.mykeeta.com/LtikChEz"
-              target="_blank"
-              rel="noopener"
-              class="button button-outline"
-            >
-              Pedir pela Keeta
-            </a>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         LOCALIZAÇÃO
-    ========================= -->
-
-    <section class="light" id="localizacao">
-
-      <div class="container">
-
-        <div class="section-top reveal">
-
-          <div>
-
-            <div class="number">
-              07 · Visite
-            </div>
-
-            <h2>
-              Encontre<br>
-              o Vittelis.
-            </h2>
-
-          </div>
-
-          <p class="intro">
-            Estamos na Vila Mascote, em São Paulo.
-          </p>
-
-        </div>
-
-
-        <div class="location">
-
-          <div class="information reveal">
-
-            <div class="info">
-
-              <span>Endereço</span>
-
-              <p>
-                Av. Mascote, 717 - Loja<br>
-                Vila Mascote<br>
-                São Paulo - SP<br>
-                04363-000
-              </p>
-
-            </div>
-
-
-            <div class="info">
-
-              <span>Telefone</span>
-
-              <p>
-                <a href="tel:+5511994389717">
-                  (11) 99438-9717
-                </a>
-              </p>
-
-            </div>
-
-
-            <div class="info">
-
-              <span>Horários</span>
-
-              <p>
-                Segunda — Fechado<br>
-                Terça a sexta — 11h30 às 15h30 · 18h30 às 23h<br>
-                Sábado — 11h30 às 17h · 18h30 às 23h<br>
-                Domingo — 11h30 às 17h
-              </p>
-
-            </div>
-
-
-            <div class="actions">
-
-              <a
-                href="https://www.google.com/maps/search/?api=1&query=Vittelis+Restaurante+Av.+Mascote+717+São+Paulo"
-                target="_blank"
-                rel="noopener"
-                class="button"
-              >
-                Abrir no Maps
-              </a>
-
-              <a
-                href="https://www.instagram.com/vittelisrestaurante/"
-                target="_blank"
-                rel="noopener"
-                class="button button-outline"
-              >
-                Instagram
-              </a>
-
-            </div>
-
-          </div>
-
-
-          <a
-            class="map reveal"
-            href="https://www.google.com/maps/search/?api=1&query=Vittelis+Restaurante+Av.+Mascote+717+São+Paulo"
-            target="_blank"
-            rel="noopener"
-            aria-label="Abrir localização do Vittelis no Google Maps"
-          >
-
-            <div class="road"></div>
-            <div class="road road-two"></div>
-
-            <div class="pin">
-              V
-            </div>
-
-          </a>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================
-         FINAL CTA
-    ========================= -->
-
-    <section class="final">
-
-      <div class="container reveal">
-
-        <div class="number">
-          VITTELIS · VILA MASCOTE
-        </div>
-
-        <h2>
-          Seu próximo momento
-          começa à mesa.
-        </h2>
-
-        <p>
-          Consulte o cardápio, faça seu pedido ou entre em contato
-          para reservar uma mesa.
-        </p>
-
-        <div class="actions">
-
-          <a
-            href="https://www.dguests.com.br/cardapio/vittelisrestaurante"
-            target="_blank"
-            rel="noopener"
-            class="button"
-          >
-            Ver cardápio
-          </a>
-
-          <a
-            href="https://wa.me/5511994389717"
-            target="_blank"
-            rel="noopener"
-            class="button button-outline"
-          >
-            Reservar mesa
-          </a>
-
-        </div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <!-- =========================
-       FOOTER
-  ========================= -->
-
-  <footer>
-
-    <div class="container">
-
-      <div class="footer-top">
-
-        <div>
-
-          <div class="footer-logo">
-            Vittelis
-          </div>
-
-          <p class="footer-desc">
-            Restaurante Contemporâneo<br>
-            Vila Mascote · São Paulo
-          </p>
-
-        </div>
-
-
-        <div class="footer-links">
-
-          <a href="#sobre">
-            Restaurante
-          </a>
-
-          <a href="#cardapio">
-            Cardápio
-          </a>
-
-          <a href="#destaques">
-            Destaques
-          </a>
-
-          <a href="#eventos">
-            Eventos
-          </a>
-
-          <a href="#localizacao">
-            Localização
-          </a>
-
-          <a
-            href="https://www.instagram.com/vittelisrestaurante/"
-            target="_blank"
-            rel="noopener"
-          >
-            Instagram
-          </a>
-
-        </div>
-
-      </div>
-
-
-      <div class="footer-bottom">
-
-        <span>
-          © <span id="year"></span> Vittelis Restaurante
-        </span>
-
-        <span>
-          Vila Mascote · São Paulo
-        </span>
-
-      </div>
-
-    </div>
-
-  </footer>
-
-
-  <script>
-
-    /* =========================
-       MENU MOBILE
-    ========================= */
-
-    const menuButton =
-      document.getElementById("menuButton");
-
-    const navLinks =
-      document.getElementById("navLinks");
-
-    menuButton.addEventListener("click", () => {
-
-      const opened =
-        navLinks.classList.toggle("active");
-
-      menuButton.setAttribute(
-        "aria-expanded",
-        opened ? "true" : "false"
-      );
-
-      menuButton.textContent =
-        opened ? "×" : "☰";
-
-    });
-
-
-    document
-      .querySelectorAll(".nav-links a")
-      .forEach(link => {
-
-        link.addEventListener("click", () => {
-
-          navLinks.classList.remove("active");
-
-          menuButton.setAttribute(
-            "aria-expanded",
-            "false"
-          );
-
-          menuButton.textContent = "☰";
-
-        });
-
-      });
-
-
-    /* =========================
-       SCROLL ANIMATION
-    ========================= */
-
-    const observer =
-      new IntersectionObserver(
-        entries => {
-
-          entries.forEach(entry => {
-
-            if (entry.isIntersecting) {
-
-              entry.target.classList.add("visible");
-
-              observer.unobserve(entry.target);
-
-            }
-
-          });
-
-        },
-        {
-          threshold: .12
-        }
-      );
-
-
-    document
-      .querySelectorAll(".reveal")
-      .forEach(element => {
-
-        observer.observe(element);
-
-      });
-
-
-    /* =========================
-       YEAR
-    ========================= */
-
-    document.getElementById("year").textContent =
-      new Date().getFullYear();
-
-
-  </script>
-
-</body>
-</html>
-Use como base para o coffeflow o designer desse código anterior
-Coffeflow:
-<!DOCTYPE html>
-<html lang="pt-PT">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CoffeeFlow - Ementa Digital & Gestão</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React & ReactDOM CDN -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Supabase JS CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Compilador Babel para JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
     .scrollbar-none::-webkit-scrollbar { display: none; }
     .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
     @media print {
       body * {
         visibility: hidden;
@@ -2021,8 +109,10 @@ Coffeflow:
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-white">
+
+<body>
   <div id="root"></div>
+
   <script type="text/babel">
     const { useState, useEffect } = React;
     const API_URL = 'https://tuecuhzmsyauzkdclrdv.supabase.co';
@@ -2045,9 +135,7 @@ Coffeflow:
     });
 
     let currentAccessToken = null;
-
     const PAYMENT_LINK = 'https://pay.cakto.com.br/iq44sy6_1035781';
-
     const gerarPinAleatorio = () => Math.floor(100000 + Math.random() * 900000).toString();
 
     const getUrlParams = () => {
@@ -2077,78 +165,46 @@ Coffeflow:
     };
 
     const getQrCodeUrl = (text, size = 280) => {
-      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=0f172a`;
+      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=12&color=151515`;
     };
 
     const getAccessToken = async (forceRefresh = false) => {
       if (!forceRefresh && currentAccessToken) {
         return currentAccessToken;
       }
-
       const { data, error } = await supabaseClient.auth.getSession();
-
-      if (error) {
-        console.error('Erro ao recuperar sessão:', error);
-      }
-
       if (!forceRefresh && data?.session?.access_token) {
         currentAccessToken = data.session.access_token;
         return currentAccessToken;
       }
-
-      const { data: refreshData, error: refreshError } =
-        await supabaseClient.auth.refreshSession();
-
+      const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
       if (refreshError) {
-        console.error('Erro ao renovar sessão:', refreshError);
-        throw new Error(
-          'Sua sessão expirou. Faça login novamente na sua conta.'
-        );
+        throw new Error('Sua sessão expirou. Faça login novamente na sua conta.');
       }
-
       if (refreshData?.session?.access_token) {
         currentAccessToken = refreshData.session.access_token;
         return currentAccessToken;
       }
-
-      throw new Error(
-        'Nenhuma sessão autenticada foi encontrada. Faça login novamente.'
-      );
+      throw new Error('Nenhuma sessão autenticada foi encontrada.');
     };
 
     const uploadImagemProduto = async (arquivo, cafeteriaId) => {
       if (!arquivo) return '';
-
-      if (!arquivo.type.startsWith('image/')) {
-        throw new Error('Selecione uma imagem válida.');
-      }
-
-      if (arquivo.size > 5 * 1024 * 1024) {
-        throw new Error('A imagem deve ter no máximo 5 MB.');
-      }
+      if (!arquivo.type.startsWith('image/')) throw new Error('Selecione uma imagem válida.');
+      if (arquivo.size > 5 * 1024 * 1024) throw new Error('A imagem deve ter no máximo 5 MB.');
 
       const extensao = arquivo.name.split('.').pop().toLowerCase();
+      const nomeArquivo = `${cafeteriaId}/${crypto.randomUUID()}.${extensao}`;
 
-      const nomeArquivo =
-        `${cafeteriaId}/${crypto.randomUUID()}.${extensao}`;
+      const { error } = await supabaseClient.storage.from('produtos').upload(nomeArquivo, arquivo, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: arquivo.type
+      });
 
-      const { error } = await supabaseClient.storage
-        .from('produtos')
-        .upload(nomeArquivo, arquivo, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: arquivo.type
-        });
+      if (error) throw new Error('Não foi possível enviar a imagem.');
 
-      if (error) {
-        console.error('Erro no upload:', error);
-        throw new Error('Não foi possível enviar a imagem.');
-      }
-
-      const { data } = supabaseClient.storage
-        .from('produtos')
-        .getPublicUrl(nomeArquivo);
-
+      const { data } = supabaseClient.storage.from('produtos').getPublicUrl(nomeArquivo);
       return data.publicUrl;
     };
 
@@ -2162,11 +218,8 @@ Coffeflow:
           if (!res.ok) return null;
           const data = await res.json();
           return data?.[0] || null;
-        } catch (err) {
-          return null;
-        }
+        } catch (err) { return null; }
       },
-
       buscarCafeteriaPorUserId: async (userId) => {
         if (!userId) return null;
         try {
@@ -2177,12 +230,8 @@ Coffeflow:
           if (!res.ok) return null;
           const data = await res.json();
           return data?.[0] || null;
-        } catch (err) {
-          console.error('Erro ao buscar cafeteria do usuário:', err);
-          return null;
-        }
+        } catch (err) { return null; }
       },
-
       buscarCafeteriaPorEmail: async (email) => {
         try {
           if (!email) return null;
@@ -2193,26 +242,16 @@ Coffeflow:
           if (!res.ok) return null;
           const data = await res.json();
           return data?.[0] ? { exists: true } : null;
-        } catch (err) {
-          console.error('Erro ao verificar cafeteria por e-mail:', err);
-          return null;
-        }
+        } catch (err) { return null; }
       },
-
       buscarCafeteriaPorPin: async (pin) => {
         const res = await fetch('/api/staff-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pin })
         });
-
         const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          console.error('Erro no staff-login:', res.status, data);
-          throw new Error(data?.error || `Erro HTTP ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(data?.error || `Erro HTTP ${res.status}`);
         const caf = data.cafeteria;
         return caf ? {
           id: caf.id,
@@ -2224,108 +263,65 @@ Coffeflow:
           email: caf.email || caf.dono_email
         } : null;
       },
-
       criarCafeteria: async (userId, email, nome, pin) => {
-        try {
-          const cleanEmail = (email || '').trim().toLowerCase();
-          if (!cleanEmail) throw new Error('E-mail obrigatório para criar a cafeteria.');
+        const cleanEmail = (email || '').trim().toLowerCase();
+        const agora = new Date();
+        const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
+        const payload = {
+          nome: nome || 'CoffeeFlow',
+          pin_equipe: pin || gerarPinAleatorio(),
+          email: cleanEmail,
+          dono_email: cleanEmail,
+          plano_ativo: true,
+          data_inscricao: agora.toISOString(),
+          data_expiracao: dataExpiracao.toISOString()
+        };
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (userId) payload.user_id = userId;
 
-          const agora = new Date();
-          const dataExpiracao = new Date(agora.getTime() + 15 * 24 * 60 * 60 * 1000);
-
-          const payload = {
-            nome: nome || 'CoffeeFlow',
-            pin_equipe: pin || gerarPinAleatorio(),
-            email: cleanEmail,
-            dono_email: cleanEmail,
-            plano_ativo: true,
-            data_inscricao: agora.toISOString(),
-            data_expiracao: dataExpiracao.toISOString()
-          };
-
-          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-          if (sessionError) throw sessionError;
-
-          if (!session?.access_token) {
-            throw new Error('Sessão de usuário não encontrada.');
-          }
-
-          if (userId) {
-            payload.user_id = userId;
-          }
-
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
-            method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const responseText = await res.text();
-          if (!res.ok) {
-            console.error('Erro ao criar cafeteria:', responseText);
-            throw new Error(`Não foi possível criar a cafeteria. ${responseText}`);
-          }
-
-          const data = JSON.parse(responseText);
-          if (!Array.isArray(data) || !data[0]) {
-            throw new Error('O Supabase não retornou a cafeteria criada.');
-          }
-          return data[0];
-        } catch (err) {
-          console.error('Erro em criarCafeteria:', err);
-          throw err;
-        }
+        const res = await fetch(`${API_URL}/rest/v1/cafeterias`, {
+          method: 'POST',
+          headers: {
+            'apikey': API_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await res.text();
+        if (!res.ok) throw new Error(`Não foi possível criar a cafeteria. ${responseText}`);
+        const data = JSON.parse(responseText);
+        return data[0];
       },
-
       atualizarPin: async (cafeteriaId, novoPin) => {
         if (!cafeteriaId) return false;
         try {
           const accessToken = await getAccessToken();
           const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteriaId)}`, {
             method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ pin_equipe: novoPin })
           });
           return res.ok;
-        } catch (err) {
-          return false;
-        }
+        } catch (err) { return false; }
       },
-
       atualizarEmailCafeteria: async (cafeteriaId, novoEmail) => {
         try {
           const email = novoEmail.trim().toLowerCase();
-          if (!email) throw new Error('Informe um e-mail válido.');
-
           const accessToken = await getAccessToken();
           const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteriaId)}`, {
             method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
             body: JSON.stringify({ email, dono_email: email })
           });
-
           if (!res.ok) throw new Error('Erro ao alterar o e-mail.');
           return { success: true, email };
         } catch (error) {
-          console.error('Erro ao alterar e-mail:', error);
-          return { success: false, error: error.message || 'Erro ao alterar o e-mail.' };
+          return { success: false, error: error.message };
         }
       },
-
       buscarProdutos: async (cafeteriaId) => {
         try {
           if (!cafeteriaId) return [];
@@ -2334,36 +330,16 @@ Coffeflow:
           });
           if (!res.ok) return [];
           return await res.json();
-        } catch (err) {
-          return [];
-        }
+        } catch (err) { return []; }
       },
-
       salvarProduto: async (produto) => {
         try {
-          if (!produto?.nome || !produto.nome.trim()) {
-            throw new Error('Informe o nome do produto.');
-          }
-
-          if (
-            !Number.isFinite(Number(produto.preco)) ||
-            Number(produto.preco) < 0
-          ) {
-            throw new Error('Informe um preço válido.');
-          }
-
           let imagemUrl = produto.imagem || '';
-
           if (produto.arquivoImagem) {
-            imagemUrl = await uploadImagemProduto(
-              produto.arquivoImagem,
-              produto.cafeteria_id
-            );
+            imagemUrl = await uploadImagemProduto(produto.arquivoImagem, produto.cafeteria_id);
           }
-
           let accessToken = await getAccessToken();
           const isEdit = Boolean(produto.id);
-
           const payload = {
             id: isEdit ? produto.id : undefined,
             nome: produto.nome.trim(),
@@ -2373,109 +349,47 @@ Coffeflow:
             imagem: imagemUrl.trim(),
             disponivel: produto.disponivel !== false
           };
-
           let res = await fetch(`${APP_API_URL}/products`, {
             method: isEdit ? 'PATCH' : 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
             body: JSON.stringify(payload)
           });
-
           if (res.status === 401) {
             accessToken = await getAccessToken(true);
             res = await fetch(`${APP_API_URL}/products`, {
               method: isEdit ? 'PATCH' : 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-              },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
               body: JSON.stringify(payload)
             });
           }
-
           const data = await res.json().catch(() => ({}));
-
-          if (!res.ok) {
-            console.error('Erro da API de produtos:', res.status, data);
-
-            throw new Error(
-              data?.error ||
-              `Não foi possível ${isEdit ? 'atualizar' : 'salvar'} o produto.`
-            );
-          }
-
-          return {
-            success: true,
-            produto: data?.produto || null
-          };
-
+          if (!res.ok) throw new Error(data?.error || 'Erro ao salvar produto.');
+          return { success: true, produto: data?.produto || null };
         } catch (err) {
-          console.error('Erro em salvarProduto:', err);
-
-          return {
-            success: false,
-            error: err.message || 'Erro desconhecido ao salvar o produto.'
-          };
+          return { success: false, error: err.message };
         }
       },
-
       deletarProduto: async (id) => {
         try {
-          if (!id) {
-            throw new Error('ID do produto não informado.');
-          }
-
           let accessToken = await getAccessToken();
-
           let res = await fetch(`${APP_API_URL}/products`, {
             method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
             body: JSON.stringify({ id })
           });
-
           if (res.status === 401) {
             accessToken = await getAccessToken(true);
             res = await fetch(`${APP_API_URL}/products`, {
               method: 'DELETE',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-              },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
               body: JSON.stringify({ id })
             });
           }
-
-          const data = await res.json().catch(() => ({}));
-
-          if (!res.ok) {
-            console.error('Erro da API de produtos:', res.status, data);
-
-            throw new Error(
-              data?.error ||
-              'Não foi possível excluir o produto.'
-            );
-          }
-
-          return {
-            success: true
-          };
-
+          return { success: res.ok };
         } catch (err) {
-          console.error('Erro em deletarProduto:', err);
-
-          return {
-            success: false,
-            error: err.message ||
-              'Não foi possível excluir o produto.'
-          };
+          return { success: false, error: err.message };
         }
       },
-
       buscarPedidos: async (cafeteriaId) => {
         try {
           if (!cafeteriaId) return [];
@@ -2484,143 +398,67 @@ Coffeflow:
           });
           if (!res.ok) return [];
           return await res.json();
-        } catch (err) {
-          console.error('Erro ao buscar pedidos:', err);
-          return [];
-        }
+        } catch (err) { return []; }
       },
-
       criarPedido: async (pedido) => {
         try {
           const res = await fetch(`${API_URL}/rest/v1/pedidos`, {
             method: 'POST',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
             body: JSON.stringify(pedido)
           });
           if (!res.ok) return null;
           const data = await res.json();
           return data?.[0] || null;
-        } catch (err) {
-          console.error('Erro ao criar pedido:', err);
-          return null;
-        }
+        } catch (err) { return null; }
       },
-
       atualizarStatusPedido: async (id, status) => {
         try {
           const staffPin = localStorage.getItem('coffeeflow_staff_pin');
           const cafeteriaId = localStorage.getItem('coffeeflow_staff_cafeteria_id');
-
-          if (!staffPin || !cafeteriaId) {
-            throw new Error('Sessão da equipe não encontrada.');
-          }
-
           const res = await fetch('/api/orders', {
             method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-staff-pin': staffPin,
-              'x-cafeteria-id': cafeteriaId
-            },
-            body: JSON.stringify({
-              id: id,
-              status: status
-            })
+            headers: { 'Content-Type': 'application/json', 'x-staff-pin': staffPin, 'x-cafeteria-id': cafeteriaId },
+            body: JSON.stringify({ id, status })
           });
-
-          const data = await res.json().catch(() => ({}));
-
-          if (!res.ok) {
-            console.error('Erro da API:', data);
-            throw new Error(
-              data?.error || `Erro ao atualizar pedido (${res.status})`
-            );
-          }
-
-          return data?.success === true;
-
-        } catch (err) {
-          console.error('Erro ao atualizar status do pedido:', err);
-          return false;
-        }
+          return res.ok;
+        } catch (err) { return false; }
       }
     };
 
     const authService = {
       login: async (email, password) => {
         const cleanEmail = email.trim().toLowerCase();
-        if (!cleanEmail) throw new Error('Informe o seu e-mail.');
-        if (!password) throw new Error('Informe a sua palavra-passe.');
-
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email: cleanEmail,
-          password
-        });
-
-        if (error) {
-          throw new Error('E-mail ou palavra-passe incorretos.');
-        }
-
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password });
+        if (error) throw new Error('E-mail ou palavra-passe incorretos.');
         return { user: data.user, session: data.session };
       },
-
       signUp: async (email, password, nomeCafeteria) => {
         const cleanEmail = email.trim().toLowerCase();
-        if (!cleanEmail || !password) throw new Error('Preencha o e-mail e a palavra-passe.');
-
-        const cafeteriaExistente = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
-        if (cafeteriaExistente) {
-          throw new Error('Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a palavra-passe.');
-        }
-
-        const { data, error } = await supabaseClient.auth.signUp({
-          email: cleanEmail,
-          password
-        });
-
-        if (error) throw new Error(error.message || 'Erro ao criar conta.');
-
-        const userId = data?.user?.id || null;
-        if (!userId) throw new Error('A conta foi criada, mas o ID do usuário não foi retornado.');
-
+        const { data, error } = await supabaseClient.auth.signUp({ email: cleanEmail, password });
+        if (error) throw new Error(error.message);
+        const userId = data?.user?.id;
         const pinUnico = gerarPinAleatorio();
         const cafeteriaSalva = await supabaseService.criarCafeteria(userId, cleanEmail, nomeCafeteria, pinUnico);
-
         return { user: data.user, session: data.session, cafeteria: cafeteriaSalva };
       },
-
       recuperarSenha: async (email) => {
-        const cleanEmail = email.trim().toLowerCase();
-        if (!cleanEmail) throw new Error('Informe o e-mail da sua conta.');
-
         const redirectUrl = `${window.location.origin}${window.location.pathname}?reset=true`;
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: redirectUrl
-        });
-
-        if (error) {
-          throw new Error('Não foi possível enviar o e-mail de recuperação.');
-        }
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: redirectUrl });
+        if (error) throw new Error('Erro ao enviar e-mail de recuperação.');
         return true;
       }
     };
 
-    const INITIAL_CATEGORIES = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
+    const CATEGORIAS_PADRAO = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
 
     function App() {
       const urlInfo = getUrlParams();
       const isClientAccessFromQr = Boolean(urlInfo.cafeteriaId);
 
-      const [isResetPassword, setIsResetPassword] = useState(() => {
-        return urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery'
-          || Boolean(urlInfo.accessToken) || Boolean(urlInfo.code);
-      });
-
+      const [isResetPassword, setIsResetPassword] = useState(
+        urlInfo.isResetRoute || urlInfo.resetQuery || urlInfo.type === 'recovery' || Boolean(urlInfo.accessToken)
+      );
       const [newPassword, setNewPassword] = useState('');
       const [confirmNewPassword, setConfirmNewPassword] = useState('');
       const [resetPasswordError, setResetPasswordError] = useState('');
@@ -2629,33 +467,38 @@ Coffeflow:
 
       const [novoEmailInput, setNovoEmailInput] = useState('');
       const [emailEditando, setEmailEditando] = useState(false);
-
       const [confirmarExclusaoModal, setConfirmarExclusaoModal] = useState(false);
-      const [eliminandoConta, setEliminandoConta] = useState(false);
 
-      const [isStaffLogged, setIsStaffLogged] = useState(() => !isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
-      const [activeView, setActiveView] = useState(() => isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing'));
+      const [isStaffLogged, setIsStaffLogged] = useState(!isClientAccessFromQr && localStorage.getItem('coffeeflow_staff_session') === 'true');
+      const [activeView, setActiveView] = useState(
+        isClientAccessFromQr ? 'customer' : (localStorage.getItem('coffeeflow_staff_session') === 'true' ? 'staff_panel' : 'landing')
+      );
 
       const [cafeteria, setCafeteria] = useState(() => {
         const salva = localStorage.getItem('coffeeflow_cafeteria');
         if (salva) {
-          try { return JSON.parse(salva); } catch (err) {}
+          try { return JSON.parse(salva); } catch (e) {}
         }
-        return { 
-          id: urlInfo.cafeteriaId || 'caf_demo_01', 
-          nome: 'CoffeeFlow', 
-          pinEquipe: '123456', 
-          planoAtivo: true, 
-          donoEmail: '', 
+        return {
+          id: urlInfo.cafeteriaId || 'caf_demo_01',
+          nome: 'CoffeeFlow',
+          pinEquipe: '123456',
+          planoAtivo: true,
+          donoEmail: '',
           dataInscricao: new Date().toISOString(),
           dataExpiracao: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          isVitalicio: false 
+          isVitalicio: false
         };
       });
 
       const [produtos, setProdutos] = useState([]);
       const [pedidos, setPedidos] = useState([]);
       const [selectedMesaCliente, setSelectedMesaCliente] = useState(urlInfo.mesaNum || '1');
+      const [carrinho, setCarrinho] = useState([]);
+      const [pedidoEnviado, setPedidoEnviado] = useState(false);
+      const [notificacao, setNotificacao] = useState('');
+      const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
+      const [termoPesquisa, setTermoPesquisa] = useState('');
 
       const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
       const [adminEmailInput, setAdminEmailInput] = useState('');
@@ -2673,87 +516,32 @@ Coffeflow:
       const [devModalOpen, setDevModalOpen] = useState(false);
       const [devPinInput, setDevPinInput] = useState('');
       const [devError, setDevError] = useState('');
-
       const [confirmarNovoPinOpen, setConfirmarNovoPinOpen] = useState(false);
       const [gerandoPin, setGerandoPin] = useState(false);
-
-      const [carrinho, setCarrinho] = useState([]);
-      const [pedidoEnviado, setPedidoEnviado] = useState(false);
-      const [notificacao, setNotificacao] = useState('');
-      const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-      const [termoPesquisa, setTermoPesquisa] = useState('');
-      const [modalProduto, setModalProduto] = useState({ open: false, data: null });
-      const [produtoAtual, setProdutoAtual] = useState(null);
-
+      const [modalQrOpen, setModalQrOpen] = useState(false);
       const [mesaQr, setMesaQr] = useState('01');
       const [linkCopiado, setLinkCopiado] = useState(false);
-      const [modalQrOpen, setModalQrOpen] = useState(false);
-
-      const mudarModoAuth = (modo) => {
-        setAdminAuthMode(modo);
-        setAdminAuthError('');
-        setAdminAuthSuccess('');
-      };
-
-      const handleResetPassword = async (e) => {
-        e.preventDefault();
-        setResetPasswordError('');
-        setResetPasswordSuccess('');
-
-        if (newPassword.length < 6) {
-          setResetPasswordError('A palavra-passe deve ter pelo menos 6 caracteres.');
-          return;
-        }
-        if (newPassword !== confirmNewPassword) {
-          setResetPasswordError('As palavras-passe não coincidem.');
-          return;
-        }
-
-        try {
-          setLoadingResetPassword(true);
-          const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-          if (error) throw error;
-
-          await supabaseClient.auth.signOut();
-          localStorage.removeItem('coffeeflow_cafeteria');
-          localStorage.removeItem('coffeeflow_staff_session');
-          localStorage.removeItem('coffeeflow_staff_pin');
-          localStorage.removeItem('coffeeflow_staff_cafeteria_id');
-          window.history.replaceState({}, document.title, '/');
-
-          setIsResetPassword(false);
-          setAdminAuthMode('login');
-          setActiveView('admin_login');
-          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Faça login com a nova palavra-passe.');
-        } catch (error) {
-          setResetPasswordError(error.message || 'Não foi possível alterar a palavra-passe.');
-        } finally {
-          setLoadingResetPassword(false);
-        }
-      };
+      const [modalProduto, setModalProduto] = useState({ open: false, data: null });
+      const [produtoAtual, setProdutoAtual] = useState(null);
 
       const planoEstaValido = (caf) => {
         if (!caf) return false;
         if (caf.isVitalicio) return true;
-        if (!caf.planoAtivo) return false;
-        if (!caf.dataExpiracao) return false;
+        if (!caf.planoAtivo || !caf.dataExpiracao) return false;
         return new Date(caf.dataExpiracao) > new Date();
       };
+      const planoAindaValido = planoEstaValido(cafeteria);
 
       const calcularDiasRestantes = (dataExpiracao, isVitalicio = false) => {
         if (isVitalicio) return 9999;
         if (!dataExpiracao) return 0;
-        const diferenca = new Date(dataExpiracao).getTime() - Date.now();
-        if (diferenca <= 0) return 0;
-        return Math.ceil(diferenca / (1000 * 60 * 60 * 24));
+        const diff = new Date(dataExpiracao).getTime() - Date.now();
+        return diff <= 0 ? 0 : Math.ceil(diff / (1000 * 60 * 60 * 24));
       };
 
-      const planoAindaValido = planoEstaValido(cafeteria);
-
       useEffect(() => {
-        const idParaBuscar = urlInfo.cafeteriaId || cafeteria.id;
-        if (idParaBuscar && isClientAccessFromQr) {
-          supabaseService.buscarCafeteriaPorId(idParaBuscar).then(dados => {
+        if (urlInfo.cafeteriaId) {
+          supabaseService.buscarCafeteriaPorId(urlInfo.cafeteriaId).then(dados => {
             if (dados) {
               const eVitalicio = dados.data_expiracao && new Date(dados.data_expiracao).getFullYear() > 2090;
               setCafeteria({
@@ -2772,205 +560,54 @@ Coffeflow:
       }, [urlInfo.cafeteriaId]);
 
       useEffect(() => {
-        if (cafeteria && cafeteria.id) {
+        if (cafeteria?.id) {
           localStorage.setItem('coffeeflow_cafeteria', JSON.stringify(cafeteria));
         }
       }, [cafeteria]);
 
-      useEffect(() => {
-        if (isClientAccessFromQr || isResetPassword) return;
-
-        const processarSessaoAtiva = async (session) => {
-          if (session?.user?.id) {
-            currentAccessToken = session.access_token || null;
-            const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(session.user.id);
-            if (dadosCaf) {
-              const eVitalicio = dadosCaf.data_expiracao && new Date(dadosCaf.data_expiracao).getFullYear() > 2090;
-              setCafeteria({
-                id: dadosCaf.id,
-                nome: dadosCaf.nome,
-                pinEquipe: dadosCaf.pin_equipe,
-                planoAtivo: dadosCaf.plano_ativo === true,
-                donoEmail: dadosCaf.email || dadosCaf.dono_email,
-                dataInscricao: dadosCaf.data_inscricao || new Date().toISOString(),
-                dataExpiracao: dadosCaf.data_expiracao || null,
-                isVitalicio: eVitalicio
-              });
-              setIsLoggedInAdmin(true);
-              setActiveView(prev => prev === 'landing' || prev === 'admin_login' ? 'admin' : prev);
-            }
-          }
-        };
-
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-          if (session) processarSessaoAtiva(session);
-        });
-
-        const { data: { subscription } } =
-          supabaseClient.auth.onAuthStateChange((event, session) => {
-
-            currentAccessToken = session?.access_token || null;
-
-            if (session) {
-              processarSessaoAtiva(session);
-            } else if (event === 'SIGNED_OUT') {
-              currentAccessToken = null;
-              setIsLoggedInAdmin(false);
-            }
-          });
-
-        return () => subscription?.unsubscribe();
-      }, []);
-
-      const carregarDadosDoBanco = async () => {
-        if (cafeteria.id) {
+      const carregarDados = async () => {
+        if (cafeteria?.id) {
           const prods = await supabaseService.buscarProdutos(cafeteria.id);
-          if (prods) setProdutos(prods);
-
+          setProdutos(prods);
           if (isLoggedInAdmin || isStaffLogged) {
             const peds = await supabaseService.buscarPedidos(cafeteria.id);
-            if (peds) setPedidos(peds);
+            setPedidos(peds);
           }
         }
       };
 
       useEffect(() => {
-        carregarDadosDoBanco();
-      }, [cafeteria.id]);
+        carregarDados();
+      }, [cafeteria.id, isLoggedInAdmin, isStaffLogged]);
 
-      useEffect(() => {
-        let interval;
-        if (isStaffLogged && cafeteria.id) {
-          interval = setInterval(() => {
-            supabaseService.buscarPedidos(cafeteria.id).then(peds => {
-              if (peds) setPedidos(peds);
-            });
-          }, 4000);
-        }
-        return () => clearInterval(interval);
-      }, [isStaffLogged, cafeteria.id]);
+      const abrirPagamento = () => window.open(PAYMENT_LINK, '_blank');
 
-      const getUrlCardapioMesa = (numMesa) => {
-        const origin = window.location.origin;
-        const mesa = String(numMesa || '1').trim() || '1';
-        return `${origin}/menu/${encodeURIComponent(cafeteria.id)}?mesa=${encodeURIComponent(mesa)}`;
-      };
-
-      const linkAtualCardapio = getUrlCardapioMesa(mesaQr);
-
-      const copiarLinkCardapio = () => {
-        navigator.clipboard.writeText(linkAtualCardapio);
-        setLinkCopiado(true);
-        setTimeout(() => setLinkCopiado(false), 3000);
-      };
-
-      const solicitarNovoPin = () => setConfirmarNovoPinOpen(true);
-
-      const confirmarGerarNovoPin = async () => {
-        setGerandoPin(true);
-        const novoPin = gerarPinAleatorio();
-        const ok = await supabaseService.atualizarPin(cafeteria.id, novoPin);
-        if (ok) {
-          setCafeteria(prev => ({ ...prev, pinEquipe: novoPin }));
-          setNotificacao(`Novo PIN gerado com sucesso: ${novoPin}`);
-          setTimeout(() => setNotificacao(''), 4000);
-        } else {
-          setNotificacao('Não foi possível atualizar o PIN.');
-          setTimeout(() => setNotificacao(''), 4000);
-        }
-        setGerandoPin(false);
-        setConfirmarNovoPinOpen(false);
-      };
-
-      const cancelarNovoPin = () => setConfirmarNovoPinOpen(false);
-
-      const alterarEmailDaCafeteria = async (e) => {
-        e.preventDefault();
-        if (!novoEmailInput) return;
-        const res = await supabaseService.atualizarEmailCafeteria(cafeteria.id, novoEmailInput);
-        if (res.success) {
-          setCafeteria(prev => ({ ...prev, donoEmail: res.email }));
-          setNotificacao('E-mail atualizado com sucesso!');
-          setNovoEmailInput('');
-          setEmailEditando(false);
-          setTimeout(() => setNotificacao(''), 4000);
-        } else {
-          setNotificacao(res.error || 'Erro ao atualizar o e-mail.');
-          setTimeout(() => setNotificacao(''), 4000);
-        }
-      };
-
-      const executarExclusaoConta = async () => {
-        setEliminandoConta(true);
-        try {
-          await supabaseClient.auth.signOut();
-          setConfirmarExclusaoModal(false);
-          localStorage.clear();
-          window.location.href = '/';
-        } catch (error) {
-          console.error('Erro ao excluir conta:', error);
-          alert('Ocorreu um erro ao encerrar a sessão.');
-        } finally {
-          setEliminandoConta(false);
-        }
-      };
-
-      const handleAdminAuth = async (e) => {
+      const lidarLoginAdmin = async (e) => {
         e.preventDefault();
         setAdminAuthError('');
-        setAdminAuthSuccess('');
         setLoadingAuth(true);
-
         try {
-          if (adminAuthMode === 'forgot') {
-            if (!adminEmailInput) throw new Error('Introduza o e-mail associado à sua conta.');
-            await authService.recuperarSenha(adminEmailInput);
-            setAdminAuthSuccess('E-mail de redefinição enviado com sucesso!');
-          } else if (adminAuthMode === 'login') {
-            const { user, session } = await authService.login(
-              adminEmailInput,
-              adminPasswordInput
-            );
-
-            if (!session?.access_token) {
-              throw new Error(
-                'O login foi realizado, mas o Supabase não forneceu uma sessão válida.'
-              );
-            }
-
+          if (adminAuthMode === 'login') {
+            const { user, session } = await authService.login(adminEmailInput, adminPasswordInput);
             currentAccessToken = session.access_token;
-
-            const dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
-            let cafeteriaFinal = dadosCaf;
-
-            if (!cafeteriaFinal) {
-              try {
-                const novoPin = gerarPinAleatorio();
-                cafeteriaFinal = await supabaseService.criarCafeteria(user.id, user.email || adminEmailInput, 'CoffeeFlow', novoPin);
-              } catch (error) {
-                await supabaseClient.auth.signOut();
-                throw new Error('Conta existe, mas não foi possível criar a cafeteria.');
-              }
+            let dadosCaf = await supabaseService.buscarCafeteriaPorUserId(user.id);
+            if (!dadosCaf) {
+              dadosCaf = await supabaseService.criarCafeteria(user.id, adminEmailInput, 'CoffeeFlow', gerarPinAleatorio());
             }
-
-            const eVitalicio = cafeteriaFinal.data_expiracao && new Date(cafeteriaFinal.data_expiracao).getFullYear() > 2090;
             setIsLoggedInAdmin(true);
             setCafeteria({
-              id: cafeteriaFinal.id,
-              nome: cafeteriaFinal.nome,
-              pinEquipe: cafeteriaFinal.pin_equipe,
-              planoAtivo: cafeteriaFinal.plano_ativo === true,
-              donoEmail: cafeteriaFinal.email || cafeteriaFinal.dono_email || adminEmailInput,
-              dataInscricao: cafeteriaFinal.data_inscricao || new Date().toISOString(),
-              dataExpiracao: cafeteriaFinal.data_expiracao || null,
-              isVitalicio: eVitalicio
+              id: dadosCaf.id,
+              nome: dadosCaf.nome,
+              pinEquipe: dadosCaf.pin_equipe,
+              planoAtivo: dadosCaf.plano_ativo === true,
+              donoEmail: dadosCaf.email || adminEmailInput,
+              dataInscricao: dadosCaf.data_inscricao,
+              dataExpiracao: dadosCaf.data_expiracao
             });
             setActiveView('admin');
-          } else {
+          } else if (adminAuthMode === 'register') {
             const { cafeteria: novaCaf, session } = await authService.signUp(adminEmailInput, adminPasswordInput, nomeCafeteriaInput || 'CoffeeFlow');
-            if (session?.access_token) {
-              currentAccessToken = session.access_token;
-            }
+            currentAccessToken = session?.access_token;
             setIsLoggedInAdmin(true);
             setCafeteria({
               id: novaCaf.id,
@@ -2978,766 +615,481 @@ Coffeflow:
               pinEquipe: novaCaf.pin_equipe,
               planoAtivo: true,
               donoEmail: adminEmailInput,
-              dataInscricao: novaCaf.data_inscricao || new Date().toISOString(),
-              dataExpiracao: novaCaf.data_expiracao || null,
-              isVitalicio: false
+              dataInscricao: novaCaf.data_inscricao,
+              dataExpiracao: novaCaf.data_expiracao
             });
             setActiveView('admin');
+          } else {
+            await authService.recuperarSenha(adminEmailInput);
+            setAdminAuthSuccess('E-mail de recuperação enviado!');
           }
         } catch (err) {
-          setAdminAuthError(err.message || 'Erro na autenticação.');
+          setAdminAuthError(err.message);
         } finally {
           setLoadingAuth(false);
         }
       };
 
-      const handleDevBypass = async (e) => {
-        e.preventDefault();
-        setDevError('');
-
-        if (devPinInput.trim() !== '777888') {
-          setDevError('PIN de programador incorreto.');
-          return;
-        }
-
-        try {
-          const dataVitalicia = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString();
-          const accessToken = await getAccessToken();
-          const res = await fetch(`${API_URL}/rest/v1/cafeterias?id=eq.${encodeURIComponent(cafeteria.id)}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ plano_ativo: true, data_expiracao: dataVitalicia })
-          });
-
-          if (!res.ok) throw new Error('Erro ao atualizar licença.');
-
-          setCafeteria(prev => ({
-            ...prev,
-            planoAtivo: true,
-            dataExpiracao: dataVitalicia,
-            isVitalicio: true
-          }));
-
-          setDevModalOpen(false);
-          setDevPinInput('');
-          setNotificacao('Acesso Vitalício de Administrador Ativado!');
-          setTimeout(() => setNotificacao(''), 4000);
-        } catch (error) {
-          setDevError(error.message || 'Não foi possível ativar a licença.');
-        }
-      };
-
-      const handleLoginStaff = async (e) => {
+      const lidarLoginStaff = async (e) => {
         e.preventDefault();
         setPinError('');
         setLoadingPin(true);
-
         try {
           const caf = await supabaseService.buscarCafeteriaPorPin(pinInput);
           if (!caf) {
-            setPinError('PIN de acesso incorreto.');
-            setLoadingPin(false);
+            setPinError('PIN incorreto.');
             return;
           }
-
-          const eVitalicio = caf.data_expiracao && new Date(caf.data_expiracao).getFullYear() > 2090;
-
           setCafeteria({
             id: caf.id,
             nome: caf.nome,
             pinEquipe: caf.pin_equipe,
-            planoAtivo: caf.plano_ativo === true,
+            planoAtivo: caf.plano_ativo,
             donoEmail: caf.email,
-            dataInscricao: caf.data_inscricao || new Date().toISOString(),
-            dataExpiracao: caf.data_expiracao || null,
-            isVitalicio: eVitalicio
+            dataInscricao: caf.data_inscricao,
+            dataExpiracao: caf.data_expiracao
           });
-
           localStorage.setItem('coffeeflow_staff_session', 'true');
           localStorage.setItem('coffeeflow_staff_pin', pinInput.trim());
           localStorage.setItem('coffeeflow_staff_cafeteria_id', caf.id);
           setIsStaffLogged(true);
-          setPinInput('');
           setActiveView('staff_panel');
         } catch (err) {
-          console.error('Erro no acesso da equipe:', err);
-          setPinError(err.message || 'Não foi possível validar o PIN.');
+          setPinError(err.message);
         } finally {
           setLoadingPin(false);
         }
       };
 
-      const handleRemoverProduto = async (id) => {
-        if (!id) return;
-        if (!confirm('Deseja eliminar este item da ementa?')) return;
-
-        try {
-          const resultado = await supabaseService.deletarProduto(id);
-          if (!resultado?.success) throw new Error(resultado?.error || 'Erro ao eliminar.');
-
-          await carregarDadosDoBanco();
-          setNotificacao('Produto eliminado com sucesso!');
-          setTimeout(() => setNotificacao(''), 4000);
-        } catch (err) {
-          setNotificacao(err.message || 'Não foi possível eliminar o produto.');
-          setTimeout(() => setNotificacao(''), 4000);
-        }
-      };
-
-      const handleSalvarProduto = async (e) => {
-        e.preventDefault();
-
-        try {
-          const formData = new FormData(e.target);
-          const preco = parseFloat(formData.get('preco'));
-
-          const prodData = {
-            id: modalProduto.data?.id,
-            cafeteria_id: cafeteria.id,
-            nome: (formData.get('nome') || '').toString().trim(),
-            preco,
-            categoria: (formData.get('categoria') || 'Cafés').toString().trim(),
-            descricao: (formData.get('descricao') || '').toString().trim(),
-            imagem: produtoAtual?.imagem || modalProduto.data?.imagem || '',
-            arquivoImagem: produtoAtual?.arquivoImagem || null
-          };
-
-          const resultado = await supabaseService.salvarProduto(prodData);
-          if (!resultado?.success) throw new Error(resultado?.error);
-
-          await carregarDadosDoBanco();
-          setModalProduto({ open: false, data: null });
-          setProdutoAtual(null);
-          setNotificacao(modalProduto.data ? 'Produto atualizado com sucesso!' : 'Produto adicionado com sucesso!');
-          setTimeout(() => setNotificacao(''), 4000);
-        } catch (err) {
-          setNotificacao(err.message || 'Não foi possível guardar o produto.');
-          setTimeout(() => setNotificacao(''), 4000);
-        }
-      };
-
-      const atualizarStatusPedido = async (id, statusAtual) => {
-        const novoStatus = statusAtual === 'pendente'
-          ? 'em_preparo'
-          : 'entregue';
-
-        const sucesso = await supabaseService.atualizarStatusPedido(
-          id,
-          novoStatus
-        );
-
-        if (!sucesso) {
-          alert('Não foi possível atualizar o pedido. Tente novamente.');
-          return;
-        }
-
-        setPedidos(prevPedidos =>
-          prevPedidos.map(p =>
-            p.id === id
-              ? { ...p, status: novoStatus }
-              : p
-          )
-        );
-      };
-
-      const enviarPedidoCliente = async () => {
-        if (carrinho.length === 0) return;
-        const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-            
-        const pedidoData = {
-          cafeteria_id: cafeteria.id,
-          codigo_pedido: `CF-${Math.floor(100 + Math.random() * 900)}`,
-          mesa: selectedMesaCliente,
-          itens: carrinho.map(c => ({ nome: c.nome, qtd: c.qtd, preco: c.preco })),
-          total: total,
-          status: 'pendente',
-          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-
-        const criado = await supabaseService.criarPedido(pedidoData);
-        if (criado) {
-          setCarrinho([]);
-          setPedidoEnviado(true);
-          setNotificacao('Pedido enviado com sucesso!');
-          setTimeout(() => setNotificacao(''), 5000);
-        } else {
-          setNotificacao('Erro ao enviar pedido.');
-          setTimeout(() => setNotificacao(''), 5000);
-        }
-      };
-
-      const abrirPagamento = () => window.open(PAYMENT_LINK, '_blank');
-
-      const produtosFiltrados = produtos.filter(p => {
-        const bateCat = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
-        const bateNome = p.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
-        return bateCat && bateNome;
-      });
-
-      if (isResetPassword) {
-        return (
-          <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex items-center justify-center p-4">
-            <div className="max-w-md w-full p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-5 shadow-2xl">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl text-2xl">🔐</div>
-                <h2 className="text-xl font-bold text-white">Criar nova palavra-passe</h2>
-                <p className="text-xs text-slate-400">Escolha uma nova palavra-passe para a sua conta CoffeeFlow.</p>
-              </div>
-
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">Nova palavra-passe</label>
-                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Digite a nova palavra-passe" minLength={6} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-400 font-bold block mb-1">Confirmar palavra-passe</label>
-                  <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Digite novamente" minLength={6} required className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
-                </div>
-                {resetPasswordError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordError}</div>}
-                {resetPasswordSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordSuccess}</div>}
-                <button type="submit" disabled={loadingResetPassword} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
-                  {loadingResetPassword ? 'A alterar...' : 'Alterar palavra-passe'}
-                </button>
-              </form>
-            </div>
-          </div>
-        );
-      }
+      const linkAtualCardapio = `${window.location.origin}/menu/${encodeURIComponent(cafeteria.id)}?mesa=${encodeURIComponent(mesaQr)}`;
 
       return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col justify-between">
-          <div>
-            <header className="bg-slate-950 border-b border-slate-800 px-4 py-2.5 text-xs flex justify-between items-center sticky top-0 z-50">
-              <div className="flex items-center gap-2">
-                <div className="p-1 bg-amber-500 text-slate-950 rounded-lg font-black">☕</div>
-                <span className="font-extrabold text-white text-sm">{cafeteria.nome}</span>
+        <div className="min-h-screen bg-[var(--black)] text-[var(--cream)] font-[family-name:var(--sans)] flex flex-col justify-between selection:bg-[var(--gold)] selection:text-[var(--black)]">
+          
+          <!-- HEADER -->
+          <header class="fixed top-0 left-0 w-full h-[82px] z-[999] flex items-center bg-[rgba(21,21,21,0.78)] backdrop-blur-[18px] border-b border-[rgba(255,255,255,0.07)]">
+            <div class="container flex justify-between items-center">
+              <a href="#inicio" onClick={() => setActiveView(isClientAccessFromQr ? 'customer' : 'landing')} class="font-[family-name:var(--serif)] text-[34px] leading-[0.8] tracking-[0.04em]">
+                {cafeteria.nome}
+                <small class="block mt-[7px] font-[family-name:var(--sans)] text-[7px] tracking-[0.29em] uppercase text-[var(--gold-light)]">CoffeeFlow · Sistema Digital</small>
+              </a>
+
+              <div class="flex items-center gap-4">
+                {notificacao && (
+                  <div class="bg-[var(--gold)] text-[var(--black)] font-bold px-3 py-1 rounded-full text-xs animate-pulse">
+                    {notificacao}
+                  </div>
+                )}
+                {!isClientAccessFromQr && (
+                  <div class="flex items-center gap-3">
+                    {!isLoggedInAdmin && activeView !== 'admin_login' && (
+                      <button onClick={() => setActiveView('admin_login')} class="px-4 py-2 border border-[var(--gold)] text-[var(--cream)] text-xs uppercase tracking-wider hover:bg-[var(--gold)] hover:text-[var(--black)] transition">
+                        Área do Proprietário
+                      </button>
+                    )}
+                    {isLoggedInAdmin && (
+                      <button onClick={() => setActiveView('admin')} class="px-4 py-2 bg-[var(--gold)] text-[var(--black)] text-xs uppercase tracking-wider font-bold">
+                        Painel de Gestão
+                      </button>
+                    )}
+                    <button onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} class="px-4 py-2 border border-[var(--line)] text-xs uppercase tracking-wider hover:border-[var(--gold)] transition">
+                      Equipa (PIN)
+                    </button>
+                  </div>
+                )}
               </div>
+            </div>
+          </header>
 
-              {notificacao && (
-                <div className="bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded-full text-xs animate-bounce shadow-lg shadow-amber-500/20">
-                  {notificacao}
-                </div>
-              )}
+          <main class="pt-[82px] flex-1">
 
-              {!isClientAccessFromQr && (
-                <div className="flex items-center gap-2">
-                  {!isLoggedInAdmin && (
-                    <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
-                      Login Proprietário
-                    </button>
-                  )}
-                  {isLoggedInAdmin && (
-                    <button onClick={() => setActiveView('admin')} className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg font-bold hover:bg-amber-400 transition">
-                      Painel Gestão
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => setActiveView(isStaffLogged ? 'staff_panel' : 'staff_login')} 
-                    className={`px-3 py-1 border border-slate-700 rounded-lg font-bold transition ${activeView === 'staff_login' || activeView === 'staff_panel' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
-                  >
-                    Acesso Equipe (PIN)
-                  </button>
-                </div>
-              )}
-            </header>
-
+            {/* LANDING VIEW */}
             {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
-              <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
-                <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-                  Acelere o fluxo de pedidos da sua cafetaria por <span className="text-amber-500">Assinatura Mensal</span>
-                </h1>
-                <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                  Sistema leve para pedidos por mesa via QR Code isolado por estabelecimento e com acesso operacional rápido por PIN.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                  <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition">
-                    Assinar e Ativar Licença
-                  </button>
-                  <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition">
-                    Criar Conta de Proprietário
-                  </button>
+              <section class="hero min-h-[calc(100vh-82px)] relative flex items-center overflow-hidden" style={{background: 'linear-gradient(90deg, rgba(10,10,10,0.94), rgba(10,10,10,0.70) 45%, rgba(10,10,10,0.20)), url("https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=2200&q=90") center/cover'}}>
+                <div class="container relative z-[2] py-20 max-w-[800px] ml-[max(24px,calc((100% - 1180px)/2))]">
+                  <div class="flex items-center gap-[13px] text-[var(--gold-light)] text-[10px] tracking-[0.24em] uppercase mb-6 before:content-[''] before:w-[42px] before:h-[1px] before:bg-[var(--gold)]">
+                    Gestão Inteligente para Cafetarias
+                  </div>
+                  <h1 class="font-[family-name:var(--serif)] text-[clamp(50px,8vw,100px)] leading-[0.85] font-medium tracking-[-0.04em]">
+                    Acelere o fluxo de <span class="text-[var(--gold-light)] italic">pedidos.</span>
+                  </h1>
+                  <p class="max-w-[550px] mt-[34px] text-[rgba(243,239,231,0.72)] text-[15px] leading-[1.9]">
+                    Simplifique o atendimento na sua cafetaria com ementas digitais por QR Code por mesa, cozinha integrada em tempo real e um sistema leve.
+                  </p>
+                  <div class="flex flex-wrap gap-3 mt-[38px]">
+                    <button onClick={abrirPagamento} class="min-h-[50px] px-[25px] inline-flex items-center justify-center bg-[var(--gold)] text-[var(--black)] border border-[var(--gold)] text-[10px] font-bold tracking-[0.14em] uppercase hover:bg-[var(--gold-light)] transition">
+                      Assinar Mensalidade
+                    </button>
+                    <button onClick={() => setActiveView('admin_login')} class="min-h-[50px] px-[25px] inline-flex items-center justify-center bg-transparent text-[var(--cream)] border border-[var(--line)] text-[10px] font-bold tracking-[0.14em] uppercase hover:bg-[rgba(168,138,90,0.15)] transition">
+                      Entrar na Conta
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </section>
             )}
 
+            {/* ADMIN LOGIN VIEW */}
             {activeView === 'admin_login' && !isLoggedInAdmin && (
-              <div className="max-w-md mx-auto my-12 p-6 bg-slate-800 border border-slate-700 rounded-2xl space-y-4 shadow-2xl">
-                <h2 className="text-xl font-bold text-center">
-                  {adminAuthMode === 'login' && 'Entrar no CoffeeFlow'}
-                  {adminAuthMode === 'register' && 'Registar Cafetaria'}
-                  {adminAuthMode === 'forgot' && 'Recuperar Palavra-passe'}
-                </h2>
-                    
-                <div className="flex bg-slate-900 p-1 rounded-xl text-xs font-bold gap-1">
-                  <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Login</button>
-                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Registar</button>
-                  <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>Recuperar</button>
+              <div class="max-w-md mx-auto my-20 p-8 bg-[var(--black2)] border border-[var(--line)] rounded-2xl space-y-6">
+                <div class="text-center">
+                  <h2 class="font-[family-name:var(--serif)] text-4xl mb-2">Portal do Proprietário</h2>
+                  <p class="text-xs text-[var(--muted)]">Gerencie os produtos, licença e acessos do CoffeeFlow.</p>
+                </div>
+                
+                <div class="flex bg-[var(--black)] p-1 rounded-xl text-xs font-bold gap-1 border border-[var(--line)]">
+                  <button onClick={() => setAdminAuthMode('login')} class={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'login' ? 'bg-[var(--gold)] text-[var(--black)]' : 'text-[var(--muted)]'}`}>Entrar</button>
+                  <button onClick={() => setAdminAuthMode('register')} class={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'register' ? 'bg-[var(--gold)] text-[var(--black)]' : 'text-[var(--muted)]'}`}>Criar Conta</button>
+                  <button onClick={() => setAdminAuthMode('forgot')} class={`flex-1 py-2 rounded-lg transition ${adminAuthMode === 'forgot' ? 'bg-[var(--gold)] text-[var(--black)]' : 'text-[var(--muted)]'}`}>Recuperar</button>
                 </div>
 
-                <form onSubmit={handleAdminAuth} className="space-y-3">
+                <form onSubmit={lidarLoginAdmin} class="space-y-4">
                   {adminAuthMode === 'register' && (
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
-                      <input type="text" placeholder="Ex: CoffeeFlow" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                      <label class="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1">Nome da Cafetaria</label>
+                      <input type="text" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] focus:border-[var(--gold)] outline-none" placeholder="Ex: Café Central" />
                     </div>
                   )}
-
                   <div>
-                    <label className="text-[11px] text-slate-400 font-bold block mb-1">E-mail</label>
-                    <input type="email" placeholder="seu-email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                    <label class="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1">E-mail</label>
+                    <input type="email" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] focus:border-[var(--gold)] outline-none" placeholder="seu@email.com" />
                   </div>
-
                   {adminAuthMode !== 'forgot' && (
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Palavra-passe</label>
-                      <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500" />
+                      <label class="text-[10px] uppercase tracking-wider text-[var(--muted)] block mb-1">Palavra-passe</label>
+                      <input type="password" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] focus:border-[var(--gold)] outline-none" placeholder="••••••••" />
                     </div>
                   )}
 
-                  {adminAuthError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{adminAuthError}</div>}
-                  {adminAuthSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">{adminAuthSuccess}</div>}
+                  {adminAuthError && <div class="bg-red-950/40 border border-red-500/30 text-red-400 p-3 rounded text-xs">{adminAuthError}</div>}
+                  {adminAuthSuccess && <div class="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 p-3 rounded text-xs">{adminAuthSuccess}</div>}
 
-                  <button type="submit" disabled={loadingAuth} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm hover:bg-amber-400 transition">
-                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : (adminAuthMode === 'register' ? 'Criar Conta' : 'Enviar Link de Recuperação'))}
+                  <button type="submit" disabled={loadingAuth} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider hover:bg-[var(--gold-light)] transition">
+                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar' : adminAuthMode === 'register' ? 'Registar Cafetaria' : 'Enviar Recuperação')}
                   </button>
                 </form>
               </div>
             )}
 
-            {activeView === 'admin' && isLoggedInAdmin && (
-              <div className="max-w-4xl mx-auto p-6 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold">{cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">ID da Cafetaria: <span className="font-mono text-amber-400">{cafeteria.id}</span></p>
-                  </div>
-                  <button onClick={async () => { await supabaseClient.auth.signOut(); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300">
-                    Sair da Conta
+            {/* STAFF LOGIN VIEW */}
+            {activeView === 'staff_login' && !isStaffLogged && (
+              <div class="max-w-md mx-auto my-20 p-8 bg-[var(--black2)] border border-[var(--line)] rounded-2xl space-y-6 text-center">
+                <h2 class="font-[family-name:var(--serif)] text-4xl">Acesso Equipe / Balcão</h2>
+                <p class="text-xs text-[var(--muted)]">Insira o PIN de 6 dígitos fornecido pela gerência para abrir o painel operacional.</p>
+                <form onSubmit={lidarLoginStaff} class="space-y-4">
+                  <input type="password" maxLength="6" value={pinInput} onChange={e => setPinInput(e.target.value)} placeholder="• • • • • •" class="w-full p-4 text-center tracking-[1em] text-2xl bg-[var(--black)] border border-[var(--line)] rounded text-[var(--cream)] focus:border-[var(--gold)] outline-none" required />
+                  {pinError && <div class="bg-red-950/40 text-red-400 p-2 rounded text-xs">{pinError}</div>}
+                  <button type="submit" disabled={loadingPin} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">
+                    {loadingPin ? 'A verificar...' : 'Entrar no Balcão'}
                   </button>
+                </form>
+              </div>
+            )}
+
+            {/* ADMIN PANEL */}
+            {activeView === 'admin' && isLoggedInAdmin && (
+              <div class="container py-12 space-y-8">
+                <div class="flex justify-between items-center border-b border-[var(--line)] pb-6">
+                  <div>
+                    <h2 class="font-[family-name:var(--serif)] text-4xl">{cafeteria.nome}</h2>
+                    <p class="text-xs text-[var(--muted)] mt-1">ID: <span class="font-mono text-[var(--gold-light)]">{cafeteria.id}</span></p>
+                  </div>
+                  <button onClick={() => { setIsLoggedInAdmin(false); setActiveView('landing'); }} class="px-4 py-2 border border-[var(--line)] text-xs uppercase tracking-wider hover:bg-[var(--gold)] hover:text-[var(--black)]">Terminar Sessão</button>
                 </div>
 
                 {!planoAindaValido ? (
-                  <div className="bg-amber-500/10 border border-amber-500/30 p-8 rounded-3xl text-center space-y-4">
-                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl font-black">🔒</div>
-                    <h3 className="text-xl font-bold text-white">Assinatura Pendente ou Expirada</h3>
-                    <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                      <button onClick={abrirPagamento} className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
-                        Pagar / Renovar 30 Dias
-                      </button>
-                      <button onClick={() => setDevModalOpen(true)} className="text-slate-500 hover:text-slate-400 text-[11px] underline">
-                        Acesso Programador / VIP
-                      </button>
-                    </div>
+                  <div class="bg-[var(--black2)] border border-[var(--gold)] p-8 rounded-2xl text-center space-y-4">
+                    <h3 class="font-[family-name:var(--serif)] text-3xl text-[var(--gold-light)]">Assinatura Expirada ou Inativa</h3>
+                    <p class="text-xs text-[var(--muted)] max-w-md mx-auto">Renove a sua assinatura mensal para continuar a aceitar pedidos e manter o cardápio ativo.</p>
+                    <button onClick={abrirPagamento} class="px-6 py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">Renovar 30 Dias</button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {!cafeteria.isVitalicio && (
-                      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-bold">Período de Teste / Assinatura</span>
-                        <span className="text-amber-400 font-bold">{calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes</span>
-                      </div>
-                    )}
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">PIN de Acesso da Equipe</h3>
-                        <p className="text-xs text-slate-400">Código de 6 dígitos utilizado no balcão e cozinha.</p>
-                        <div className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-slate-700">
-                          <span className="text-2xl font-mono font-bold text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
-                          <button onClick={solicitarNovoPin} className="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg border border-slate-600 hover:bg-slate-700">Gerar Novo</button>
+                  <div class="space-y-8">
+                    <div class="grid md:grid-cols-2 gap-6">
+                      <div class="bg-[var(--black2)] p-6 border border-[var(--line)] rounded-2xl space-y-4">
+                        <h3 class="font-[family-name:var(--serif)] text-2xl">PIN Operacional da Equipa</h3>
+                        <p class="text-xs text-[var(--muted)]">Código de acesso rápido para balcão e cozinha.</p>
+                        <div class="flex items-center justify-between p-4 bg-[var(--black)] border border-[var(--line)] rounded">
+                          <span class="font-mono text-xl tracking-widest text-[var(--gold-light)]">{cafeteria.pinEquipe}</span>
+                          <button onClick={async () => {
+                            const novo = gerarPinAleatorio();
+                            if (await supabaseService.atualizarPin(cafeteria.id, novo)) {
+                              setCafeteria(p => ({...p, pinEquipe: novo}));
+                              setNotificacao('PIN atualizado com sucesso!');
+                              setTimeout(() => setNotificacao(''), 3000);
+                            }
+                          }} class="px-3 py-1.5 border border-[var(--line)] text-[10px] uppercase">Gerar Novo</button>
                         </div>
                       </div>
 
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                        <h3 className="font-bold text-lg">Estado da Licença</h3>
-                        <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
-                          <span className="text-slate-400">Estado:</span>
-                          <span className="text-emerald-400 font-bold">
-                            {cafeteria.isVitalicio ? '✓ Ativa (Vitalícia Admin)' : `✓ Ativa (${calcularDiasRestantes(cafeteria.dataExpiracao)} dias restantes)`}
-                          </span>
+                      <div class="bg-[var(--black2)] p-6 border border-[var(--line)] rounded-2xl space-y-4">
+                        <h3 class="font-[family-name:var(--serif)] text-2xl">Estado da Licença</h3>
+                        <div class="p-3 bg-[var(--black)] border border-[var(--line)] rounded flex justify-between items-center text-xs">
+                          <span class="text-[var(--muted)]">Subscrição:</span>
+                          <span class="text-emerald-400 font-bold">Ativa ({calcularDiasRestantes(cafeteria.dataExpiracao)} dias restantes)</span>
                         </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => setModalQrOpen(true)} className="flex-1 py-3 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-400 transition">📱 QR Code Mesas</button>
-                          {!cafeteria.isVitalicio && calcularDiasRestantes(cafeteria.dataExpiracao) <= 15 && (
-                            <button
-                              onClick={abrirPagamento}
-                              className="px-4 py-3 bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-xl text-xs hover:bg-slate-600 transition"
-                            >
-                              💳 Renovar
-                            </button>
-                          )}
-                        </div>
+                        <button onClick={() => setModalQrOpen(true)} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">Gerador de QR Code de Mesas</button>
                       </div>
                     </div>
 
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-lg">Gestão da Ementa</h3>
-                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">
-                          + Adicionar Item
-                        </button>
+                    <div class="bg-[var(--black2)] p-6 border border-[var(--line)] rounded-2xl space-y-4">
+                      <div class="flex justify-between items-center">
+                        <h3 class="font-[family-name:var(--serif)] text-2xl">Ementa / Produtos</h3>
+                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} class="px-4 py-2 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">+ Adicionar Item</button>
                       </div>
-                      <div className="space-y-2">
+                      <div class="space-y-3">
                         {produtos.map(p => (
-                          <div key={p.id} className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
-                            <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-800 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-white truncate">{p.nome}</p>
-                              <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
+                          <div key={p.id} class="p-3 bg-[var(--black)] border border-[var(--line)] rounded flex items-center justify-between gap-4 text-xs">
+                            <img src={p.imagem || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=100&q=80'} class="w-12 h-12 object-cover rounded" />
+                            <div class="flex-1">
+                              <p class="font-bold">{p.nome}</p>
+                              <p class="text-[var(--gold-light)] font-mono">{formatarPreco(p.preco)}</p>
                             </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-600 font-bold">Editar</button>
-                              <button onClick={() => handleRemoverProduto(p.id)} className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg border border-rose-500/30 font-bold">Eliminar</button>
+                            <div class="flex gap-2">
+                              <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} class="px-3 py-1.5 border border-[var(--line)]">Editar</button>
+                              <button onClick={async () => {
+                                if (confirm('Eliminar produto?')) {
+                                  await supabaseService.deletarProduto(p.id);
+                                  carregarDados();
+                                }
+                              }} class="px-3 py-1.5 bg-red-950/40 text-red-400 border border-red-500/20">Eliminar</button>
                             </div>
                           </div>
                         ))}
                       </div>
                     </div>
-
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                      <h3 className="font-bold text-lg">Definições da Conta e Acesso</h3>
-                      <p className="text-xs text-slate-400">Altere o e-mail de acesso exclusivo para esta cafeteria ou elimine a conta permanentemente.</p>
-                      
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
-                        <div className="flex justify-between items-center text-xs">
-                          <div>
-                            <span className="text-slate-400 block">E-mail atual da Cafetaria:</span>
-                            <span className="font-bold text-white text-sm">{cafeteria.donoEmail || 'Não definido'}</span>
-                          </div>
-                          <button onClick={() => setEmailEditando(!emailEditando)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg font-bold text-amber-400">
-                            {emailEditando ? 'Cancelar' : 'Alterar E-mail'}
-                          </button>
-                        </div>
-
-                        {emailEditando && (
-                          <form onSubmit={alterarEmailDaCafeteria} className="pt-2 border-t border-slate-800 flex gap-2">
-                            <input type="email" placeholder="Novo e-mail de acesso" value={novoEmailInput} onChange={e => setNovoEmailInput(e.target.value)} required className="flex-1 p-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
-                            <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs">Salvar</button>
-                          </form>
-                        )}
-                      </div>
-
-                      <div className="pt-2 flex justify-between items-center border-t border-slate-700/60">
-                        <div>
-                          <p className="text-xs font-bold text-rose-400">Zona de Perigo</p>
-                          <p className="text-[11px] text-slate-400">Apagar permanentemente todos os dados e acesso desta cafeteria.</p>
-                        </div>
-                        <button onClick={() => setConfirmarExclusaoModal(true)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/40 rounded-xl text-xs font-bold transition">
-                          Excluir Conta
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>
             )}
 
+            {/* STAFF PANEL */}
             {activeView === 'staff_panel' && isStaffLogged && (
-              <div className="max-w-6xl mx-auto p-4 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-4 flex-wrap gap-2">
+              <div class="container py-12 space-y-8">
+                <div class="flex justify-between items-center border-b border-[var(--line)] pb-6">
                   <div>
-                    <h2 className="text-xl font-bold">Balcão & Cozinha - {cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400">Modo operacional ativo</p>
+                    <h2 class="font-[family-name:var(--serif)] text-4xl">Balcão & Cozinha</h2>
+                    <p class="text-xs text-[var(--muted)]">Modo operacional em tempo real</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setModalQrOpen(true)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl">📱 QR Code Mesas</button>
-                    <button onClick={() => { localStorage.removeItem('coffeeflow_staff_session'); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsStaffLogged(false); setActiveView('staff_login'); }} className="px-3 py-2 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold">Sair do Balcão</button>
-                  </div>
+                  <button onClick={() => { setIsStaffLogged(false); localStorage.removeItem('coffeeflow_staff_session'); setActiveView('staff_login'); }} class="px-4 py-2 border border-[var(--line)] text-xs uppercase">Sair do Balcão</button>
                 </div>
 
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Pedidos Pendentes ({pedidos.filter(p => p.status !== 'entregue').length})</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div class="space-y-4">
+                    <h3 class="font-[family-name:var(--serif)] text-2xl text-[var(--gold-light)]">Pedidos Ativos</h3>
                     {pedidos.filter(p => p.status !== 'entregue').length === 0 ? (
-                      <div className="bg-slate-800/60 p-6 rounded-xl text-center text-xs text-slate-400 border border-slate-700/60">Sem pedidos pendentes de momento.</div>
+                      <p class="text-xs text-[var(--muted)] p-6 bg-[var(--black2)] border border-[var(--line)] rounded">Sem pedidos pendentes no momento.</p>
                     ) : (
                       pedidos.filter(p => p.status !== 'entregue').map(p => (
-                        <div key={p.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 shadow-md">
-                          <div className="flex justify-between font-bold text-xs border-b border-slate-700 pb-2">
-                            <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Mesa {p.mesa}</span>
-                            <span className="text-slate-400 font-mono">{p.hora}</span>
-                            <span className="text-amber-400 font-mono text-sm">{formatarPreco(p.total)}</span>
+                        <div key={p.id} class="p-4 bg-[var(--black2)] border border-[var(--line)] rounded space-y-3 text-xs">
+                          <div class="flex justify-between font-bold border-b border-[var(--line)] pb-2">
+                            <span>Mesa {p.mesa}</span>
+                            <span class="text-[var(--gold-light)] font-mono">{formatarPreco(p.total)}</span>
                           </div>
-                          <div className="text-xs text-slate-300 space-y-1">
+                          <div class="space-y-1">
                             {p.itens.map((it, idx) => (
-                              <div key={idx} className="flex justify-between">
+                              <div key={idx} class="flex justify-between text-[var(--muted)]">
                                 <span>{it.qtd}x {it.nome}</span>
-                                <span className="text-slate-400">{formatarPreco(it.preco * it.qtd)}</span>
                               </div>
                             ))}
                           </div>
-                          <button
-                            onClick={() => atualizarStatusPedido(p.id, p.status)}
-                            className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition"
-                          >
-                            {p.status === 'pendente'
-                              ? 'Iniciar Preparação'
-                              : '✓ Concluir / Marcar Entregue'}
+                          <button onClick={async () => {
+                            await supabaseService.atualizarStatusPedido(p.id, p.status === 'pendente' ? 'em_preparo' : 'entregue');
+                            carregarDados();
+                          }} class="w-full py-2 bg-[var(--gold)] text-[var(--black)] font-bold uppercase tracking-wider">
+                            {p.status === 'pendente' ? 'Iniciar Preparo' : 'Concluir Pedido'}
                           </button>
                         </div>
                       ))
                     )}
                   </div>
-
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-amber-400 text-sm">Ementa Ativa ({produtos.length} itens)</h3>
-                    <p className="text-[11px] text-slate-400">Ementa — somente visualização. A edição da ementa está disponível no painel do proprietário.</p>
-                    {produtos.map(p => (
-                      <div key={p.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs gap-3">
-                        <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-slate-900 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white truncate">{p.nome}</p>
-                          <p className="text-amber-400 font-bold font-mono">{formatarPreco(p.preco)}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="text-[10px] text-slate-500 font-semibold">
-                            Apenas visualização
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             )}
 
-            {activeView === 'staff_login' && !isStaffLogged && (
-              <div className="max-w-md mx-auto my-12 p-6 sm:p-8 bg-slate-800 border border-slate-700 rounded-3xl text-center space-y-6 shadow-2xl">
-                <div className="inline-flex items-center justify-center p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl mb-1">
-                  <span className="text-2xl">🔑</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Acesso Operacional por PIN</h3>
-                  <p className="text-xs text-slate-400 mt-1">Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.</p>
-                </div>
-
-                <form onSubmit={handleLoginStaff} className="space-y-4">
-                  <div>
-                    <input type="password" maxLength={6} placeholder="••••••" value={pinInput} onChange={e => setPinInput(e.target.value)} className="w-full text-center text-3xl font-mono tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-2xl text-amber-400 focus:outline-none focus:border-amber-500 shadow-inner" autoFocus />
-                    <p className="text-[11px] text-slate-500 mt-2">O PIN é gerado pelo proprietário no Painel de Gestão.</p>
-                  </div>
-                  {pinError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{pinError}</div>}
-                  <button type="submit" disabled={loadingPin} className="w-full py-3.5 bg-amber-500 text-slate-950 font-extrabold rounded-2xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/10">
-                    {loadingPin ? 'A validar PIN...' : 'Entrar no Balcão & Cozinha'}
-                  </button>
-                </form>
-
-                <div className="pt-2 border-t border-slate-700/60 flex justify-between items-center text-xs">
-                  <button onClick={() => setActiveView('landing')} className="text-slate-400 hover:text-white transition">← Voltar</button>
-                  <button onClick={() => { mudarModoAuth('login'); setActiveView('admin_login'); }} className="text-amber-400 hover:underline font-semibold">É o proprietário? Faça login</button>
-                </div>
-              </div>
-            )}
-
-            {activeView === 'customer' && (
-              <div className="max-w-md mx-auto p-4 space-y-4 pb-28">
-                <div className="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 text-xs flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-white text-sm">{cafeteria.nome}</h3>
-                    <p className="text-amber-400 font-bold mt-0.5">Mesa / Posição: {selectedMesaCliente}</p>
-                  </div>
-                  <select value={selectedMesaCliente} onChange={e => setSelectedMesaCliente(e.target.value)} className="bg-slate-800 text-amber-400 font-bold rounded-lg px-2 py-1 text-xs border border-slate-700">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n.toString()}>Mesa {n}</option>)}
-                  </select>
+            {/* CUSTOMER EMENTA / MENU VIEW */}
+            {(activeView === 'customer' || isClientAccessFromQr) && (
+              <div class="container py-12 space-y-8">
+                <div class="text-center space-y-3 border-b border-[var(--line)] pb-8">
+                  <span class="text-[10px] tracking-[0.2em] uppercase text-[var(--gold-light)]">Ementa Digital · Mesa {selectedMesaCliente}</span>
+                  <h2 class="font-[family-name:var(--serif)] text-5xl">{cafeteria.nome}</h2>
+                  <p class="text-xs text-[var(--muted)]">Escolha os seus itens favoritos e faça o pedido diretamente para a mesa.</p>
                 </div>
 
-                {pedidoEnviado && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl text-center">
-                    <p className="font-bold text-sm">Pedido enviado para a cozinha!</p>
-                    <p className="text-xs text-emerald-300/80 mt-1">Aguarde na Mesa {selectedMesaCliente}.</p>
-                  </div>
-                )}
+                <div class="flex gap-2 overflow-x-auto scrollbar-none pb-2">
+                  {CATEGORIAS_PADRAO.map(cat => (
+                    <button key={cat} onClick={() => setCategoriaAtiva(cat)} class={`px-4 py-2 text-xs uppercase tracking-wider whitespace-nowrap border transition ${categoriaAtiva === cat ? 'bg-[var(--gold)] text-[var(--black)] border-[var(--gold)]' : 'border-[var(--line)] text-[var(--muted)]'}`}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
 
-                <div className="space-y-3">
-                  {produtosFiltrados.map(prod => (
-                    <div key={prod.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-3">
-                      {prod.imagem && (
-                        <img
-                          src={prod.imagem}
-                          alt={prod.nome}
-                          className="w-full h-48 object-cover rounded-xl"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-white truncate">{prod.nome}</h4>
-                        <p className="text-xs text-slate-400 line-clamp-1">{prod.descricao}</p>
-                        <p className="text-xs font-bold text-amber-400 mt-1 font-mono">{formatarPreco(prod.preco)}</p>
+                <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {produtos.filter(p => categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva).map(prod => (
+                    <div key={prod.id} class="bg-[var(--black2)] border border-[var(--line)] rounded-xl overflow-hidden flex flex-col justify-between">
+                      <img src={prod.imagem || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=500&q=80'} class="h-48 object-cover" />
+                      <div class="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                        <div>
+                          <span class="text-[9px] uppercase tracking-wider text-[var(--gold-light)]">{prod.categoria}</span>
+                          <h3 class="font-[family-name:var(--serif)] text-2xl mt-1">{prod.nome}</h3>
+                          <p class="text-xs text-[var(--muted)] mt-1">{prod.descricao}</p>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-[var(--line)]">
+                          <span class="font-mono text-lg text-[var(--gold-light)]">{formatarPreco(prod.preco)}</span>
+                          <button onClick={() => {
+                            setCarrinho(prev => {
+                              const existe = prev.find(i => i.id === prod.id);
+                              if (existe) {
+                                return prev.map(i => i.id === prod.id ? {...i, qtd: i.qtd + 1} : i);
+                              }
+                              return [...prev, {...prod, qtd: 1}];
+                            });
+                            setNotificacao('Adicionado ao pedido!');
+                            setTimeout(() => setNotificacao(''), 2000);
+                          }} class="px-4 py-2 bg-[var(--gold)] text-[var(--black)] text-xs uppercase font-bold">Adicionar</button>
+                        </div>
                       </div>
-                      <button onClick={() => setCarrinho([...carrinho, { ...prod, qtd: 1 }])} className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition">+ Pedir</button>
                     </div>
                   ))}
                 </div>
 
                 {carrinho.length > 0 && (
-                  <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-slate-900/95 border-t border-slate-800 flex justify-between items-center z-40">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Total</p>
-                      <p className="text-amber-400 font-bold font-mono text-base">{formatarPreco(carrinho.reduce((a, b) => a + (b.preco * b.qtd), 0))}</p>
+                  <div class="fixed bottom-6 right-6 z-50 bg-[var(--black2)] border border-[var(--gold)] p-6 rounded-2xl shadow-2xl max-w-sm w-full space-y-4">
+                    <div class="flex justify-between items-center border-b border-[var(--line)] pb-3">
+                      <h3 class="font-[family-name:var(--serif)] text-xl">O seu Pedido (Mesa {selectedMesaCliente})</h3>
+                      <button onClick={() => setCarrinho([])} class="text-xs text-[var(--muted)]">Limpar</button>
                     </div>
-                    <button onClick={enviarPedidoCliente} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs transition">
-                      Enviar Pedido (Mesa {selectedMesaCliente})
+                    <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-none text-xs">
+                      {carrinho.map(item => (
+                        <div key={item.id} class="flex justify-between items-center">
+                          <span>{item.qtd}x {item.nome}</span>
+                          <span class="font-mono text-[var(--gold-light)]">{formatarPreco(item.preco * item.qtd)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div class="pt-3 border-t border-[var(--line)] flex justify-between items-center font-bold">
+                      <span>Total:</span>
+                      <span class="font-mono text-lg text-[var(--gold-light)]">{formatarPreco(carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0))}</span>
+                    </div>
+                    <button onClick={async () => {
+                      const total = carrinho.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
+                      const res = await supabaseService.criarPedido({
+                        cafeteria_id: cafeteria.id,
+                        codigo_pedido: `CF-${Math.floor(100+Math.random()*900)}`,
+                        mesa: selectedMesaCliente,
+                        itens: carrinho.map(c => ({nome: c.nome, qtd: c.qtd, preco: c.preco})),
+                        total,
+                        status: 'pendente',
+                        hora: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                      });
+                      if (res) {
+                        setCarrinho([]);
+                        setPedidoEnviado(true);
+                        setNotificacao('Pedido enviado com sucesso para a cozinha!');
+                        setTimeout(() => setNotificacao(''), 4000);
+                      }
+                    }} class="w-full py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase tracking-wider">
+                      Enviar Pedido para a Cozinha
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            {confirmarExclusaoModal && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
-                  <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
-                  <h3 className="text-lg font-bold text-white">Tem a certeza?</h3>
-                  <p className="text-xs text-slate-300">
-                    Esta ação encerrará a sessão atual e desvinculará o acesso local.
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={() => setConfirmarExclusaoModal(false)} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">Cancelar</button>
-                    <button onClick={executarExclusaoConta} disabled={eliminandoConta} className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs transition">
-                      {eliminandoConta ? 'A processar...' : 'Confirmar'}
-                    </button>
-                  </div>
+          </main>
+
+          {/* FOOTER */}
+          <footer class="py-12 bg-[var(--black)] border-t border-[var(--line)]">
+            <div class="container flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-[var(--muted)]">
+              <div>
+                <span class="font-[family-name:var(--serif)] text-2xl text-[var(--cream)] block">{cafeteria.nome}</span>
+                <p class="mt-1">CoffeeFlow · Sistema Digital & Gestão de Cafetarias</p>
+              </div>
+              <div class="flex gap-6 uppercase tracking-wider text-[10px]">
+                <a href="#inicio" onClick={() => setActiveView('landing')} class="hover:text-[var(--cream)] transition">Início</a>
+                <button onClick={() => setActiveView('admin_login')} class="hover:text-[var(--cream)] transition">Gerência</button>
+                <button onClick={() => setActiveView('staff_login')} class="hover:text-[var(--cream)] transition">Equipa</button>
+              </div>
+            </div>
+          </footer>
+
+          {/* MODAL QR CODE */}
+          {modalQrOpen && (
+            <div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+              <div class="bg-[var(--black2)] border border-[var(--line)] p-8 rounded-2xl max-w-md w-full space-y-6 text-center">
+                <h3 class="font-[family-name:var(--serif)] text-3xl">QR Code da Mesa</h3>
+                <div class="space-y-2">
+                  <label class="text-xs uppercase text-[var(--muted)]">Número da Mesa</label>
+                  <input type="text" value={mesaQr} onChange={e => setMesaQr(e.target.value)} class="w-full p-2 bg-[var(--black)] border border-[var(--line)] text-center text-lg rounded text-[var(--cream)] outline-none focus:border-[var(--gold)]" />
+                </div>
+                <div class="bg-white p-6 rounded-xl inline-block">
+                  <img src={getQrCodeUrl(linkAtualCardapio)} alt="QR Code Mesa" class="w-48 h-48 mx-auto" />
+                </div>
+                <div class="flex gap-2">
+                  <button onClick={() => navigator.clipboard.writeText(linkAtualCardapio)} class="flex-1 py-3 bg-[var(--gold)] text-[var(--black)] font-bold text-xs uppercase">Copiar Link</button>
+                  <button onClick={() => setModalQrOpen(false)} class="px-4 py-3 border border-[var(--line)] text-xs uppercase">Fechar</button>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {devModalOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white text-center">🔐 Ativação Vitalícia de Administrador</h3>
-                  <p className="text-xs text-slate-400 text-center">Introduza o PIN mestre para libertar o acesso ilimitado.</p>
-                  <form onSubmit={handleDevBypass} className="space-y-3">
-                    <input type="password" placeholder="PIN Secreto" value={devPinInput} onChange={e => setDevPinInput(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-amber-500" autoFocus />
-                    {devError && <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>}
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setDevModalOpen(false)} className="flex-1 py-2 bg-slate-700 text-xs rounded-xl font-bold">Cancelar</button>
-                      <button type="submit" className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl">Ativar Vitalício</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {confirmarNovoPinOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
-                  <h3 className="text-lg font-bold text-white">Gerar novo PIN?</h3>
-                  <p className="text-xs text-slate-400">
-                    O PIN atual (<span className="font-mono text-amber-400">{cafeteria.pinEquipe}</span>) será substituído por um novo código de 6 dígitos.
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={cancelarNovoPin} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-600 transition">Não mudar</button>
-                    <button onClick={confirmarGerarNovoPin} disabled={gerandoPin} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs hover:bg-amber-400 transition">
-                      {gerandoPin ? 'A gerar...' : 'Mudar PIN'}
-                    </button>
+          {/* MODAL PRODUTO */}
+          {modalProduto.open && (
+            <div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+              <div class="bg-[var(--black2)] border border-[var(--line)] p-8 rounded-2xl max-w-lg w-full space-y-6">
+                <h3 class="font-[family-name:var(--serif)] text-3xl">{produtoAtual ? 'Editar Produto' : 'Novo Produto'}</h3>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = new FormData(e.target);
+                  const res = await supabaseService.salvarProduto({
+                    id: produtoAtual?.id,
+                    cafeteria_id: cafeteria.id,
+                    nome: form.get('nome'),
+                    preco: parseFloat(form.get('preco')),
+                    categoria: form.get('categoria'),
+                    descricao: form.get('descricao'),
+                    imagem: produtoAtual?.imagem || '',
+                    arquivoImagem: form.get('arquivo')?.size > 0 ? form.get('arquivo') : null
+                  });
+                  if (res.success) {
+                    setModalProduto({open: false, data: null});
+                    carregarDados();
+                  } else {
+                    alert(res.error);
+                  }
+                }} class="space-y-4 text-xs">
+                  <div>
+                    <label class="uppercase text-[var(--muted)] block mb-1">Nome</label>
+                    <input name="nome" defaultValue={produtoAtual?.nome} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]" />
                   </div>
-                </div>
-              </div>
-            )}
-
-            {modalQrOpen && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">📱 QR Code da Mesa</h3>
-                    <button onClick={() => setModalQrOpen(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
-                  </div>
-
-                  <div className="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-slate-300 block mb-1">Mesa ou Posição:</label>
-                      <input type="text" value={mesaQr} onChange={(e) => setMesaQr(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-
-                    <div id="print-qr-section" className="flex justify-center py-2">
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center text-slate-900 space-y-2 max-w-xs w-full">
-                        <div className="text-lg font-black">{cafeteria.nome}</div>
-                        <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR Code" className="w-44 h-44 rounded-lg mx-auto" />
-                        <p className="text-xs font-bold text-amber-600">MESA {mesaQr}</p>
-                        <p className="text-[10px] text-slate-500">Aponte a câmara do telemóvel para fazer o pedido.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button onClick={copiarLinkCardapio} className="flex-1 py-2.5 bg-slate-700 text-slate-200 font-bold rounded-xl text-xs">
-                        {linkCopiado ? '✓ Link Copiado' : 'Copiar Link'}
-                      </button>
-                      <button onClick={() => window.print()} className="flex-1 py-2.5 bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs">🖨️ Imprimir Placa</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {modalProduto.open && (
-              <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white">{modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}</h3>
-                  <form onSubmit={handleSalvarProduto} className="space-y-3">
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Nome do Produto</label>
-                      <input type="text" name="nome" defaultValue={modalProduto.data?.nome || ''} placeholder="Ex: Espresso Duplo" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                      <label class="uppercase text-[var(--muted)] block mb-1">Preço (R$)</label>
+                      <input name="preco" type="number" step="0.01" defaultValue={produtoAtual?.preco} required class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]" />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Preço (€)</label>
-                      <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block mb-1">Categoria</label>
-                      <select name="categoria" defaultValue={modalProduto.data?.categoria || INITIAL_CATEGORIES[1]} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
-                        {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
+                      <label class="uppercase text-[var(--muted)] block mb-1">Categoria</label>
+                      <select name="categoria" defaultValue={produtoAtual?.categoria || 'Cafés Espressos'} class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]">
+                        {CATEGORIAS_PADRAO.filter(c => c !== 'Todas').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
-                    <div>
-                      <label className="text-[11px] text-slate-400 font-bold block uname mb-1">Descrição</label>
-                      <input type="text" name="descricao" defaultValue={modalProduto.data?.descricao || ''} placeholder="Ex: Café encorpado" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-300">
-                        Imagem do produto
-                      </label>
-
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const arquivo = e.target.files?.[0] || null;
-                          setProdutoAtual({
-                            ...(produtoAtual || modalProduto.data || {}),
-                            arquivoImagem: arquivo,
-                            imagem: arquivo ? URL.createObjectURL(arquivo) : (modalProduto.data?.imagem || '')
-                          });
-                        }}
-                        className="block w-full text-sm text-slate-300
-                          file:mr-4 file:rounded-lg file:border-0
-                          file:bg-amber-500 file:px-4 file:py-2
-                          file:text-sm file:font-semibold
-                          file:text-white hover:file:bg-amber-600"
-                      />
-
-                      {(produtoAtual?.imagem || modalProduto.data?.imagem) && (
-                        <img
-                          src={produtoAtual?.imagem || modalProduto.data?.imagem}
-                          alt={produtoAtual?.nome || modalProduto.data?.nome || 'Produto'}
-                          className="mt-3 h-32 w-32 rounded-xl object-cover border border-slate-700"
-                        />
-                      )}
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-700">
-                      <button type="button" onClick={() => { setModalProduto({ open: false, data: null }); setProdutoAtual(null); }} className="px-3 py-1.5 bg-slate-700 text-xs rounded-lg text-slate-300 font-bold">Cancelar</button>
-                      <button type="submit" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg">Guardar</button>
-                    </div>
-                  </form>
-                </div>
+                  </div>
+                  <div>
+                    <label class="uppercase text-[var(--muted)] block mb-1">Descrição</label>
+                    <textarea name="descricao" defaultValue={produtoAtual?.descricao} class="w-full p-3 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)] h-20"></textarea>
+                  </div>
+                  <div>
+                    <label class="uppercase text-[var(--muted)] block mb-1">Imagem do Produto (Arquivo)</label>
+                    <input name="arquivo" type="file" accept="image/*" class="w-full p-2 bg-[var(--black)] border border-[var(--line)] rounded text-sm text-[var(--cream)]" />
+                  </div>
+                  <div class="flex gap-2 pt-4">
+                    <button type="submit" class="flex-1 py-3 bg-[var(--gold)] text-[var(--black)] font-bold uppercase">Salvar Produto</button>
+                    <button type="button" onClick={() => setModalProduto({open: false, data: null})} class="px-4 py-3 border border-[var(--line)] uppercase">Cancelar</button>
+                  </div>
+                </form>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
         </div>
       );
     }
@@ -3745,4 +1097,4 @@ Coffeflow:
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
-  </html>
+</html>
