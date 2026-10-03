@@ -1,4 +1,1989 @@
 <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Vittelis Restaurante Contemporâneo | Vila Mascote</title>
+
+  <meta
+    name="description"
+    content="Vittelis Restaurante Contemporâneo, na Vila Mascote, São Paulo. À la carte, executivo, express, feijoada, pizza napolitana, hambúrgueres e eventos."
+  >
+
+  <meta name="theme-color" content="#151515">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Vittelis Restaurante Contemporâneo">
+  <meta
+    property="og:description"
+    content="Sabores da Dona Lia. Restaurante contemporâneo na Vila Mascote, São Paulo."
+  >
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+
+    :root {
+      --black: #151515;
+      --black2: #1d1d1b;
+      --cream: #f3efe7;
+      --cream2: #e8e0d2;
+      --gold: #a88a5a;
+      --gold-light: #c6ab78;
+      --brown: #5b4635;
+      --white: #ffffff;
+      --muted: #aaa49b;
+      --line: rgba(255,255,255,.12);
+
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "Manrope", Arial, sans-serif;
+
+      --max: 1180px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--black);
+      color: var(--cream);
+      font-family: var(--sans);
+      overflow-x: hidden;
+    }
+
+    img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .container {
+      width: min(var(--max), calc(100% - 48px));
+      margin: auto;
+    }
+
+    /* =========================
+       HEADER
+    ========================= */
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 82px;
+      z-index: 999;
+
+      display: flex;
+      align-items: center;
+
+      background: rgba(21,21,21,.78);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: var(--serif);
+      font-size: 34px;
+      line-height: .8;
+      letter-spacing: .04em;
+    }
+
+    .logo small {
+      display: block;
+      margin-top: 7px;
+
+      font-family: var(--sans);
+      font-size: 7px;
+      letter-spacing: .29em;
+      text-transform: uppercase;
+
+      color: var(--gold-light);
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+
+      font-size: 11px;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .nav-links a {
+      color: rgba(243,239,231,.7);
+      transition: .25s;
+    }
+
+    .nav-links a:hover {
+      color: var(--white);
+    }
+
+    .nav-cta {
+      padding: 12px 18px;
+      border: 1px solid var(--gold);
+      color: var(--cream) !important;
+    }
+
+    .nav-cta:hover {
+      background: var(--gold);
+      color: var(--black) !important;
+    }
+
+    .menu-button {
+      display: none;
+      border: 0;
+      background: none;
+      color: var(--cream);
+      font-size: 27px;
+      cursor: pointer;
+    }
+
+    /* =========================
+       HERO
+    ========================= */
+
+    .hero {
+      min-height: 100vh;
+      position: relative;
+
+      display: flex;
+      align-items: center;
+
+      overflow: hidden;
+
+      background:
+        linear-gradient(
+          90deg,
+          rgba(10,10,10,.94),
+          rgba(10,10,10,.70) 45%,
+          rgba(10,10,10,.20)
+        ),
+        url("https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=2200&q=90")
+        center/cover;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+
+      background:
+        radial-gradient(
+          circle at 75% 35%,
+          rgba(168,138,90,.18),
+          transparent 32%
+        );
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding-top: 80px;
+      max-width: 800px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+
+      color: var(--gold-light);
+
+      font-size: 10px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 42px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(64px, 9vw, 120px);
+      line-height: .83;
+      font-weight: 500;
+      letter-spacing: -.04em;
+    }
+
+    h1 span {
+      color: var(--gold-light);
+      font-style: italic;
+    }
+
+    .hero-text {
+      max-width: 550px;
+      margin-top: 34px;
+
+      color: rgba(243,239,231,.72);
+      font-size: 15px;
+      line-height: 1.9;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 38px;
+    }
+
+    .button {
+      min-height: 50px;
+      padding: 0 25px;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      background: var(--gold);
+      color: var(--black);
+
+      border: 1px solid var(--gold);
+
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+
+      transition: .25s;
+    }
+
+    .button:hover {
+      background: var(--gold-light);
+      transform: translateY(-2px);
+    }
+
+    .button-outline {
+      background: transparent;
+      color: var(--cream);
+    }
+
+    .button-outline:hover {
+      background: rgba(168,138,90,.15);
+      color: var(--cream);
+    }
+
+    .hero-info {
+      position: absolute;
+      bottom: 32px;
+      left: 0;
+      right: 0;
+      z-index: 3;
+
+      display: flex;
+      justify-content: space-between;
+
+      color: rgba(255,255,255,.52);
+
+      font-size: 9px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    /* =========================
+       SECTIONS
+    ========================= */
+
+    section {
+      padding: 120px 0;
+    }
+
+    .dark {
+      background: var(--black);
+    }
+
+    .light {
+      background: var(--cream);
+      color: var(--black);
+    }
+
+    .section-top {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 60px;
+      align-items: end;
+
+      margin-bottom: 65px;
+    }
+
+    .number {
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: clamp(50px, 6vw, 82px);
+      font-weight: 500;
+      line-height: .92;
+      letter-spacing: -.03em;
+    }
+
+    .intro {
+      max-width: 580px;
+
+      color: rgba(243,239,231,.62);
+      font-size: 14px;
+      line-height: 1.95;
+    }
+
+    .light .intro {
+      color: rgba(21,21,21,.62);
+    }
+
+    /* =========================
+       ABOUT
+    ========================= */
+
+    .about {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .about-image {
+      min-height: 620px;
+
+      background:
+        linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.12)),
+        url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1500&q=90")
+        center/cover;
+    }
+
+    .about-copy p {
+      color: rgba(243,239,231,.7);
+      font-size: 15px;
+      line-height: 2;
+      margin-bottom: 22px;
+    }
+
+    .signature {
+      margin-top: 32px;
+
+      font-family: var(--serif);
+      font-size: 32px;
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    /* =========================
+       MENU TYPES
+    ========================= */
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+
+      border-top: 1px solid rgba(21,21,21,.18);
+      border-left: 1px solid rgba(21,21,21,.18);
+    }
+
+    .menu-card {
+      min-height: 230px;
+      padding: 35px 30px;
+
+      border-right: 1px solid rgba(21,21,21,.18);
+      border-bottom: 1px solid rgba(21,21,21,.18);
+
+      transition: .3s;
+    }
+
+    .menu-card:hover {
+      background: #ebe4d8;
+    }
+
+    .menu-card span {
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: .18em;
+    }
+
+    .menu-card h3 {
+      margin-top: 25px;
+
+      font-family: var(--serif);
+      font-size: 38px;
+      font-weight: 500;
+    }
+
+    .menu-card p {
+      margin-top: 8px;
+
+      color: rgba(21,21,21,.58);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    /* =========================
+       DISHES
+    ========================= */
+
+    .dishes {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 20px;
+    }
+
+    .dish {
+      position: relative;
+      height: 570px;
+      overflow: hidden;
+      background: #242424;
+    }
+
+    .dish img {
+      height: 100%;
+      transition: transform .8s ease;
+    }
+
+    .dish:hover img {
+      transform: scale(1.05);
+    }
+
+    .dish::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+
+      background:
+        linear-gradient(
+          transparent 25%,
+          rgba(0,0,0,.9)
+        );
+    }
+
+    .dish-content {
+      position: absolute;
+      z-index: 2;
+
+      left: 30px;
+      right: 30px;
+      bottom: 28px;
+    }
+
+    .dish-label {
+      color: var(--gold-light);
+      font-size: 9px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+
+    .dish h3 {
+      margin-top: 7px;
+
+      font-family: var(--serif);
+      font-size: 44px;
+      font-weight: 500;
+    }
+
+    .dish p {
+      max-width: 450px;
+      margin-top: 8px;
+
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    /* =========================
+       EXPERIENCE
+    ========================= */
+
+    .experience {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+    }
+
+    .experience-image {
+      min-height: 620px;
+
+      background:
+        linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.08)),
+        url("https://images.unsplash.com/photo-1515669097368-22e68427d265?auto=format&fit=crop&w=1500&q=90")
+        center/cover;
+    }
+
+    .experience-copy {
+      padding: 80px;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      background: var(--brown);
+    }
+
+    .experience-copy p {
+      max-width: 530px;
+      margin-top: 28px;
+
+      color: rgba(243,239,231,.7);
+      line-height: 1.9;
+      font-size: 15px;
+    }
+
+    /* =========================
+       EVENTS
+    ========================= */
+
+    .events {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 75px;
+      align-items: center;
+    }
+
+    .events-image {
+      min-height: 560px;
+
+      background:
+        linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.08)),
+        url("https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1500&q=90")
+        center/cover;
+    }
+
+    .events-copy p {
+      margin-top: 25px;
+      max-width: 520px;
+
+      color: rgba(243,239,231,.65);
+      line-height: 1.9;
+    }
+
+    .event-list {
+      margin-top: 32px;
+      border-top: 1px solid var(--line);
+    }
+
+    .event-item {
+      display: flex;
+      justify-content: space-between;
+
+      padding: 18px 0;
+
+      border-bottom: 1px solid var(--line);
+
+      font-size: 12px;
+    }
+
+    .event-item span:last-child {
+      color: var(--gold-light);
+    }
+
+    /* =========================
+       DELIVERY
+    ========================= */
+
+    .delivery {
+      background: #211f1c;
+    }
+
+    .delivery-box {
+      padding: 55px;
+
+      border: 1px solid var(--line);
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .delivery-box h2 {
+      font-size: 58px;
+    }
+
+    .delivery-box p {
+      margin-top: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* =========================
+       LOCATION
+    ========================= */
+
+    .location {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 70px;
+    }
+
+    .information {
+      display: grid;
+      gap: 30px;
+    }
+
+    .info span {
+      display: block;
+
+      color: var(--gold);
+
+      font-size: 9px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+
+      margin-bottom: 8px;
+    }
+
+    .info p {
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .map {
+      min-height: 470px;
+      position: relative;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      overflow: hidden;
+
+      background:
+        linear-gradient(
+          120deg,
+          #d8d0c2 25%,
+          #c3baaa 25%,
+          #c3baaa 50%,
+          #d8d0c2 50%,
+          #d8d0c2 75%,
+          #c3baaa 75%
+        );
+
+      background-size: 100px 100px;
+    }
+
+    .road {
+      position: absolute;
+      width: 150%;
+      height: 35px;
+
+      background: rgba(21,21,21,.13);
+
+      transform: rotate(-23deg);
+    }
+
+    .road-two {
+      transform: rotate(31deg);
+      height: 20px;
+    }
+
+    .pin {
+      position: relative;
+      z-index: 2;
+
+      width: 75px;
+      height: 75px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background: var(--black);
+      color: var(--gold-light);
+
+      font-family: var(--serif);
+      font-size: 28px;
+
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    }
+
+    /* =========================
+       FINAL CTA
+    ========================= */
+
+    .final {
+      text-align: center;
+
+      background:
+        radial-gradient(
+          circle at center,
+          rgba(168,138,90,.14),
+          transparent 42%
+        ),
+        var(--black);
+    }
+
+    .final h2 {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .final p {
+      max-width: 550px;
+      margin: 25px auto 0;
+
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .final .actions {
+      justify-content: center;
+    }
+
+    /* =========================
+       FOOTER
+    ========================= */
+
+    footer {
+      padding: 50px 0 25px;
+      background: var(--black);
+
+      border-top: 1px solid var(--line);
+    }
+
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .footer-logo {
+      font-family: var(--serif);
+      font-size: 42px;
+    }
+
+    .footer-desc {
+      max-width: 320px;
+      margin-top: 8px;
+
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px;
+
+      color: var(--muted);
+
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .footer-links a:hover {
+      color: var(--cream);
+    }
+
+    .footer-bottom {
+      margin-top: 45px;
+      padding-top: 22px;
+
+      border-top: 1px solid var(--line);
+
+      display: flex;
+      justify-content: space-between;
+
+      color: #777;
+      font-size: 9px;
+    }
+
+    /* =========================
+       ANIMATION
+    ========================= */
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+
+      transition:
+        opacity .8s ease,
+        transform .8s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* =========================
+       RESPONSIVE
+    ========================= */
+
+    @media(max-width:900px) {
+
+      .menu-button {
+        display: block;
+      }
+
+      .nav-links {
+        display: none;
+
+        position: fixed;
+        top: 82px;
+        left: 0;
+        right: 0;
+
+        padding: 25px;
+
+        flex-direction: column;
+        align-items: stretch;
+
+        background: rgba(21,21,21,.98);
+      }
+
+      .nav-links.active {
+        display: flex;
+      }
+
+      .nav-links a {
+        display: block;
+        padding: 10px 0;
+      }
+
+      .section-top,
+      .about,
+      .experience,
+      .events,
+      .location {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .delivery-box {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media(max-width:600px) {
+
+      .container {
+        width: calc(100% - 32px);
+      }
+
+      header {
+        height: 72px;
+      }
+
+      .nav-links {
+        top: 72px;
+      }
+
+      section {
+        padding: 80px 0;
+      }
+
+      .hero {
+        min-height: 850px;
+        background-position: 65% center;
+      }
+
+      h1 {
+        font-size: clamp(58px, 18vw, 85px);
+      }
+
+      .hero-info {
+        display: none;
+      }
+
+      .section-top {
+        margin-bottom: 45px;
+      }
+
+      .menu-grid,
+      .dishes {
+        grid-template-columns: 1fr;
+      }
+
+      .about-image,
+      .experience-image,
+      .events-image {
+        min-height: 420px;
+      }
+
+      .dish {
+        height: 470px;
+      }
+
+      .experience-copy {
+        padding: 60px 30px;
+      }
+
+      .delivery-box {
+        padding: 35px 25px;
+      }
+
+      .delivery-box h2 {
+        font-size: 45px;
+      }
+
+      .map {
+        min-height: 350px;
+      }
+
+      .footer-top,
+      .footer-bottom {
+        flex-direction: column;
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- =========================
+       HEADER
+  ========================= -->
+
+  <header>
+
+    <div class="container nav">
+
+      <a href="#inicio" class="logo">
+        Vittelis
+        <small>Restaurante Contemporâneo</small>
+      </a>
+
+      <button
+        class="menu-button"
+        id="menuButton"
+        aria-label="Abrir menu"
+        aria-expanded="false"
+      >
+        ☰
+      </button>
+
+      <ul class="nav-links" id="navLinks">
+
+        <li>
+          <a href="#sobre">O restaurante</a>
+        </li>
+
+        <li>
+          <a href="#cardapio">Cardápio</a>
+        </li>
+
+        <li>
+          <a href="#destaques">Destaques</a>
+        </li>
+
+        <li>
+          <a href="#eventos">Eventos</a>
+        </li>
+
+        <li>
+          <a href="#localizacao">Localização</a>
+        </li>
+
+        <li>
+          <a
+            href="https://wa.me/5511994389717"
+            target="_blank"
+            rel="noopener"
+            class="nav-cta"
+          >
+            Reservar
+          </a>
+        </li>
+
+      </ul>
+
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <!-- =========================
+         HERO
+    ========================= -->
+
+    <section class="hero" id="inicio">
+
+      <div class="container hero-content reveal">
+
+        <div class="eyebrow">
+          Vila Mascote · São Paulo
+        </div>
+
+        <h1>
+          Sabores que
+          <span>reúnem.</span>
+        </h1>
+
+        <p class="hero-text">
+          O Vittelis Restaurante Contemporâneo reúne diferentes
+          possibilidades gastronômicas em um espaço pensado para
+          refeições, encontros e celebrações.
+        </p>
+
+        <div class="actions">
+
+          <a
+            href="https://www.dguests.com.br/cardapio/vittelisrestaurante"
+            target="_blank"
+            rel="noopener"
+            class="button"
+          >
+            Ver cardápio
+          </a>
+
+          <a
+            href="https://wa.me/5511994389717"
+            target="_blank"
+            rel="noopener"
+            class="button button-outline"
+          >
+            Reservar mesa
+          </a>
+
+        </div>
+
+      </div>
+
+      <div class="container hero-info">
+
+        <span>
+          Av. Mascote, 717 · Vila Mascote
+        </span>
+
+        <span>
+          São Paulo · SP
+        </span>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         SOBRE
+    ========================= -->
+
+    <section class="dark" id="sobre">
+
+      <div class="container">
+
+        <div class="section-top reveal">
+
+          <div>
+
+            <div class="number">
+              01 · O restaurante
+            </div>
+
+            <h2>
+              Sabores da<br>
+              Dona Lia.
+            </h2>
+
+          </div>
+
+          <p class="intro">
+            O Vittelis Restaurante Contemporâneo está localizado na
+            Vila Mascote, em São Paulo, e reúne diferentes formatos
+            gastronômicos em uma mesma experiência.
+          </p>
+
+        </div>
+
+
+        <div class="about">
+
+          <div class="about-image reveal"></div>
+
+          <div class="reveal">
+
+            <div class="about-copy">
+
+              <p>
+                À la carte, executivo, express, feijoada, pizza
+                napolitana e hambúrgueres fazem parte das opções
+                apresentadas atualmente pela casa.
+              </p>
+
+              <p>
+                A proposta permite que o Vittelis acompanhe diferentes
+                momentos: um almoço durante a semana, um jantar,
+                encontros entre amigos ou uma celebração especial.
+              </p>
+
+              <p>
+                O restaurante também recebe eventos e
+                confraternizações.
+              </p>
+
+            </div>
+
+            <div class="signature">
+              Vittelis
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         CARDÁPIO
+    ========================= -->
+
+    <section class="light" id="cardapio">
+
+      <div class="container">
+
+        <div class="section-top reveal">
+
+          <div>
+
+            <div class="number">
+              02 · Cardápio
+            </div>
+
+            <h2>
+              Para diferentes<br>
+              momentos.
+            </h2>
+
+          </div>
+
+          <p class="intro">
+            Uma variedade de formatos para acompanhar diferentes
+            ocasiões, do almoço ao jantar.
+          </p>
+
+        </div>
+
+
+        <div class="menu-grid">
+
+          <article class="menu-card reveal">
+
+            <span>01</span>
+
+            <h3>À la carte</h3>
+
+            <p>
+              Pratos da casa para uma experiência completa.
+            </p>
+
+          </article>
+
+
+          <article class="menu-card reveal">
+
+            <span>02</span>
+
+            <h3>Executivo</h3>
+
+            <p>
+              Opções para o almoço durante a semana.
+            </p>
+
+          </article>
+
+
+          <article class="menu-card reveal">
+
+            <span>03</span>
+
+            <h3>Express</h3>
+
+            <p>
+              Uma alternativa para quem busca praticidade.
+            </p>
+
+          </article>
+
+
+          <article class="menu-card reveal">
+
+            <span>04</span>
+
+            <h3>Feijoada</h3>
+
+            <p>
+              Uma das opções apresentadas pela casa.
+            </p>
+
+          </article>
+
+
+          <article class="menu-card reveal">
+
+            <span>05</span>
+
+            <h3>Pizza Napolitana</h3>
+
+            <p>
+              Pizzas inspiradas na tradição napolitana.
+            </p>
+
+          </article>
+
+
+          <article class="menu-card reveal">
+
+            <span>06</span>
+
+            <h3>Hambúrgueres</h3>
+
+            <p>
+              Opções de hambúrguer para diferentes ocasiões.
+            </p>
+
+          </article>
+
+        </div>
+
+
+        <div class="actions reveal">
+
+          <a
+            href="https://www.dguests.com.br/cardapio/vittelisrestaurante"
+            target="_blank"
+            rel="noopener"
+            class="button"
+          >
+            Abrir cardápio completo
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         DESTAQUES
+    ========================= -->
+
+    <section class="dark" id="destaques">
+
+      <div class="container">
+
+        <div class="section-top reveal">
+
+          <div>
+
+            <div class="number">
+              03 · Destaques
+            </div>
+
+            <h2>
+              Alguns sabores<br>
+              da casa.
+            </h2>
+
+          </div>
+
+          <p class="intro">
+            Entre os pratos encontrados nas informações públicas do
+            restaurante estão opções como Filet au Poivre, Mignon à
+            Popeye, Bruschetta Contemporânea e Tiramisù.
+          </p>
+
+        </div>
+
+
+        <div class="dishes">
+
+          <article class="dish reveal">
+
+            <img
+              src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=1400&q=90"
+              alt="Prato de gastronomia contemporânea"
+              loading="lazy"
+            >
+
+            <div class="dish-content">
+
+              <div class="dish-label">
+                Prato
+              </div>
+
+              <h3>
+                Filet au Poivre
+              </h3>
+
+              <p>
+                Medalhão de filé mignon com molho de pimenta,
+                apresentado entre os destaques do restaurante.
+              </p>
+
+            </div>
+
+          </article>
+
+
+          <article class="dish reveal">
+
+            <img
+              src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1400&q=90"
+              alt="Prato de restaurante"
+              loading="lazy"
+            >
+
+            <div class="dish-content">
+
+              <div class="dish-label">
+                Prato
+              </div>
+
+              <h3>
+                Mignon à Popeye
+              </h3>
+
+              <p>
+                Uma das preparações apresentadas entre os pratos
+                destacados da casa.
+              </p>
+
+            </div>
+
+          </article>
+
+
+          <article class="dish reveal">
+
+            <img
+              src="https://images.unsplash.com/photo-1572449043416-55f4685c9bb7?auto=format&fit=crop&w=1400&q=90"
+              alt="Bruschetta"
+              loading="lazy"
+            >
+
+            <div class="dish-content">
+
+              <div class="dish-label">
+                Entrada
+              </div>
+
+              <h3>
+                Bruschetta
+              </h3>
+
+              <p>
+                A Bruschetta Contemporânea aparece entre as opções
+                destacadas publicamente do restaurante.
+              </p>
+
+            </div>
+
+          </article>
+
+
+          <article class="dish reveal">
+
+            <img
+              src="https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=1400&q=90"
+              alt="Tiramisù"
+              loading="lazy"
+            >
+
+            <div class="dish-content">
+
+              <div class="dish-label">
+                Sobremesa
+              </div>
+
+              <h3>
+                Tiramisù
+              </h3>
+
+              <p>
+                Uma sobremesa clássica italiana presente entre as
+                opções mencionadas da casa.
+              </p>
+
+            </div>
+
+          </article>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         EXPERIÊNCIA
+    ========================= -->
+
+    <section class="dark">
+
+      <div class="experience">
+
+        <div class="experience-image reveal"></div>
+
+        <div class="experience-copy reveal">
+
+          <div class="number">
+            04 · Experiência
+          </div>
+
+          <h2>
+            Um espaço para
+            bons momentos.
+          </h2>
+
+          <p>
+            Do almoço ao jantar, o Vittelis foi pensado para diferentes
+            ocasiões. A casa também recebe eventos,
+            confraternizações e reservas especiais.
+          </p>
+
+          <div class="actions">
+
+            <a
+              href="https://wa.me/5511994389717"
+              target="_blank"
+              rel="noopener"
+              class="button"
+            >
+              Falar sobre uma reserva
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         EVENTOS
+    ========================= -->
+
+    <section class="dark" id="eventos">
+
+      <div class="container">
+
+        <div class="events">
+
+          <div class="events-image reveal"></div>
+
+          <div class="events-copy reveal">
+
+            <div class="number">
+              05 · Eventos
+            </div>
+
+            <h2>
+              Celebre<br>
+              à mesa.
+            </h2>
+
+            <p>
+              O Vittelis recebe eventos e confraternizações.
+              Para consultar disponibilidade e condições, entre em
+              contato diretamente com a equipe.
+            </p>
+
+            <div class="event-list">
+
+              <div class="event-item">
+                <span>Confraternizações</span>
+                <span>Consultar</span>
+              </div>
+
+              <div class="event-item">
+                <span>Eventos</span>
+                <span>Consultar</span>
+              </div>
+
+              <div class="event-item">
+                <span>Reservas especiais</span>
+                <span>Consultar</span>
+              </div>
+
+            </div>
+
+            <div class="actions">
+
+              <a
+                href="https://wa.me/5511994389717"
+                target="_blank"
+                rel="noopener"
+                class="button"
+              >
+                Consultar pelo WhatsApp
+              </a>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         DELIVERY
+    ========================= -->
+
+    <section class="delivery">
+
+      <div class="container">
+
+        <div class="delivery-box reveal">
+
+          <div>
+
+            <div class="number">
+              06 · Delivery
+            </div>
+
+            <h2>
+              Vittelis em casa.
+            </h2>
+
+            <p>
+              Faça seu pedido pelos canais de delivery disponíveis.
+            </p>
+
+          </div>
+
+          <div class="actions">
+
+            <a
+              href="https://www.ifood.com.br/delivery/sao-paulo-sp/vittelis-restaurante-contemporaneo-vila-mascote/fb37d645-3e19-4147-8034-7a16f1478a4b"
+              target="_blank"
+              rel="noopener"
+              class="button"
+            >
+              Pedir pelo iFood
+            </a>
+
+            <a
+              href="https://url-eu.mykeeta.com/LtikChEz"
+              target="_blank"
+              rel="noopener"
+              class="button button-outline"
+            >
+              Pedir pela Keeta
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         LOCALIZAÇÃO
+    ========================= -->
+
+    <section class="light" id="localizacao">
+
+      <div class="container">
+
+        <div class="section-top reveal">
+
+          <div>
+
+            <div class="number">
+              07 · Visite
+            </div>
+
+            <h2>
+              Encontre<br>
+              o Vittelis.
+            </h2>
+
+          </div>
+
+          <p class="intro">
+            Estamos na Vila Mascote, em São Paulo.
+          </p>
+
+        </div>
+
+
+        <div class="location">
+
+          <div class="information reveal">
+
+            <div class="info">
+
+              <span>Endereço</span>
+
+              <p>
+                Av. Mascote, 717 - Loja<br>
+                Vila Mascote<br>
+                São Paulo - SP<br>
+                04363-000
+              </p>
+
+            </div>
+
+
+            <div class="info">
+
+              <span>Telefone</span>
+
+              <p>
+                <a href="tel:+5511994389717">
+                  (11) 99438-9717
+                </a>
+              </p>
+
+            </div>
+
+
+            <div class="info">
+
+              <span>Horários</span>
+
+              <p>
+                Segunda — Fechado<br>
+                Terça a sexta — 11h30 às 15h30 · 18h30 às 23h<br>
+                Sábado — 11h30 às 17h · 18h30 às 23h<br>
+                Domingo — 11h30 às 17h
+              </p>
+
+            </div>
+
+
+            <div class="actions">
+
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=Vittelis+Restaurante+Av.+Mascote+717+São+Paulo"
+                target="_blank"
+                rel="noopener"
+                class="button"
+              >
+                Abrir no Maps
+              </a>
+
+              <a
+                href="https://www.instagram.com/vittelisrestaurante/"
+                target="_blank"
+                rel="noopener"
+                class="button button-outline"
+              >
+                Instagram
+              </a>
+
+            </div>
+
+          </div>
+
+
+          <a
+            class="map reveal"
+            href="https://www.google.com/maps/search/?api=1&query=Vittelis+Restaurante+Av.+Mascote+717+São+Paulo"
+            target="_blank"
+            rel="noopener"
+            aria-label="Abrir localização do Vittelis no Google Maps"
+          >
+
+            <div class="road"></div>
+            <div class="road road-two"></div>
+
+            <div class="pin">
+              V
+            </div>
+
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         FINAL CTA
+    ========================= -->
+
+    <section class="final">
+
+      <div class="container reveal">
+
+        <div class="number">
+          VITTELIS · VILA MASCOTE
+        </div>
+
+        <h2>
+          Seu próximo momento
+          começa à mesa.
+        </h2>
+
+        <p>
+          Consulte o cardápio, faça seu pedido ou entre em contato
+          para reservar uma mesa.
+        </p>
+
+        <div class="actions">
+
+          <a
+            href="https://www.dguests.com.br/cardapio/vittelisrestaurante"
+            target="_blank"
+            rel="noopener"
+            class="button"
+          >
+            Ver cardápio
+          </a>
+
+          <a
+            href="https://wa.me/5511994389717"
+            target="_blank"
+            rel="noopener"
+            class="button button-outline"
+          >
+            Reservar mesa
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =========================
+       FOOTER
+  ========================= -->
+
+  <footer>
+
+    <div class="container">
+
+      <div class="footer-top">
+
+        <div>
+
+          <div class="footer-logo">
+            Vittelis
+          </div>
+
+          <p class="footer-desc">
+            Restaurante Contemporâneo<br>
+            Vila Mascote · São Paulo
+          </p>
+
+        </div>
+
+
+        <div class="footer-links">
+
+          <a href="#sobre">
+            Restaurante
+          </a>
+
+          <a href="#cardapio">
+            Cardápio
+          </a>
+
+          <a href="#destaques">
+            Destaques
+          </a>
+
+          <a href="#eventos">
+            Eventos
+          </a>
+
+          <a href="#localizacao">
+            Localização
+          </a>
+
+          <a
+            href="https://www.instagram.com/vittelisrestaurante/"
+            target="_blank"
+            rel="noopener"
+          >
+            Instagram
+          </a>
+
+        </div>
+
+      </div>
+
+
+      <div class="footer-bottom">
+
+        <span>
+          © <span id="year"></span> Vittelis Restaurante
+        </span>
+
+        <span>
+          Vila Mascote · São Paulo
+        </span>
+
+      </div>
+
+    </div>
+
+  </footer>
+
+
+  <script>
+
+    /* =========================
+       MENU MOBILE
+    ========================= */
+
+    const menuButton =
+      document.getElementById("menuButton");
+
+    const navLinks =
+      document.getElementById("navLinks");
+
+    menuButton.addEventListener("click", () => {
+
+      const opened =
+        navLinks.classList.toggle("active");
+
+      menuButton.setAttribute(
+        "aria-expanded",
+        opened ? "true" : "false"
+      );
+
+      menuButton.textContent =
+        opened ? "×" : "☰";
+
+    });
+
+
+    document
+      .querySelectorAll(".nav-links a")
+      .forEach(link => {
+
+        link.addEventListener("click", () => {
+
+          navLinks.classList.remove("active");
+
+          menuButton.setAttribute(
+            "aria-expanded",
+            "false"
+          );
+
+          menuButton.textContent = "☰";
+
+        });
+
+      });
+
+
+    /* =========================
+       SCROLL ANIMATION
+    ========================= */
+
+    const observer =
+      new IntersectionObserver(
+        entries => {
+
+          entries.forEach(entry => {
+
+            if (entry.isIntersecting) {
+
+              entry.target.classList.add("visible");
+
+              observer.unobserve(entry.target);
+
+            }
+
+          });
+
+        },
+        {
+          threshold: .12
+        }
+      );
+
+
+    document
+      .querySelectorAll(".reveal")
+      .forEach(element => {
+
+        observer.observe(element);
+
+      });
+
+
+    /* =========================
+       YEAR
+    ========================= */
+
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+
+
+  </script>
+
+</body>
+</html>
+Use como base para o coffeflow o designer desse código anterior
+Coffeflow:
+<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
@@ -1760,4 +3745,4 @@
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
-</html>
+  </html>
