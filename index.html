@@ -702,6 +702,8 @@
       const [termoPesquisa, setTermoPesquisa] = useState('');
       const [modalProduto, setModalProduto] = useState({ open: false, data: null });
       const [produtoAtual, setProdutoAtual] = useState(null);
+      const [salvandoProduto, setSalvandoProduto] = useState(false);
+      const [erroProdutoModal, setErroProdutoModal] = useState('');
 
       const [mesaQr, setMesaQr] = useState('01');
       const [linkCopiado, setLinkCopiado] = useState(false);
@@ -1106,6 +1108,8 @@
 
       const handleSalvarProduto = async (e) => {
         e.preventDefault();
+        setSalvandoProduto(true);
+        setErroProdutoModal('');
 
         try {
           const formData = new FormData(e.target);
@@ -1131,8 +1135,13 @@
           setNotificacao(modalProduto.data ? 'Produto atualizado com sucesso!' : 'Produto adicionado com sucesso!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          setNotificacao(err.message || 'Não foi possível salvar o produto.');
+          console.error('Erro ao salvar produto:', err.message);
+          const mensagemErro = err.message || 'Não foi possível salvar o produto.';
+          setErroProdutoModal(mensagemErro);
+          setNotificacao(mensagemErro);
           setTimeout(() => setNotificacao(''), 4000);
+        } finally {
+          setSalvandoProduto(false);
         }
       };
 
@@ -1491,7 +1500,7 @@
                           <h3 className="font-extrabold text-xl text-white">Gestão do Cardápio</h3>
                           <p className="text-xs text-slate-400 mt-0.5">Adicione, edite ou remova produtos do cardápio digital.</p>
                         </div>
-                        <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-xs transition shadow-lg shadow-amber-500/20">
+                        <button onClick={() => { setProdutoAtual(null); setErroProdutoModal(''); setModalProduto({ open: true, data: null }); }} className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-xs transition shadow-lg shadow-amber-500/20">
                           + Adicionar Item
                         </button>
                       </div>
@@ -1509,7 +1518,7 @@
                                 <p className="text-amber-400 font-bold font-mono text-xs">{formatarPreco(p.preco)}</p>
                               </div>
                               <div className="flex gap-2">
-                                <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-700 font-bold transition">Editar</button>
+                                <button onClick={() => { setProdutoAtual(p); setErroProdutoModal(''); setModalProduto({ open: true, data: p }); }} className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-700 font-bold transition">Editar</button>
                                 <button onClick={() => handleRemoverProduto(p.id)} className="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 font-bold transition">Excluir</button>
                               </div>
                             </div>
@@ -1849,9 +1858,18 @@
                       <label className="text-xs text-slate-400 font-bold block mb-1">Imagem do Produto (Arquivo)</label>
                       <input type="file" accept="image/*" onChange={e => setProdutoAtual(prev => ({ ...(prev || {}), arquivoImagem: e.target.files?.[0] }))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 transition" />
                     </div>
+
+                    {erroProdutoModal && (
+                      <div className="bg-rose-500/10 border border-rose-500/25 text-rose-400 p-3 rounded-xl text-xs font-semibold">
+                        {erroProdutoModal}
+                      </div>
+                    )}
+
                     <div className="pt-2 flex gap-3">
-                      <button type="button" onClick={() => setModalProduto({ open: false, data: null })} className="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs">Cancelar</button>
-                      <button type="submit" className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20">Salvar Produto</button>
+                      <button type="button" disabled={salvandoProduto} onClick={() => { setModalProduto({ open: false, data: null }); setErroProdutoModal(''); }} className="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs disabled:opacity-50">Cancelar</button>
+                      <button type="submit" disabled={salvandoProduto} className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 disabled:opacity-50">
+                        {salvandoProduto ? 'Salvando...' : 'Salvar Produto'}
+                      </button>
                     </div>
                   </form>
                 </div>
