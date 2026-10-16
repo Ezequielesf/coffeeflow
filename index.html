@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-PT" class="scroll-smooth">
+<html lang="pt-BR" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CoffeeFlow - Seu cardápio digital com QR Code, simples de criar e fácil de atualizar.</title>
+  <title>CoffeeFlow - Cardápio Digital & Gestão Inteligente para Cafeterias</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- React & ReactDOM CDN -->
@@ -564,7 +564,7 @@
       login: async (email, password) => {
         const cleanEmail = email.trim().toLowerCase();
         if (!cleanEmail) throw new Error('Informe o seu e-mail.');
-        if (!password) throw new Error('Informe a sua palavra-passe.');
+        if (!password) throw new Error('Informe a sua senha.');
 
         const { data, error } = await supabaseClient.auth.signInWithPassword({
           email: cleanEmail,
@@ -572,7 +572,7 @@
         });
 
         if (error) {
-          throw new Error('E-mail ou palavra-passe incorretos.');
+          throw new Error('E-mail ou senha incorretos.');
         }
 
         return { user: data.user, session: data.session };
@@ -580,11 +580,11 @@
 
       signUp: async (email, password, nomeCafeteria) => {
         const cleanEmail = email.trim().toLowerCase();
-        if (!cleanEmail || !password) throw new Error('Preencha o e-mail e a palavra-passe.');
+        if (!cleanEmail || !password) throw new Error('Preencha o e-mail e a senha.');
 
         const cafeteriaExistente = await supabaseService.buscarCafeteriaPorEmail(cleanEmail);
         if (cafeteriaExistente) {
-          throw new Error('Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a palavra-passe.');
+          throw new Error('Este e-mail já possui uma conta no CoffeeFlow. Faça login ou recupere a senha.');
         }
 
         const { data, error } = await supabaseClient.auth.signUp({
@@ -619,7 +619,7 @@
       }
     };
 
-    const INITIAL_CATEGORIES = ['Todas', 'Cafés Espressos', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Sanduíches'];
+    const INITIAL_CATEGORIES = ['Todas', 'Cafés', 'Bebidas Frias', 'Doces & Bolos', 'Salgados & Lanches'];
 
     function App() {
       const urlInfo = getUrlParams();
@@ -710,11 +710,11 @@
         setResetPasswordSuccess('');
 
         if (newPassword.length < 6) {
-          setResetPasswordError('A palavra-passe deve ter pelo menos 6 caracteres.');
+          setResetPasswordError('A senha deve ter pelo menos 6 caracteres.');
           return;
         }
         if (newPassword !== confirmNewPassword) {
-          setResetPasswordError('As palavras-passe não coincidem.');
+          setResetPasswordError('As senhas não coincidem.');
           return;
         }
 
@@ -733,9 +733,9 @@
           setIsResetPassword(false);
           setAdminAuthMode('login');
           setActiveView('admin_login');
-          setResetPasswordSuccess('Palavra-passe alterada com sucesso! Faça login com a nova palavra-passe.');
+          setResetPasswordSuccess('Senha alterada com sucesso! Faça login com a nova senha.');
         } catch (error) {
-          setResetPasswordError(error.message || 'Não foi possível alterar a palavra-passe.');
+          setResetPasswordError(error.message || 'Não foi possível alterar a senha.');
         } finally {
           setLoadingResetPassword(false);
         }
@@ -1080,17 +1080,17 @@
 
       const handleRemoverProduto = async (id) => {
         if (!id) return;
-        if (!confirm('Deseja eliminar este item da ementa?')) return;
+        if (!confirm('Deseja excluir este item do cardápio?')) return;
 
         try {
           const resultado = await supabaseService.deletarProduto(id);
-          if (!resultado?.success) throw new Error(resultado?.error || 'Erro ao eliminar.');
+          if (!resultado?.success) throw new Error(resultado?.error || 'Erro ao excluir.');
 
           await carregarDadosDoBanco();
-          setNotificacao('Produto eliminado com sucesso!');
+          setNotificacao('Produto excluído com sucesso!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          setNotificacao(err.message || 'Não foi possível eliminar o produto.');
+          setNotificacao(err.message || 'Não foi possível excluir o produto.');
           setTimeout(() => setNotificacao(''), 4000);
         }
       };
@@ -1122,7 +1122,7 @@
           setNotificacao(modalProduto.data ? 'Produto atualizado com sucesso!' : 'Produto adicionado com sucesso!');
           setTimeout(() => setNotificacao(''), 4000);
         } catch (err) {
-          setNotificacao(err.message || 'Não foi possível guardar o produto.');
+          setNotificacao(err.message || 'Não foi possível salvar o produto.');
           setTimeout(() => setNotificacao(''), 4000);
         }
       };
@@ -1192,23 +1192,23 @@
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-300"></div>
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-2xl text-amber-400">🔐</div>
-                <h2 className="text-2xl font-black text-white">Criar nova palavra-passe</h2>
-                <p className="text-xs text-slate-400">Escolha uma nova palavra-passe segura para a sua conta CoffeeFlow.</p>
+                <h2 className="text-2xl font-black text-white">Criar nova senha</h2>
+                <p className="text-xs text-slate-400">Escolha uma nova senha segura para a sua conta CoffeeFlow.</p>
               </div>
 
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="text-xs text-slate-400 font-bold block mb-1">Nova palavra-passe</label>
+                  <label className="text-xs text-slate-400 font-bold block mb-1">Nova senha</label>
                   <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" minLength={6} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 font-bold block mb-1">Confirmar palavra-passe</label>
+                  <label className="text-xs text-slate-400 font-bold block mb-1">Confirmar senha</label>
                   <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="••••••••" minLength={6} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                 </div>
                 {resetPasswordError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordError}</div>}
                 {resetPasswordSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold">{resetPasswordSuccess}</div>}
                 <button type="submit" disabled={loadingResetPassword} className="w-full py-3.5 bg-amber-500 text-slate-950 font-black rounded-xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
-                  {loadingResetPassword ? 'A alterar...' : 'Alterar palavra-passe'}
+                  {loadingResetPassword ? 'Alterando...' : 'Alterar senha'}
                 </button>
               </form>
             </div>
@@ -1225,7 +1225,7 @@
                 <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 rounded-xl flex items-center justify-center font-black text-lg shadow-md shadow-amber-500/20">☕</div>
                 <div>
                   <span className="font-black text-white text-lg tracking-tight">Coffee<span className="text-amber-500">Flow</span></span>
-                  <span className="block text-[10px] text-slate-400 font-semibold tracking-wider uppercase">Ementa & Gestão SaaS</span>
+                  <span className="block text-[10px] text-slate-400 font-semibold tracking-wider uppercase">Cardápio & Gestão SaaS</span>
                 </div>
               </div>
 
@@ -1244,7 +1244,7 @@
                   )}
                   {!isLoggedInAdmin && (
                     <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-4 py-2.5 bg-amber-500 text-slate-950 rounded-xl text-xs font-black hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
-                      Começar Grátis
+                      Criar Conta
                     </button>
                   )}
                   {isLoggedInAdmin && (
@@ -1262,71 +1262,61 @@
               )}
             </header>
 
-            {/* LANDING PAGE - SaaS Moderno e Comercial */}
+            {/* LANDING PAGE - Nova Versão Brasileira */}
             {activeView === 'landing' && !isLoggedInAdmin && !isStaffLogged && !isClientAccessFromQr && (
               <div className="space-y-24 pb-20 overflow-hidden">
                 {/* Hero Section */}
-                <section className="relative pt-20 pb-20 px-4 max-w-6xl mx-auto text-center space-y-8">
+                <section className="relative pt-20 pb-16 px-4 max-w-5xl mx-auto text-center space-y-8">
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
                   
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 text-amber-400 text-xs font-bold shadow-inner">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    Nova Versão 2.4 — Ementa Digital + Cozinha em Tempo Real
-                  </div>
-
-                  <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tight leading-[1.1] max-w-4xl mx-auto">
-                    Transforme a operação da sua cafetaria com <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">pedidos inteligentes por QR Code</span>
+                  <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] max-w-3xl mx-auto">
+                    Seu <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">cardápio digital</span>, pronto para compartilhar.
                   </h1>
 
-                  <p className="text-slate-400 text-base sm:text-xl max-w-2xl mx-auto font-normal leading-relaxed">
-                    Elimine filas e erros de atendimento. Sistema completo de ementa digital por mesa, gestão de produtos e painel de pedidos instantâneo para a equipa.
+                  <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto font-normal leading-relaxed">
+                    Organize seus produtos e preços em um cardápio que seus clientes podem acessar pelo celular através de um QR Code.
                   </p>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
-                    <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-amber-500/20 transition transform hover:-translate-y-0.5 text-sm sm:text-base flex items-center justify-center gap-3">
-                      <span>🚀 Ativar Assinatura Mensal</span>
+                    <button onClick={() => {
+                      setCafeteria(prev => ({ ...prev, id: 'caf_demo_01', nome: 'CoffeeFlow Café' }));
+                      setActiveView('customer');
+                    }} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-amber-500/20 transition transform hover:-translate-y-0.5 text-sm sm:text-base flex items-center justify-center gap-3">
+                      <span>Ver demonstração</span>
                     </button>
                     <button onClick={() => { mudarModoAuth('register'); setActiveView('admin_login'); }} className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl border border-slate-800 transition text-sm sm:text-base flex items-center justify-center gap-2">
-                      <span>Criar Conta de Proprietário</span>
+                      <span>Quero meu cardápio</span>
                     </button>
                   </div>
 
-                  <div className="pt-6 flex flex-wrap items-center justify-center gap-8 text-xs text-slate-400 font-semibold">
-                    <div className="flex items-center gap-2">✓ Sem comissões por venda</div>
-                    <div className="flex items-center gap-2">✓ Configuração em 2 minutos</div>
-                    <div className="flex items-center gap-2">✓ Acesso imediato via PIN</div>
+                  {/* Benefícios */}
+                  <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-6 text-xs text-slate-300 font-semibold">
+                    <div className="flex items-center gap-2">✓ Apresente seus produtos e preços em um só lugar</div>
+                    <div className="flex items-center gap-2">✓ Facilite o acesso ao cardápio pelo celular</div>
+                    <div className="flex items-center gap-2">✓ Atualize seu cardápio sem precisar reimprimir tudo</div>
                   </div>
 
-                  {/* Product Mockup Preview Card */}
-                  <div className="pt-10 max-w-4xl mx-auto">
-                    <div className="p-2 bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-xl">
-                      <div className="bg-slate-950 rounded-2xl p-6 border border-slate-800/60 text-left space-y-6">
-                        <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                          </div>
-                          <div className="text-xs text-slate-500 font-mono">coffeeflow.app/balcao</div>
+                  {/* Prévia Visual / Phone Mockup */}
+                  <div className="pt-8 max-w-xs mx-auto">
+                    <div className="p-3 bg-slate-900 border-2 border-slate-800 rounded-[40px] shadow-2xl relative">
+                      <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto mb-3"></div>
+                      <div className="bg-slate-950 rounded-[28px] p-4 border border-slate-800/80 text-left space-y-3">
+                        <div className="flex justify-between items-center border-b border-slate-900 pb-2">
+                          <span className="font-bold text-xs text-white">☕ CoffeeFlow Café</span>
+                          <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">Mesa 01</span>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-4">
-                          <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">MESA 04</span>
-                            <h4 className="font-bold text-sm text-white">2x Espresso Duplo</h4>
-                            <p className="text-xs text-slate-400">Enviado há 1 min</p>
-                            <div className="text-xs font-mono font-bold text-emerald-400">R$ 16,00</div>
+                        <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 flex items-center gap-3">
+                          <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-400 font-bold">☕</div>
+                          <div>
+                            <p className="font-bold text-xs text-white">Café Espresso</p>
+                            <p className="text-[10px] text-amber-400 font-mono font-bold">R$ 6,50</p>
                           </div>
-                          <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">MESA 01</span>
-                            <h4 className="font-bold text-sm text-white">1x Croissant de Mantega</h4>
-                            <p className="text-xs text-slate-400">Em preparação</p>
-                            <div className="text-xs font-mono font-bold text-amber-400">R$ 9,50</div>
-                          </div>
-                          <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">MESA 07</span>
-                            <h4 className="font-bold text-sm text-white">1x Cappuccino Cremoso</h4>
-                            <p className="text-xs text-slate-400">Pronto para entrega</p>
-                            <div className="text-xs font-mono font-bold text-emerald-400">R$ 12,00</div>
+                        </div>
+                        <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 flex items-center gap-3">
+                          <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-400 font-bold">🥐</div>
+                          <div>
+                            <p className="font-bold text-xs text-white">Pão de Queijo</p>
+                            <p className="text-[10px] text-amber-400 font-mono font-bold">R$ 5,00</p>
                           </div>
                         </div>
                       </div>
@@ -1334,49 +1324,30 @@
                   </div>
                 </section>
 
-                {/* Features Grid */}
-                <section className="max-w-6xl mx-auto px-4 space-y-12">
-                  <div className="text-center space-y-3">
-                    <h2 className="text-xs uppercase tracking-widest text-amber-500 font-black">Funcionalidades Poderosas</h2>
-                    <h3 className="text-3xl sm:text-4xl font-extrabold text-white">Tudo o que sua cafetaria precisa para crescer</h3>
+                {/* Como Funciona Section */}
+                <section className="max-w-5xl mx-auto px-4 space-y-12">
+                  <div className="text-center space-y-2">
+                    <h2 className="text-xs uppercase tracking-widest text-amber-500 font-black">Passo a Passo</h2>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold text-white">Como funciona</h3>
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-6">
-                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition group">
-                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black group-hover:scale-110 transition">📱</div>
-                      <h4 className="text-lg font-bold text-white">Ementa Digital por Mesa</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">Gere QR codes personalizados para cada mesa. Seus clientes acedem instantaneamente ao cardápio atualizado sem instalar nenhuma aplicação.</p>
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition">
+                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black">1</div>
+                      <h4 className="text-lg font-bold text-white">Configure o cardápio</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">Adicione seus produtos, descrições e preços de forma simples e rápida diretamente no painel administrativo.</p>
                     </div>
 
-                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition group">
-                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black group-hover:scale-110 transition">⚡</div>
-                      <h4 className="text-lg font-bold text-white">Painel de Cozinha em Tempo Real</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">Os pedidos realizados pelos clientes chegam instantaneamente ao balcão e à cozinha com alertas sonoros e atualização automática.</p>
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition">
+                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black">2</div>
+                      <h4 className="text-lg font-bold text-white">Disponibilize o QR Code</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">Gere o QR Code exclusivo para as mesas do seu estabelecimento e imprima com facilidade.</p>
                     </div>
 
-                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition group">
-                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black group-hover:scale-110 transition">🔑</div>
-                      <h4 className="text-lg font-bold text-white">Acesso Operacional por PIN</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">Sua equipa acede ao painel de atendimento e cozinha com um PIN numérico seguro de 6 dígitos, sem necessidade de senhas complexas.</p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Pricing / CTA Section */}
-                <section className="max-w-4xl mx-auto px-4">
-                  <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 sm:p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[100px] pointer-events-none"></div>
-                    
-                    <div className="space-y-3">
-                      <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold rounded-full">Licença Profissional</span>
-                      <h3 className="text-3xl sm:text-5xl font-black text-white">Pronto para elevar o padrão do seu negócio?</h3>
-                      <p className="text-slate-400 text-sm max-w-xl mx-auto">Comece agora mesmo a gerir pedidos com agilidade e modernize a experiência dos seus clientes.</p>
-                    </div>
-
-                    <div className="pt-2">
-                      <button onClick={abrirPagamento} className="px-10 py-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-base shadow-xl shadow-amber-500/20 transition transform hover:-translate-y-0.5">
-                        Assinar CoffeeFlow — Acesso Imediato
-                      </button>
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 hover:border-amber-500/50 transition">
+                      <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-black">3</div>
+                      <h4 className="text-lg font-bold text-white">Seus clientes consultam</h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">Os clientes leem o código com a câmera do celular e navegam pelo cardápio atualizado na hora.</p>
                     </div>
                   </div>
                 </section>
@@ -1390,34 +1361,34 @@
                 <div className="text-center space-y-1">
                   <h2 className="text-2xl font-black text-white">
                     {adminAuthMode === 'login' && 'Entrar na Conta'}
-                    {adminAuthMode === 'register' && 'Registar Cafetaria'}
-                    {adminAuthMode === 'forgot' && 'Recuperar Palavra-passe'}
+                    {adminAuthMode === 'register' && 'Cadastrar Cafeteria'}
+                    {adminAuthMode === 'forgot' && 'Recuperar Senha'}
                   </h2>
                   <p className="text-xs text-slate-400">Painel administrativo exclusivo para proprietários</p>
                 </div>
                     
                 <div className="flex bg-slate-950 p-1.5 rounded-2xl text-xs font-bold gap-1 border border-slate-800">
                   <button onClick={() => mudarModoAuth('login')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'login' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}>Login</button>
-                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}>Registar</button>
+                  <button onClick={() => mudarModoAuth('register')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'register' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}>Cadastrar</button>
                   <button onClick={() => mudarModoAuth('forgot')} className={`flex-1 py-2.5 rounded-xl transition ${adminAuthMode === 'forgot' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}>Recuperar</button>
                 </div>
 
                 <form onSubmit={handleAdminAuth} className="space-y-4">
                   {adminAuthMode === 'register' && (
                     <div>
-                      <label className="text-xs text-slate-400 font-bold block mb-1">Nome da Cafetaria</label>
+                      <label className="text-xs text-slate-400 font-bold block mb-1">Nome da Cafeteria</label>
                       <input type="text" placeholder="Ex: CoffeeFlow Central" value={nomeCafeteriaInput} onChange={e => setNomeCafeteriaInput(e.target.value)} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                     </div>
                   )}
 
                   <div>
                     <label className="text-xs text-slate-400 font-bold block mb-1">E-mail</label>
-                    <input type="email" placeholder="seu-email@cafetaria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
+                    <input type="email" placeholder="seu-email@cafeteria.com" value={adminEmailInput} onChange={e => setAdminEmailInput(e.target.value)} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                   </div>
 
                   {adminAuthMode !== 'forgot' && (
                     <div>
-                      <label className="text-xs text-slate-400 font-bold block mb-1">Palavra-passe</label>
+                      <label className="text-xs text-slate-400 font-bold block mb-1">Senha</label>
                       <input type="password" placeholder="••••••••" value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} required className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition" />
                     </div>
                   )}
@@ -1426,7 +1397,7 @@
                   {adminAuthSuccess && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3.5 rounded-xl text-xs font-semibold">{adminAuthSuccess}</div>}
 
                   <button type="submit" disabled={loadingAuth} className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl text-sm hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
-                    {loadingAuth ? 'A processar...' : (adminAuthMode === 'login' ? 'Entrar no Sistema' : (adminAuthMode === 'register' ? 'Criar Conta e Cafetaria' : 'Enviar Link de Recuperação'))}
+                    {loadingAuth ? 'Processando...' : (adminAuthMode === 'login' ? 'Entrar no Sistema' : (adminAuthMode === 'register' ? 'Criar Conta e Cafeteria' : 'Enviar Link de Recuperação'))}
                   </button>
                 </form>
 
@@ -1443,7 +1414,7 @@
                   <div>
                     <span className="text-xs uppercase font-bold text-amber-500 tracking-wider">Painel do Proprietário</span>
                     <h2 className="text-3xl font-black text-white mt-1">{cafeteria.nome}</h2>
-                    <p className="text-xs text-slate-400 mt-1">ID da Cafetaria: <span className="font-mono text-amber-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">{cafeteria.id}</span></p>
+                    <p className="text-xs text-slate-400 mt-1">ID da Cafeteria: <span className="font-mono text-amber-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">{cafeteria.id}</span></p>
                   </div>
                   <button onClick={async () => { await supabaseClient.auth.signOut(); localStorage.removeItem('coffeeflow_staff_pin'); localStorage.removeItem('coffeeflow_staff_cafeteria_id'); setIsLoggedInAdmin(false); setActiveView('landing'); }} className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 transition">
                     Sair da Conta
@@ -1455,7 +1426,7 @@
                     <div className="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center mx-auto text-4xl font-black shadow-inner">🔒</div>
                     <div className="space-y-2">
                       <h3 className="text-2xl font-black text-white">Assinatura Pendente ou Expirada</h3>
-                      <p className="text-xs text-slate-400 max-w-md mx-auto">Para continuar a utilizar a ementa digital e o painel de pedidos, renove a sua assinatura mensal.</p>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">Para continuar utilizando o cardápio digital e o painel de pedidos, renove sua assinatura mensal.</p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
                       <button onClick={abrirPagamento} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-sm transition shadow-xl shadow-amber-500/20">
@@ -1472,7 +1443,7 @@
                       <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center shadow-md">
                         <div className="flex items-center gap-3">
                           <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                          <span className="text-xs text-slate-300 font-bold">Estado da Assinatura: <span className="text-emerald-400">Ativa</span></span>
+                          <span className="text-xs text-slate-300 font-bold">Status da Assinatura: <span className="text-emerald-400">Ativa</span></span>
                         </div>
                         <span className="text-amber-400 font-bold text-xs bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">{calcularDiasRestantes(cafeteria.dataExpiracao, cafeteria.isVitalicio)} dias restantes</span>
                       </div>
@@ -1484,7 +1455,7 @@
                           <h3 className="font-extrabold text-lg text-white">PIN de Acesso da Equipe</h3>
                           <span className="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-lg font-mono">6 Dígitos</span>
                         </div>
-                        <p className="text-xs text-slate-400">Utilizado por garçons e equipe da cozinha para aceder ao balcão.</p>
+                        <p className="text-xs text-slate-400">Utilizado por garçons e equipe da cozinha para acessar o balcão.</p>
                         <div className="bg-slate-950 p-4 rounded-2xl flex justify-between items-center border border-slate-800">
                           <span className="text-3xl font-mono font-black text-amber-400 tracking-widest">{cafeteria.pinEquipe || '------'}</span>
                           <button onClick={solicitarNovoPin} className="px-4 py-2 bg-slate-900 text-xs font-bold rounded-xl border border-slate-700 hover:bg-slate-800 transition text-slate-200">Gerar Novo</button>
@@ -1508,7 +1479,7 @@
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 space-y-6 shadow-xl">
                       <div className="flex justify-between items-center">
                         <div>
-                          <h3 className="font-extrabold text-xl text-white">Gestão da Ementa</h3>
+                          <h3 className="font-extrabold text-xl text-white">Gestão do Cardápio</h3>
                           <p className="text-xs text-slate-400 mt-0.5">Adicione, edite ou remova produtos do cardápio digital.</p>
                         </div>
                         <button onClick={() => { setProdutoAtual(null); setModalProduto({ open: true, data: null }); }} className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-xs transition shadow-lg shadow-amber-500/20">
@@ -1518,7 +1489,7 @@
 
                       <div className="space-y-3">
                         {produtos.length === 0 ? (
-                          <div className="text-center py-10 text-slate-500 text-xs bg-slate-950 rounded-2xl border border-slate-800/80">Nenhum produto cadastrado na ementa.</div>
+                          <div className="text-center py-10 text-slate-500 text-xs bg-slate-950 rounded-2xl border border-slate-800/80">Nenhum produto cadastrado no cardápio.</div>
                         ) : (
                           produtos.map(p => (
                             <div key={p.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-between items-center text-xs gap-4 shadow-sm">
@@ -1530,7 +1501,7 @@
                               </div>
                               <div className="flex gap-2">
                                 <button onClick={() => { setProdutoAtual(p); setModalProduto({ open: true, data: p }); }} className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-700 font-bold transition">Editar</button>
-                                <button onClick={() => handleRemoverProduto(p.id)} className="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 font-bold transition">Eliminar</button>
+                                <button onClick={() => handleRemoverProduto(p.id)} className="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 font-bold transition">Excluir</button>
                               </div>
                             </div>
                           ))
@@ -1539,12 +1510,12 @@
                     </div>
 
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 space-y-6 shadow-xl">
-                      <h3 className="font-extrabold text-xl text-white">Definições da Conta & Acesso</h3>
+                      <h3 className="font-extrabold text-xl text-white">Configurações da Conta & Acesso</h3>
                       
                       <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-3">
                           <div>
-                            <span className="text-slate-400 block">E-mail de acesso da Cafetaria:</span>
+                            <span className="text-slate-400 block">E-mail de acesso da Cafeteria:</span>
                             <span className="font-extrabold text-white text-sm mt-0.5 block">{cafeteria.donoEmail || 'Não definido'}</span>
                           </div>
                           <button onClick={() => setEmailEditando(!emailEditando)} className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl font-bold text-amber-400 transition">
@@ -1563,7 +1534,7 @@
                       <div className="pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center border-t border-slate-800 gap-4">
                         <div>
                           <p className="text-xs font-black text-rose-400 uppercase tracking-wider">Zona de Perigo</p>
-                          <p className="text-xs text-slate-400 mt-0.5">Apagar permanentemente todos os dados e acesso desta cafetaria.</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Apagar permanentemente todos os dados e acesso desta cafeteria.</p>
                         </div>
                         <button onClick={() => setConfirmarExclusaoModal(true)} className="px-5 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-black transition">
                           Excluir Conta
@@ -1627,12 +1598,12 @@
                     )}
                   </div>
 
-                  {/* Ementa Visualização */}
+                  {/* Cardápio Visualização */}
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <h3 className="font-extrabold text-amber-400 text-base">Ementa Ativa ({produtos.length} itens)</h3>
+                      <h3 className="font-extrabold text-amber-400 text-base">Cardápio Ativo ({produtos.length} itens)</h3>
                     </div>
-                    <p className="text-xs text-slate-400">Modo de visualização rápida para consulta da equipa.</p>
+                    <p className="text-xs text-slate-400">Modo de visualização rápida para consulta da equipe.</p>
                     <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                       {produtos.map(p => (
                         <div key={p.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center text-xs gap-4 shadow-sm">
@@ -1659,7 +1630,7 @@
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-black text-white">Acesso Operacional por PIN</h3>
-                  <p className="text-xs text-slate-400">Introduza o PIN de 6 dígitos da sua cafetaria para aceder ao balcão e cozinha.</p>
+                  <p className="text-xs text-slate-400">Insira o PIN de 6 dígitos da sua cafeteria para acessar o balcão e cozinha.</p>
                 </div>
 
                 <form onSubmit={handleLoginStaff} className="space-y-6">
@@ -1669,7 +1640,7 @@
                   </div>
                   {pinError && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3.5 rounded-xl text-xs font-semibold">{pinError}</div>}
                   <button type="submit" disabled={loadingPin} className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-2xl text-sm hover:bg-amber-400 transition shadow-xl shadow-amber-500/20">
-                    {loadingPin ? 'A validar PIN...' : 'Entrar no Balcão & Cozinha'}
+                    {loadingPin ? 'Validando PIN...' : 'Entrar no Balcão & Cozinha'}
                   </button>
                 </form>
 
@@ -1755,13 +1726,13 @@
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 space-y-6 shadow-2xl text-center">
                   <div className="w-16 h-16 bg-rose-500/10 text-rose-400 rounded-3xl flex items-center justify-center mx-auto text-2xl font-black border border-rose-500/20">⚠️</div>
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black text-white">Tem a certeza?</h3>
+                    <h3 className="text-xl font-black text-white">Tem certeza?</h3>
                     <p className="text-xs text-slate-300">Esta ação encerrará a sessão atual e desvinculará o acesso local permanentemente.</p>
                   </div>
                   <div className="flex gap-3 pt-2">
                     <button onClick={() => setConfirmarExclusaoModal(false)} className="flex-1 py-3 bg-slate-800 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-700 transition">Cancelar</button>
                     <button onClick={executarExclusaoConta} disabled={eliminandoConta} className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-rose-600/20">
-                      {eliminandoConta ? 'A processar...' : 'Confirmar'}
+                      {eliminandoConta ? 'Processando...' : 'Confirmar'}
                     </button>
                   </div>
                 </div>
@@ -1772,7 +1743,7 @@
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 space-y-6 shadow-2xl">
                   <h3 className="text-xl font-black text-white text-center">🔐 Ativação VIP Admin</h3>
-                  <p className="text-xs text-slate-400 text-center">Introduza o PIN mestre para liberar o acesso ilimitado.</p>
+                  <p className="text-xs text-slate-400 text-center">Insira o PIN mestre para liberar o acesso ilimitado.</p>
                   <form onSubmit={handleDevBypass} className="space-y-4">
                     <input type="password" placeholder="PIN Secreto" value={devPinInput} onChange={e => setDevPinInput(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-center text-sm text-white focus:outline-none focus:border-amber-500 font-mono tracking-widest" autoFocus />
                     {devError && <p className="text-xs text-rose-400 text-center font-bold">{devError}</p>}
@@ -1795,7 +1766,7 @@
                   <div className="flex gap-3 pt-2">
                     <button onClick={cancelarNovoPin} className="flex-1 py-3 bg-slate-800 text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-700 transition">Não mudar</button>
                     <button onClick={confirmarGerarNovoPin} disabled={gerandoPin} className="flex-1 py-3 bg-amber-500 text-slate-950 font-black rounded-xl text-xs hover:bg-amber-400 transition shadow-lg shadow-amber-500/20">
-                      {gerandoPin ? 'A gerar...' : 'Mudar PIN'}
+                      {gerandoPin ? 'Gerando...' : 'Mudar PIN'}
                     </button>
                   </div>
                 </div>
@@ -1821,7 +1792,7 @@
                         <div className="text-xl font-black uppercase tracking-tight">{cafeteria.nome}</div>
                         <img src={getQrCodeUrl(linkAtualCardapio, 180)} alt="QR Code" className="w-48 h-48 rounded-xl mx-auto" />
                         <div className="bg-amber-500 text-slate-950 py-1.5 px-3 rounded-xl font-black text-sm tracking-wide">MESA {mesaQr}</div>
-                        <p className="text-[11px] text-slate-500 font-medium">Aponte a câmara do telemóvel para aceder à ementa e fazer o pedido.</p>
+                        <p className="text-[11px] text-slate-500 font-medium">Aponte a câmera do celular para acessar o cardápio e fazer o pedido.</p>
                       </div>
                     </div>
 
@@ -1840,7 +1811,7 @@
               <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-black text-white">{modalProduto.data ? 'Editar Item da Ementa' : 'Novo Item na Ementa'}</h3>
+                    <h3 className="text-xl font-black text-white">{modalProduto.data ? 'Editar Item do Cardápio' : 'Novo Item no Cardápio'}</h3>
                     <button onClick={() => setModalProduto({ open: false, data: null })} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
                   </div>
 
@@ -1851,8 +1822,8 @@
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs text-slate-400 font-bold block mb-1">Preço (€ ou R$)</label>
-                        <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="2.50" required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-amber-500" />
+                        <label className="text-xs text-slate-400 font-bold block mb-1">Preço (R$)</label>
+                        <input type="number" step="0.10" name="preco" defaultValue={modalProduto.data?.preco || ''} placeholder="8.50" required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-amber-500" />
                       </div>
                       <div>
                         <label className="text-xs text-slate-400 font-bold block mb-1">Categoria</label>
@@ -1879,13 +1850,13 @@
             )}
           </div>
 
-          {/* Footer Profissional SaaS */}
+          {/* Footer */}
           <footer className="bg-slate-950 border-t border-slate-900 py-10 px-6 text-center text-xs text-slate-500 space-y-4">
             <div className="flex items-center justify-center gap-2">
               <div className="w-6 h-6 bg-amber-500 text-slate-950 rounded-lg flex items-center justify-center font-black text-xs">☕</div>
               <span className="font-extrabold text-white text-sm">CoffeeFlow SaaS</span>
             </div>
-            <p>Sistema inteligente de ementa digital e gestão de pedidos para cafetarias e restaurantes.</p>
+            <p>Sistema inteligente de cardápio digital e gestão de pedidos para cafeterias.</p>
             <p>© {new Date().getFullYear()} CoffeeFlow. Todos os direitos reservados.</p>
           </footer>
         </div>
